@@ -36,6 +36,7 @@ func buildAll() *Asm {
 	a.Branch("bne", "fin")
 	a.Branch("bra", "fin")
 	a.Bytes(1, 2, 255)
+	a.Bytes()
 	a.Text("Ab")
 	a.Word("start", 0)
 	a.Word("fin", 2)

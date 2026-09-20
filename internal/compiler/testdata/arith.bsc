@@ -1,0 +1,9 @@
+' arithmetique entiere 32 bits, priorites
+a = 7: b = -3
+print a + b, a - b, a * b, a \ b, a % b
+print (a + b) * 2, a + b * 2, -a, - - a
+print 2147483647 + 1, -2147483648 - 1
+print 1 << 4, 256 >> 4, 1 << 33, -8 >> 1
+print 6 & 3, 6 | 3, 6 ^ 3
+print $ff, $100 + 1
+print 12345678 * 100, 1000000 \ 7, 1000000 % 7

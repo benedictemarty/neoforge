@@ -266,8 +266,11 @@ func (a *Asm) Branch(mn, label string) {
 	}
 }
 
-// Bytes émet des octets bruts (.byte).
+// Bytes émet des octets bruts (.byte) ; sans octet, rien n'est émis.
 func (a *Asm) Bytes(b ...byte) {
+	if len(b) == 0 {
+		return
+	}
 	a.emit(b...)
 	var parts []string
 	for _, x := range b {

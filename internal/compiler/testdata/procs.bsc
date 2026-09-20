@@ -1,0 +1,23 @@
+call square(7)
+call greet("ab", 3)
+i = 5
+call counter()
+print "out="; i
+call hello()
+end
+proc square(x)
+  print x * x
+endproc
+proc greet(n$, k)
+  local i
+  for i = 1 to k: print n$;: next
+  print
+endproc
+proc counter()
+  local i
+  i = 100
+  print "in="; i
+endproc
+proc hello()
+  print "hello"
+endproc

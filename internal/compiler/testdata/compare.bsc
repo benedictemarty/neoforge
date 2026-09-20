@@ -1,0 +1,12 @@
+print 3 = 3; 3 < 2; 2 < 3; 3 > 2; 3 >= 3; 2 <= 1; 2 <> 3; 2 <> 2
+print not 5; not 0; true; false
+x = -5
+if x < 0 then print "neg"
+if x >= 0 then print "pos"
+if x = -5 then print "cinq"
+if x > 0
+  print "jamais"
+else
+  print "sinon"
+endif
+if x:print "vrai":endif

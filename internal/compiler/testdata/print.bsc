@@ -1,0 +1,6 @@
+print "a", "b", "c"
+print 1, 22, 333
+print "x";
+print "y"
+print
+print "tab", "stop"; "end"

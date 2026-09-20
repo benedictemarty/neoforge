@@ -1,0 +1,6 @@
+poke $9000, 123
+doke $9002, $1234
+print peek($9000); deek($9002); peek($9003)
+print abs(-4); abs(4); sgn(-9); sgn(0); sgn(9); int(3); min(2, 9); max(2, 9)
+x = rand(1)
+print "rand="; x

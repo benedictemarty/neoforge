@@ -1,0 +1,8 @@
+a$ = "Hello"
+b$ = a$ + ", " + "World"
+print a$; "|"; b$; "|"; len(b$); "|"; asc(a$); "|"; asc("")
+print chr$(65) + chr$(66); str$(42) + "!"; str$(-7)
+c$ = ""
+print "[" + c$ + "]"; len(c$)
+for i = 1 to 3: c$ = c$ + str$(i): next
+print c$
