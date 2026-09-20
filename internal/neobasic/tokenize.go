@@ -86,100 +86,19 @@ var (
 	reIdent = regexp.MustCompile(`^([A-Za-z0-9_.]+\$?\(?)\s*(.*)$`)
 )
 
-// Tokenize tokenise une ligne (sans numéro) ; un `//` en début d'élément termine
-// la ligne (commentaire de source, non conservé).
-func (t *Tokenizer) Tokenize(s string) ([]byte, error) {
-	var code []byte
-	s = strings.TrimSpace(s)
-	for s != "" && !strings.HasPrefix(s, "//") {
-		var err error
-		if code, s, err = t.one(code, s); err != nil {
-			return nil, err
-		}
-		s = strings.TrimSpace(s)
-	}
-	return code, nil
-}
-
 func (t *Tokenizer) id(name string) byte {
 	tok, _ := t.ts.ByName(name)
 	return byte(tok.ID)
 }
 
-// one consomme un élément en tête de s et l'ajoute à code.
-func (t *Tokenizer) one(code []byte, s string) ([]byte, string, error) {
-	c := s[0]
-	switch {
-	case c >= '0' && c <= '9': // entier en base 64, puis éventuelle partie décimale BCD
-		m := reInt.FindStringSubmatch(s)
-		code = renderConstant(code, parseUint(m[1]))
-		s = m[2]
-		if f := reFrac.FindStringSubmatch(s); f != nil {
-			digits := []byte(f[1])
-			for i := range digits {
-				digits[i] -= '0'
-			}
-			digits = append(digits, 0xF)
-			if len(digits)%2 != 0 {
-				digits = append(digits, 0xF)
-			}
-			code = append(code, t.id("!!dec"), byte(len(digits)>>1))
-			for i := 0; i < len(digits); i += 2 {
-				code = append(code, digits[i]*16+digits[i+1])
-			}
-			return code, f[2], nil
-		}
-		return code, s, nil
-	case c == '$': // hexadécimal
-		m := reHex.FindStringSubmatch(s)
-		if m == nil {
-			return nil, "", fmt.Errorf("nombre hexadécimal attendu après « $ » : %q", s)
-		}
-		code = append(code, t.id("$"))
-		return renderConstant(code, parseHex(m[1])), m[2], nil
-	case c == '"': // chaîne : [!!str][longueur][caractères]
-		m := reStr.FindStringSubmatch(s)
-		if m == nil {
-			return nil, "", fmt.Errorf("chaîne non terminée : %q", s)
-		}
-		if err := checkText(m[1]); err != nil {
-			return nil, "", err
-		}
-		code = append(code, t.id("!!str"), byte(len(m[1])))
-		return append(code, m[1]...), m[2], nil
-	case c == '\'': // commentaire conservé (le reste de la ligne, guillemets retirés)
-		rest := strings.ReplaceAll(strings.TrimSpace(s[1:]), `"`, "")
-		code = append(code, t.id("'"))
-		if rest != "" {
-			if err := checkText(rest); err != nil {
-				return nil, "", err
-			}
-			code = append(code, t.id("!!str"), byte(len(rest)))
-			code = append(code, rest...)
-		}
-		return code, "", nil
-	case isLetter(c): // mot-clé ou identifiant
-		m := reIdent.FindStringSubmatch(s)
-		if tok, ok := t.ts.ByName(m[1]); ok {
-			if tok.ID >= 0x100 {
-				code = append(code, t.id(fmt.Sprintf("!!sh%d", tok.ID>>8)))
-			}
-			return append(code, byte(tok.ID&0xFF)), m[2], nil
-		}
-		id := t.store.Add(m[1])
-		return append(code, byte(id>>8), byte(id&0xFF)), m[2], nil
+// Tokenize tokenise une ligne (sans numéro) : découpage en éléments (Lex) puis
+// encodage (Encode) ; un `//` en début d'élément termine la ligne.
+func (t *Tokenizer) Tokenize(s string) ([]byte, error) {
+	items, err := Lex(t.ts, s)
+	if err != nil {
+		return nil, err
 	}
-	// Ponctuation : d'abord deux caractères, sinon un seul.
-	if len(s) >= 2 {
-		if tok, ok := t.ts.ByName(s[:2]); ok {
-			return append(code, byte(tok.ID)), s[2:], nil
-		}
-	}
-	tok, ok := t.ts.ByName(s[:1])
-	if !ok {
-		return nil, "", fmt.Errorf("caractère inattendu « %c »", c)
-	}
-	return append(code, byte(tok.ID)), s[1:], nil
+	return t.Encode(items), nil
 }
 
 // checkText vérifie qu'un texte tient dans un octet de longueur et reste en ASCII.

@@ -293,3 +293,31 @@ func firstDiff(a, b []byte) int {
 	}
 	return min(len(a), len(b))
 }
+
+func TestLexItems(t *testing.T) {
+	ts := NewTokenSet()
+	items, err := Lex(ts, `print "hi"; a$, 3.25, $2a, x // fin`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var kinds []string
+	for _, it := range items {
+		kinds = append(kinds, it.String())
+	}
+	if got := strings.Join(kinds, " "); got != `print "hi" ; a$ , 3.25 , $2a , x` {
+		t.Errorf("Lex : %s", got)
+	}
+	if items[0].Col != 0 || items[1].Col != 6 || items[2].Kind != ItemKeyword || items[3].Kind != ItemIdent || items[3].Text != "A$" {
+		t.Errorf("colonnes/genres : %+v", items[:4])
+	}
+	items, _ = Lex(ts, `' un commentaire "cite"`)
+	if len(items) != 1 || items[0].Kind != ItemComment || items[0].String() != "'un commentaire cite" {
+		t.Errorf("commentaire : %+v", items)
+	}
+	if _, err := Lex(ts, `x = "`); err == nil {
+		t.Error("chaîne non terminée : erreur attendue")
+	}
+	if items, _ := Lex(ts, "42"); items[0].String() != "42" {
+		t.Errorf("entier : %s", items[0])
+	}
+}
