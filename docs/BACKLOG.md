@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0). Sprint 5 à cadrer : assembleur en ligne `[ ]`, fichiers, `ref`, débogueur (E8), carte réelle. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0) ; sprint 5 en cours : S5-1 fait. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -72,11 +72,11 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S4-4 | E5    | Graphisme chaîné, sprites, `gload`, `tilemap`, son, `vmode`, `ink`, `cursor`, `palette`, `event( joypad( hit(`… — différentiel texte **et image** 11/11 | P1   | FAIT |
 | S4-5 | E9    | `tools/corpus.sh` : 34/50 exemples de Trinity compilent (+ `data`/`read`, `assert`, `defchr`, `load`, `sys`, `local` chaîne) ; 13 programmes différentiels | P2   | FAIT |
 
-## Sprint 5 — À cadrer (v0.6.0)
+## Sprint 5 — Compilateur : assembleur, fichiers, débogueur (v0.6.0) — EN COURS
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
-| S5-1 | E5    | Assembleur en ligne `[ … ]` / `.label` / mnémoniques (5 exemples de Trinity)        | P2   | TODO |
+| S5-1 | E5    | Assembleur en ligne (mnémoniques à l'exécution dans `P`/`O`, `.nom`, tous modes, `mem[i]`) — code identique à l'interpréteur ; 37/50 exemples | P2   | FAIT |
 | S5-2 | E5    | Fichiers (`open`, `close`, `print #`, `input #`, `save`), `mouse(`, `pin`, `i2c`, `uconfig` | P3   | TODO |
 | S5-3 | E5    | Paramètres `ref`, récursion (pile de variables)                                    | P3   | TODO |
 | S5-4 | E8    | Débogueur : exports Phosphoneo (`web_pause`, registres, mémoire), symboles du compilateur | P2   | TODO |

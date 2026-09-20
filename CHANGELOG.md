@@ -5,6 +5,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : assembleur en ligne (S5-1)
+- Mnémoniques 65C02 assemblés à l'exécution dans la variable `P` (`O` : bit 0 dernière passe, bit 1
+  listing hexadécimal), étiquettes `.nom` (fixées si la variable vaut 0), choix page zéro/absolu sur la
+  valeur de l'opérande, `,x`/`,y`, modes indirects, branches relatives à `P` — mécanisme de
+  `assembler/*.asm` reproduit ; opérateur `mem[i]` (lecture/écriture 16 bits). Code assemblé **identique
+  octet pour octet** à l'interpréteur (`inline.bsc` : taille et somme de contrôle) ; 14 différentiels.
+- Fait relevé : les modes indirects `(zp),y`, `(zp,x)`, `(zp)` exigent un opérande < 256 (erreur sinon).
 
 ## [0.5.0] - 2026-09-21 — sprint 4 : compilateur, suite
 ### Ajouté — corpus (S4-5)

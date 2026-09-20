@@ -139,3 +139,37 @@ func TestDataAssertMisc(t *testing.T) {
 		}
 	}
 }
+
+func TestInlineAsm(t *testing.T) {
+	src := "mem = $7000: p = mem: o = 3\n.start\nlda #1\nlda zp\nlda mem\nlda zp,x\nlda mem,y\nsta $2000,x\nldx zp,y\nlda (zp),y\nlda (zp,x)\nlda (zp)\njmp (mem)\njmp (mem,x)\nbne start\ninc\nrts\nzp = 5\nmem[0] = 1\nprint mem[1]\n.start\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ src, want string }{
+		{". 1", "nom d'étiquette"},
+		{".s$", "nom d'étiquette"},
+		{"lda #", "expression attendue"},
+		{"lda (", "expression attendue"},
+		{"lda (1,y)", "« ,x) » attendu"},
+		{"lda (1,x", "« ) » attendu"},
+		{"lda (1", "« ) » attendu"},
+		{"lda (1),x", "« ),y » attendu"},
+		{"lda 1,z", "« ,x » ou « ,y » attendu"},
+		{"lda \"a\"", "nombre attendu"},
+		{"sta #1", "mode d'adressage non admis"},
+		{"bne 1,x", "mode d'adressage non admis"},
+		{"x = mem[", "expression attendue"},
+		{"x = mem[1", "« ] » attendu"},
+		{"mem[1", "« ] » attendu"},
+		{"mem[1] 2", "« = » attendu"},
+		{"mem[1] = \"a\"", "nombre attendu"},
+		{"mem[\"a\"] = 1", "nombre attendu"},
+	} {
+		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)
+		}
+	}
+	if (Bracket{}).Type() != TInt {
+		t.Error("Bracket.Type")
+	}
+}

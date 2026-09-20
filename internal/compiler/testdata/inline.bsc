@@ -1,0 +1,33 @@
+mem = $7000
+for i = 0 to 1
+  p = mem
+  o = i
+  .start
+  ldx #10
+  .loop1
+  lda #42
+  jsr $FFF1
+  dex
+  bne loop1
+  lda zp
+  sta $2000,x
+  lda mem,y
+  ldy #0
+  inc
+  jmp fin
+  .fin
+  rts
+  lda (zp),y
+  adc (zp,x)
+  ora (zp)
+  jmp (mem)
+next
+s = 0: for i = mem to p - 1: s = s + peek(i): next
+print "taille="; p - mem; " somme="; s
+sys mem
+print
+x = 3: sys start
+print
+mem[0] = 513: mem[1] = -1
+print mem[0]; mem[1]; peek(mem); peek(mem+1); deek(mem+2)
+zp = 5

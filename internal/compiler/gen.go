@@ -322,7 +322,7 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		if !g.arrayStmt(s) && !g.dataStmt(s) {
+		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) {
 			g.hwStmt(s)
 		}
 	}
@@ -543,6 +543,8 @@ func (g *gen) intExpr(x Expr) {
 		g.loadACC(varLabel(x.Name))
 	case Index:
 		g.indexValue(x)
+	case Bracket:
+		g.bracketValue(x)
 	case Unary:
 		g.intExpr(x.X)
 		switch {
@@ -1150,7 +1152,7 @@ var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": t
 // isInt : l'expression numérique est-elle prouvée entière ?
 func (g *gen) isInt(x Expr) bool {
 	switch x := x.(type) {
-	case IntLit:
+	case IntLit, Bracket:
 		return true
 	case Var:
 		return g.intVars[x.Name]

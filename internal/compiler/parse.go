@@ -187,6 +187,9 @@ func (p *parser) statement() (Stmt, error) {
 	if it.Kind != neobasic.ItemKeyword {
 		return nil, p.errorf("instruction attendue, trouvé « %s »", p.peekName())
 	}
+	if s, ok, err := p.asmStatement(it); ok {
+		return s, err
+	}
 	if s, ok, err := p.hwStatement(it.Tok.Name); ok {
 		return s, err
 	}
@@ -435,6 +438,23 @@ func (p *parser) assign() (Stmt, error) {
 			return nil, err
 		}
 		return &AssignIndex{Target: target, X: x}, nil
+	}
+	if !isStrName(v.Text) && p.accept("[") { // mem[i] = valeur
+		idx, err := p.expr(TInt)
+		if err != nil {
+			return nil, err
+		}
+		if err := p.expect("]"); err != nil {
+			return nil, err
+		}
+		if err := p.expect("="); err != nil {
+			return nil, err
+		}
+		x, err := p.expr(TInt)
+		if err != nil {
+			return nil, err
+		}
+		return &AssignBracket{Target: Bracket{Base: Var{Name: v.Text}, Idx: idx}, X: x}, nil
 	}
 	if err := p.expect("="); err != nil {
 		return nil, err
@@ -688,6 +708,13 @@ func (p *parser) unary() (Expr, error) {
 				return nil, err
 			}
 			return Index{Name: strings.TrimSuffix(it.Text, "("), Idx: idx}, nil
+		}
+		if !isStrName(it.Text) && p.accept("[") { // mem[i]
+			idx, err := p.expr(TInt)
+			if err != nil {
+				return nil, err
+			}
+			return Bracket{Base: Var{Name: it.Text}, Idx: idx}, p.expect("]")
 		}
 		return Var{Name: it.Text}, nil
 	}

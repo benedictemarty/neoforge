@@ -15,6 +15,8 @@ var rtDeps = map[string][]string{
 	"STRCMP": {}, "INSTR": {}, "STRSUB": {}, "RIGHTSTART": {}, "CLAMP255": {}, "UPPER": {}, "LOWER": {}, "SPACES": {},
 	"INPUTLINE": {"PRCHR"},
 	"GFXSEND":   {}, "GFXPOS": {}, "GFXDRAW": {"GFXPOS"}, "GFXRESET": {}, "SPRINIT": {}, "SPRUPDATE": {}, "SEXT16": {}, "JOYAXIS": {}, "EVENT": {},
+	"MUL16": {}, "ZEROFILL": {}, "LOADELEM": {}, "STOREELEM": {}, "READDATA": {}, "SYSCALL": {},
+	"ASMBYTE": {"PRHEX", "PRCHR"}, "PRHEX": {"PRCHR"},
 }
 
 // Ordre d'émission stable.
@@ -22,7 +24,7 @@ var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NE
 	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
-	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL"}
+	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -57,6 +59,12 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "MUL16", "ZEROFILL", "LOADELEM", "STOREELEM":
 		g.emitArrayRoutine(name)
+		return
+	case "ASMBYTE":
+		g.emitAsmRoutine()
+		return
+	case "PRHEX":
+		g.emitPrHex()
 		return
 	case "READDATA": // item courant du pool : nombre → ACC (type + valeur), chaîne → PTR ; avance de 6 octets
 		str, done := a.Uniq("rd"), a.Uniq("rd")
