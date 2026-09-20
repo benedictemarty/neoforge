@@ -36,6 +36,7 @@ func New(cfg config.Config, version string) *Server {
 	sub, _ := fs.Sub(webFS, "web")
 	s.mux.Handle("/", http.FileServer(http.FS(sub)))
 	s.mux.Handle("/emu/", http.StripPrefix("/emu/", http.FileServer(http.Dir(cfg.PhosphoneoWeb))))
+	s.mux.HandleFunc("GET /emu-boot/neobasic.bin", s.handleNeoBasic)
 	s.mux.HandleFunc("GET /api/config", s.handleConfig)
 	s.mux.HandleFunc("GET /api/keywords", s.handleKeywords)
 	s.mux.HandleFunc("POST /api/build", s.handleBuild)
@@ -63,8 +64,15 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{
 		"version":     s.version,
 		"emulator":    s.cfg.EmulatorAvailable(),
+		"neobasic":    s.cfg.NeoBasicAvailable(),
 		"projectsDir": s.cfg.ProjectsDir,
 	})
+}
+
+// handleNeoBasic sert le binaire NeoBASIC que la page place dans /storage/boot/neobasic.bin
+// (Trinity ≥ 0.4.0 : NeoDOS résident, NeoBASIC lancé depuis boot/auto.txt).
+func (s *Server) handleNeoBasic(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, s.cfg.NeoBasicBin)
 }
 
 // Keyword décrit un mot-clé pour l'éditeur (coloration, complétion).

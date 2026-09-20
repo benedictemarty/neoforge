@@ -5,14 +5,21 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — Trinity dans la page (S1-6, S1-8)
+- Phosphoneo reconstruit contre `~/Neo6502Trinity` (voir son CHANGELOG du 2026-09-20 : gardes pour le
+  code du fork, `TMRRead()` avance pendant l'attente active de `BOOTLoadChoice`, exports `web_type` et
+  `web_reset`). Le firmware Trinity démarre sur NeoDOS : neoforge sert `NEOFORGE_NEOBASIC_BIN`
+  (défaut `~/Neo6502Basic/bin/basic.bin`) sur `/emu-boot/neobasic.bin` et la page l'écrit dans
+  `/storage/boot/` avec `auto.txt` avant le démarrage (`Module.preRun`).
+- ⟳ Reset (`web_reset` : firmware + 65C02, `boot/auto.txt` rejoué) ; ■ Stop passe par `web_type("\\e")`.
+- `vmode 1` (Hercules 720×350, 80 colonnes) vérifié dans la page ; `make e2e` prépare `storage/boot`.
 ### Corrigé — exécution dans le navigateur (S1-2)
 - `phosphoneo.js` résolvait `phosphoneo.data`/`.wasm` relativement à la page (404) : `Module.locateFile`
   les renvoie sous `/emu/`.
 - Le programme par défaut contenait un « — » non ASCII, refusé par le tokeniseur.
 ### Ajouté
-- ■ Stop : envoie Échap (Break de NeoBASIC) au canvas de l'émulateur (S1-6, vérifié en navigateur :
-  « Break Pressed at line 120 »). Le Reset attend un export `web_reset` côté Phosphoneo (bloqué :
-  Phosphoneo ne compile plus contre Trinity, `interface/clock.h` manquant).
+- ■ Stop : envoie Échap (Break de NeoBASIC) à l'émulateur (S1-6, vérifié en navigateur :
+  « Break Pressed at line 120 »).
 - Aide des commandes NeoBASIC (S1-5) : `help.json` généré par `tools/gen_help.py` depuis la
   documentation officielle **neo6502-documents** (MIT © Paul Robson, `reference/basic.md`) + extensions
   Trinity (`vmode`) — 190 entrées ; panneau ❔ (F1) filtrable avec insertion au clic, descriptions au

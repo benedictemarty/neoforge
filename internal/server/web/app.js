@@ -34,6 +34,18 @@ async function loadEmulator(cfg) {
     el("emu-status").textContent = "Émulateur absent : construire Phosphoneo (make wasm) ou régler NEOFORGE_PHOSPHONEO_WEB.";
     return;
   }
+  // Trinity : NeoDOS est résident, NeoBASIC est lancé depuis /storage/boot/auto.txt → on y place
+  // le binaire NeoBASIC (servi depuis NEOFORGE_NEOBASIC_BIN) avant le démarrage du firmware.
+  if (cfg.neobasic) {
+    const bin = new Uint8Array(await fetch("/emu-boot/neobasic.bin").then((r) => r.arrayBuffer()));
+    Module.preRun = [() => {
+      Module.FS.mkdirTree("/storage/boot");
+      Module.FS.writeFile("/storage/boot/neobasic.bin", bin);
+      Module.FS.writeFile("/storage/boot/auto.txt", "neobasic.bin\n");
+    }];
+  } else {
+    el("emu-status").textContent = "NeoBASIC introuvable (NEOFORGE_NEOBASIC_BIN) : l'émulateur démarrera sur NeoDOS.";
+  }
   const s = document.createElement("script");
   s.src = "/emu/phosphoneo.js";
   s.onerror = () => { el("emu-status").textContent = "Échec du chargement de /emu/phosphoneo.js"; };
@@ -179,7 +191,18 @@ async function main() {
 
     el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
-    el("btn-stop").addEventListener("click", () => { if (emuReady) { sendKey("Escape", "Escape", 27); status("Break envoyé"); } });
+    // Stop : web_type("\\e") (frappe automatique de Phosphoneo) si l'export existe, sinon touche synthétique.
+    el("btn-stop").addEventListener("click", () => {
+      if (!emuReady) return;
+      if (Module._web_type) Module.ccall("web_type", "number", ["string"], ["\\e"]); else sendKey("Escape", "Escape", 27);
+      status("Break envoyé");
+    });
+    el("btn-reset").addEventListener("click", () => {
+      if (!emuReady) return;
+      if (!Module._web_reset) { status("Reset indisponible : reconstruire Phosphoneo (make wasm)", true); return; }
+      Module.ccall("web_reset", null, [], []);
+      status("Émulateur redémarré");
+    });
     el("btn-fullscreen").addEventListener("click", () => Module.canvas.requestFullscreen && Module.canvas.requestFullscreen());
   });
 }

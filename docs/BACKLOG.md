@@ -2,7 +2,9 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-20)** : sprint 0 **livré** (v0.1.0) ; sprint 1 ouvert. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-20)** : sprint 0 **livré** (v0.1.0) ; sprint 1 en cours (S1-1, S1-2, S1-4, S1-5, S1-6, S1-8 faits ; restent S1-3 onglets, S1-7 fichiers de données). Cadrage : `docs/adr/ADR-001`.
+
+**Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
 ## Épopées
 
@@ -37,9 +39,9 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S1-3 | E1    | Onglets multi-programmes, indicateur « ● » non enregistré                          | P2   | TODO |
 | S1-4 | E1    | Détokeniseur `.bas` → source (`listbasic.py`) : ⬆ .bas, `neobas -list`, `/api/detok` | P2   | FAIT |
 | S1-5 | E1    | Aide des commandes (panneau ❔/F1 filtrable, survol, complétion) depuis neo6502-documents | P2   | FAIT |
-| S1-6 | E2    | ■ Stop (Échap synthétique = Break, vérifié en navigateur) — **FAIT** ; ⟳ Reset **bloqué** : exige un export `web_reset` dans Phosphoneo, qui ne se reconstruit plus contre Trinity (`interface/clock.h` absent) | P2   | EN COURS |
+| S1-6 | E2    | ■ Stop (`web_type("\\e")` = Break) et ⟳ Reset (`web_reset` : firmware + 65C02, `boot/auto.txt` rejoué) — Phosphoneo reconstruit contre Trinity | P2   | FAIT |
 | S1-7 | E3    | Fichiers de données du programme (.gfx, niveaux…) envoyés dans `/storage`          | P2   | TODO |
-| S1-8 | E6    | Aperçu `vmode 1` (80 col.) : rendu canvas 720×350 correct dans la page             | P2   | TODO |
+| S1-8 | E6    | Aperçu `vmode 1` (80 col.) : rendu Hercules vérifié dans la page (WASM Trinity)      | P2   | FAIT |
 
 ## Sprint 2 — Compilateur, fondations (v0.3.0) — TODO
 

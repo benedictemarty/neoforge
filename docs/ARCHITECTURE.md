@@ -45,7 +45,11 @@ neoforge reprend l'architecture d'oriced (Forge Oric) en remplaçant deux maillo
 Phosphoneo est chargé comme un script emscripten classique (`Module` global, `--sdl --scale 1`).
 Le `.bas` est écrit dans `/storage` (MEMFS) puis `web_load_neo` tape `load "nom.bas"` + `run` à
 l'invite NeoBASIC (ou charge en page BASIC et réinitialise si le BASIC n'est pas à l'invite).
-Les fichiers du build WASM ne sont **pas** versionnés ici : servis depuis `~/Phosphoneo/web`.
+Les fichiers du build WASM ne sont **pas** versionnés ici : servis depuis `~/Phosphoneo/web`, construits
+contre `~/Neo6502Trinity`. Trinity démarre sur NeoDOS et lance `boot/auto.txt` → `boot/neobasic.bin` :
+la page écrit ces deux fichiers dans `/storage/boot` (`Module.preRun`) depuis `/emu-boot/neobasic.bin`
+(`NEOFORGE_NEOBASIC_BIN`). Exports Phosphoneo utilisés : `web_load_neo` (▶), `web_type("\\e")` (■ Stop),
+`web_reset` (⟳ Reset).
 
 ## Qualité
 

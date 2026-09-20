@@ -28,8 +28,11 @@ Voir `docs/ARCHITECTURE.md`.
 ## Prérequis
 
 - Go ≥ 1.26 ; `node` pour les tests JS ; `python3` pour le test différentiel (optionnel).
-- **Phosphoneo** construit en WebAssembly : `make -C ~/Phosphoneo wasm` (emsdk) → `~/Phosphoneo/web/`.
-  Sans lui, l'éditeur fonctionne (tokenisation, `.bas` téléchargeable) mais l'écran reste vide.
+- **Phosphoneo** construit en WebAssembly **contre le firmware Trinity** : `make -C ~/Phosphoneo wasm`
+  (emsdk) → `~/Phosphoneo/web/`. Sans lui, l'éditeur fonctionne (tokenisation, `.bas` téléchargeable)
+  mais l'écran reste vide.
+- **NeoBASIC** (`~/Neo6502Basic/bin/basic.bin`, `make` dans ce dépôt) : Trinity démarre sur NeoDOS et
+  lance NeoBASIC depuis `boot/neobasic.bin`, que neoforge place dans le stockage de l'émulateur.
 
 ## Démarrer
 
@@ -39,7 +42,8 @@ make run          # http://127.0.0.1:8098
 
 - **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
   dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
-- **■ Stop** : envoie Échap à l'émulateur (Break de NeoBASIC).
+- **■ Stop** : envoie Échap à l'émulateur (Break de NeoBASIC) ; **⟳ Reset** : redémarrage à froid
+  (firmware + 65C02, retour à NeoBASIC via `boot/auto.txt`).
 - **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel ;
   **⬆ .bas** : importe un `.bas` (détokenisé dans l'éditeur).
 - **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.
@@ -54,6 +58,7 @@ make run          # http://127.0.0.1:8098
 | `NEOFORGE_ADDR`           | `127.0.0.1:8098`    | Adresse d'écoute HTTP                           |
 | `NEOFORGE_PHOSPHONEO_WEB` | `~/Phosphoneo/web`  | Build WASM de Phosphoneo (servi sous `/emu/`)   |
 | `NEOFORGE_PROJECTS_DIR`   | `~/NeoPrograms`     | Programmes `.bsc` (Ouvrir/Enregistrer)          |
+| `NEOFORGE_NEOBASIC_BIN`   | `~/Neo6502Basic/bin/basic.bin` | NeoBASIC injecté dans `/storage/boot/` (Trinity démarre sur NeoDOS) |
 
 ## Outil en ligne de commande
 

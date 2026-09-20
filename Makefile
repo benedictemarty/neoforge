@@ -56,11 +56,14 @@ emu-wasm:
 
 # Validation de bout en bout : examples/hello.bsc tokenisé par neobas, exécuté par
 # Phosphoneo natif (même moteur que le WASM), écran texte vérifié.
+# Trinity : le firmware démarre sur NeoDOS, NeoBASIC vient de storage/boot/neobasic.bin (+ auto.txt).
+NEOBASIC_BIN ?= $(HOME)/Neo6502Basic/bin/basic.bin
 e2e: build
-	@rm -rf /tmp/neoforge-e2e && mkdir -p /tmp/neoforge-e2e/storage
+	@rm -rf /tmp/neoforge-e2e && mkdir -p /tmp/neoforge-e2e/storage/boot
+	cp $(NEOBASIC_BIN) /tmp/neoforge-e2e/storage/boot/neobasic.bin && echo neobasic.bin > /tmp/neoforge-e2e/storage/boot/auto.txt
 	./neobas -o /tmp/neoforge-e2e/storage/hello.bas examples/hello.bsc
 	cd /tmp/neoforge-e2e && $(PHOSPHONEO)/build/phosphoneo --headless --storage storage \
-		--load-at 15000000:storage/hello.bas --cycles 40000000 --screenshot-text out.txt >/dev/null 2>&1
+		--load-at 20000000:storage/hello.bas --cycles 45000000 --screenshot-text out.txt >/dev/null 2>&1
 	@grep -q "NEOFORGE OK" /tmp/neoforge-e2e/out.txt && grep -q "x=42" /tmp/neoforge-e2e/out.txt \
 		&& echo "e2e OK" || (echo "e2e ÉCHEC"; cat /tmp/neoforge-e2e/out.txt; exit 1)
 

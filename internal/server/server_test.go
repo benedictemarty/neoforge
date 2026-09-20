@@ -17,7 +17,7 @@ import (
 
 func newTest(t *testing.T) (*Server, config.Config) {
 	t.Helper()
-	cfg := config.Config{PhosphoneoWeb: t.TempDir(), ProjectsDir: filepath.Join(t.TempDir(), "progs")}
+	cfg := config.Config{PhosphoneoWeb: t.TempDir(), ProjectsDir: filepath.Join(t.TempDir(), "progs"), NeoBasicBin: filepath.Join(t.TempDir(), "basic.bin")}
 	return New(cfg, "test"), cfg
 }
 
@@ -55,6 +55,16 @@ func TestStaticAndConfig(t *testing.T) {
 	}
 	if code, _, body := do(t, s, "GET", "/emu/phosphoneo.wasm", ""); code != 200 || body != "wasm" {
 		t.Errorf("/emu/ : %d %q", code, body)
+	}
+	if code, _, _ := do(t, s, "GET", "/emu-boot/neobasic.bin", ""); code != 404 {
+		t.Errorf("neobasic absent : %d", code)
+	}
+	os.WriteFile(cfg.NeoBasicBin, []byte("basic"), 0o644)
+	if code, _, body := do(t, s, "GET", "/emu-boot/neobasic.bin", ""); code != 200 || body != "basic" {
+		t.Errorf("neobasic : %d %q", code, body)
+	}
+	if _, m, _ := do(t, s, "GET", "/api/config", ""); m["neobasic"] != true {
+		t.Error("neobasic non détecté")
 	}
 }
 
