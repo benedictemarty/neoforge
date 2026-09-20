@@ -1,6 +1,6 @@
 // Application neoforge : éditeur Monaco (NeoBASIC) + émulateur Phosphoneo (WASM).
 import { registerNeoBasic } from "/neobasic-lang.js";
-import { decodeBase64, errorLine, storageName, filterHelp } from "/editor-logic.js";
+import { decodeBase64, errorLine, storageName, filterHelp, tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle } from "/editor-logic.js";
 
 const el = (id) => document.getElementById(id);
 const status = (msg, err) => { const s = el("status"); s.textContent = msg; s.classList.toggle("err", !!err); };
@@ -96,10 +96,64 @@ async function main() {
   require(["vs/editor/editor.main"], () => {
     registerNeoBasic(monaco, keywords, help);
     const editor = monaco.editor.create(el("editor"), {
-      value: DEFAULT_SOURCE, language: "neobasic", theme: "vs-dark", fontSize: 15,
+      model: null, language: "neobasic", theme: "vs-dark", fontSize: 15,
       minimap: { enabled: false }, automaticLayout: true,
     });
     status("neoforge " + cfg.version);
+
+    // ─── Onglets : un modèle Monaco par programme, « ● » si non enregistré (S1-3) ──
+    let tabs = { tabs: [], activeId: null };
+    const models = new Map();
+    let seq = 0;
+    const activeTab = () => tabs.tabs.find((t) => t.id === tabs.activeId);
+    const renderTabs = () => {
+      const bar = el("tabs");
+      bar.innerHTML = "";
+      for (const t of tabs.tabs) {
+        const d = document.createElement("div");
+        d.className = "tab" + (t.id === tabs.activeId ? " active" : "");
+        d.setAttribute("role", "tab");
+        d.dataset.id = t.id;
+        const label = document.createElement("span");
+        label.textContent = tabTitle(t, models.get(t.id).getAlternativeVersionId());
+        const close = document.createElement("span");
+        close.className = "close";
+        close.textContent = "✕";
+        close.title = "Fermer";
+        close.addEventListener("click", (ev) => { ev.stopPropagation(); closeTab(t.id); });
+        d.append(label, close);
+        d.addEventListener("click", () => activateTab(t.id));
+        bar.appendChild(d);
+      }
+    };
+    const activateTab = (id) => {
+      tabs = tabsActivate(tabs, id);
+      const t = activeTab();
+      editor.setModel(t ? models.get(t.id) : null);
+      el("fname").value = t ? t.name : "";
+      renderTabs();
+      editor.focus();
+    };
+    const openTab = (name, source) => {
+      const existing = name && tabsFindByName(tabs, name);
+      if (existing) { models.get(existing.id).setValue(source); existing.savedVersion = models.get(existing.id).getAlternativeVersionId(); activateTab(existing.id); return; }
+      const id = ++seq;
+      const model = monaco.editor.createModel(source, "neobasic");
+      model.onDidChangeContent(() => renderTabs());
+      models.set(id, model);
+      tabs = tabsAdd(tabs, { id, name: name || "", savedVersion: model.getAlternativeVersionId() });
+      activateTab(id);
+    };
+    const closeTab = (id) => {
+      const t = tabs.tabs.find((x) => x.id === id);
+      if (t && models.get(id).getAlternativeVersionId() !== t.savedVersion && !confirm("Fermer « " + (t.name || "sans titre") + " » sans enregistrer ?")) return;
+      tabs = tabsClose(tabs, id);
+      models.get(id).dispose();
+      models.delete(id);
+      if (!tabs.tabs.length) openTab("", DEFAULT_SOURCE); else activateTab(tabs.activeId);
+    };
+    el("fname").addEventListener("input", () => { const t = activeTab(); if (t) { t.name = el("fname").value.trim(); renderTabs(); } });
+    openTab("", DEFAULT_SOURCE);
 
     // build : tokenise le source ; marque la ligne en erreur dans l'éditeur.
     async function build() {
@@ -136,7 +190,11 @@ async function main() {
       if (!name) { status("Indiquer un nom (nom.bsc)", true); return; }
       const r = await fetch("/api/file?name=" + encodeURIComponent(name), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: editor.getValue() }) });
       const j = await r.json();
-      if (j.error) status(j.error, true); else { status(name + " enregistré"); refreshFiles(); }
+      if (j.error) { status(j.error, true); return; }
+      const t = activeTab();
+      if (t) { t.name = name; t.savedVersion = editor.getModel().getAlternativeVersionId(); renderTabs(); }
+      status(name + " enregistré");
+      refreshFiles();
     };
     el("btn-save").addEventListener("click", save);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, save);
@@ -146,8 +204,7 @@ async function main() {
       if (!name) return;
       const j = await fetch("/api/file?name=" + encodeURIComponent(name)).then((r) => r.json());
       if (j.error) { status(j.error, true); return; }
-      editor.setValue(j.source);
-      el("fname").value = j.name;
+      openTab(j.name, j.source);
       status(name + " ouvert");
     });
 
@@ -157,8 +214,7 @@ async function main() {
       if (!f) return;
       const j = await fetch("/api/detok", { method: "POST", body: await f.arrayBuffer() }).then((r) => r.json());
       if (j.error) { status(j.error, true); return; }
-      editor.setValue(j.source);
-      el("fname").value = f.name.replace(/\.bas$/i, ".bsc");
+      openTab(f.name.replace(/\.bas$/i, ".bsc"), j.source);
       status(f.name + " détokenisé");
       ev.target.value = "";
     });
@@ -198,7 +254,7 @@ async function main() {
       ev.target.value = "";
     });
 
-    el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
+    el("btn-new").addEventListener("click", () => { openTab("", DEFAULT_SOURCE); diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
     // Stop : web_type("\\e") (frappe automatique de Phosphoneo) si l'export existe, sinon touche synthétique.
     el("btn-stop").addEventListener("click", () => {

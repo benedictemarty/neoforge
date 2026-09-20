@@ -56,3 +56,34 @@ export function filterHelp(entries, filter) {
 export function helpByName(entries) {
   return new Map(entries.map((e) => [e.name.toUpperCase(), e]));
 }
+
+// ─── Onglets (S1-3) : état pur, sans DOM ni Monaco ───────────────────────────
+// Un onglet = { id, name, savedVersion } ; le modèle Monaco est tenu par app.js.
+// Les fonctions renvoient un nouvel état { tabs, activeId }.
+export function tabsAdd(state, tab) {
+  return { tabs: [...state.tabs, tab], activeId: tab.id };
+}
+
+export function tabsActivate(state, id) {
+  return state.tabs.some((t) => t.id === id) ? { ...state, activeId: id } : state;
+}
+
+// tabsClose : ferme l'onglet ; l'actif devient le voisin de gauche (ou de droite).
+export function tabsClose(state, id) {
+  const i = state.tabs.findIndex((t) => t.id === id);
+  if (i < 0) return state;
+  const tabs = state.tabs.filter((t) => t.id !== id);
+  let activeId = state.activeId;
+  if (activeId === id) activeId = tabs.length ? tabs[Math.max(0, i - 1)].id : null;
+  return { tabs, activeId };
+}
+
+// tabsFindByName : onglet portant ce nom de fichier (insensible à la casse), ou undefined.
+export function tabsFindByName(state, name) {
+  return state.tabs.find((t) => t.name && t.name.toLowerCase() === (name || "").toLowerCase());
+}
+
+// tabTitle : libellé « nom ● » quand la version courante diffère de la version enregistrée.
+export function tabTitle(tab, currentVersion) {
+  return (tab.name || "sans titre") + (currentVersion !== tab.savedVersion ? " ●" : "");
+}

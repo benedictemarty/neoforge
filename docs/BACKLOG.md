@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-20)** : sprint 0 **livré** (v0.1.0) ; sprint 1 en cours (reste S1-3 onglets). Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-20)** : sprints 0 et 1 **livrés** (v0.2.0) ; sprint 2 (compilateur, fondations) à ouvrir. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -30,20 +30,20 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S0-6 | E3    | Ouvrir / Enregistrer des `.bsc` ; télécharger le `.bas`                            | P2   | FAIT |
 | S0-7 | E4    | Tests Go 100 %, tests JS, `make e2e` (Phosphoneo natif), documentation             | P1   | FAIT |
 
-## Sprint 1 — Édition confortable & exécution fiable (v0.2.0) — EN COURS
+## Sprint 1 — Édition confortable & exécution fiable (v0.2.0) — FAIT
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S1-1 | E4    | Dépôt distant GitHub `benedictemarty/neoforge` + CI (gofmt, vet, cover-check, JS)   | P1   | FAIT |
 | S1-2 | E2    | Vérifier le chargement à chaud WASM dans un vrai navigateur (`make e2e-browser`)    | P1   | FAIT |
-| S1-3 | E1    | Onglets multi-programmes, indicateur « ● » non enregistré                          | P2   | TODO |
+| S1-3 | E1    | Onglets multi-programmes (un modèle Monaco par onglet), « ● » non enregistré, fermeture confirmée | P2   | FAIT |
 | S1-4 | E1    | Détokeniseur `.bas` → source (`listbasic.py`) : ⬆ .bas, `neobas -list`, `/api/detok` | P2   | FAIT |
 | S1-5 | E1    | Aide des commandes (panneau ❔/F1 filtrable, survol, complétion) depuis neo6502-documents | P2   | FAIT |
 | S1-6 | E2    | ■ Stop (`web_type("\\e")` = Break) et ⟳ Reset (`web_reset` : firmware + 65C02, `boot/auto.txt` rejoué) — Phosphoneo reconstruit contre Trinity | P2   | FAIT |
 | S1-7 | E3    | 📎 Fichiers : données du programme (.gfx, niveaux…) envoyées dans `/storage` (validé : démo sprites crossdev) | P2   | FAIT |
 | S1-8 | E6    | Aperçu `vmode 1` (80 col.) : rendu Hercules vérifié dans la page (WASM Trinity)      | P2   | FAIT |
 
-## Sprint 2 — Compilateur, fondations (v0.3.0) — TODO
+## Sprint 2 — Compilateur, fondations (v0.3.0) — À OUVRIR
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|

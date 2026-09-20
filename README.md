@@ -10,7 +10,8 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 0 livré (v0.1.0)** — socle, tokeniseur NeoBASIC, page éditeur + émulateur, CLI `neobas`.
+> État : **sprint 1 livré (v0.2.0)** — socle, tokeniseur/détokeniseur NeoBASIC, éditeur à onglets + aide,
+> émulateur Trinity dans la page (Stop/Reset, `vmode 1`, fichiers de données), CLI `neobas`.
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
 ## Architecture en un coup d'œil
@@ -46,6 +47,7 @@ make run          # http://127.0.0.1:8098
   (firmware + 65C02, retour à NeoBASIC via `boot/auto.txt`).
 - **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel ;
   **⬆ .bas** : importe un `.bas` (détokenisé dans l'éditeur).
+- **Onglets** : plusieurs programmes ouverts ; « ● » signale un onglet non enregistré.
 - **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.
 - **⌨ Clavier → Neo** : donne le clavier à l'émulateur (ou cliquer sur l'écran).
 - **📎 Fichiers** : envoie des fichiers de données (`.gfx`, niveaux…) dans `/storage` de l'émulateur

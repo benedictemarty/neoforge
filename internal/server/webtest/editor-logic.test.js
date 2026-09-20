@@ -47,3 +47,27 @@ test("filterHelp / helpByName", () => {
   assert.deepEqual(filterHelp(entries, "print").map((e) => e.name), ["print"]);
   assert.equal(helpByName(entries).get("RND(").syntax, "rnd(n)");
 });
+
+import { tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle } from "../web/editor-logic.js";
+
+test("onglets", () => {
+  let s = { tabs: [], activeId: null };
+  s = tabsAdd(s, { id: 1, name: "a.bsc", savedVersion: 1 });
+  s = tabsAdd(s, { id: 2, name: "", savedVersion: 1 });
+  s = tabsAdd(s, { id: 3, name: "c.bsc", savedVersion: 1 });
+  assert.equal(s.activeId, 3);
+  assert.equal(tabsActivate(s, 1).activeId, 1);
+  assert.equal(tabsActivate(s, 99), s);
+  assert.equal(tabsFindByName(s, "A.BSC").id, 1);
+  assert.equal(tabsFindByName(s, "zz"), undefined);
+  s = tabsClose(s, 3);
+  assert.deepEqual(s.tabs.map((t) => t.id), [1, 2]);
+  assert.equal(s.activeId, 2);
+  s = tabsClose(s, 1);
+  assert.equal(s.activeId, 2);
+  assert.equal(tabsClose(s, 42), s);
+  s = tabsClose(s, 2);
+  assert.equal(s.activeId, null);
+  assert.equal(tabTitle({ name: "", savedVersion: 1 }, 1), "sans titre");
+  assert.equal(tabTitle({ name: "a.bsc", savedVersion: 1 }, 2), "a.bsc ●");
+});

@@ -5,6 +5,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.2.0] - 2026-09-20
+### Ajouté — onglets (S1-3)
+- Onglets multi-programmes : un modèle Monaco par onglet, « ● » quand le contenu diffère de la version
+  enregistrée, fermeture confirmée si non enregistré, Ouvrir/⬆ .bas/Nouveau ouvrent un onglet
+  (ou réutilisent celui du même nom).
 ### Ajouté — fichiers de données (S1-7)
 - 📎 Fichiers : envoie des fichiers (.gfx, niveaux, scores…) dans `/storage` de l'émulateur ; vérifié en
   navigateur avec la démo `crossdev` de Trinity (`examples/sprites.bsc` + `examples/graphics.gfx`,
