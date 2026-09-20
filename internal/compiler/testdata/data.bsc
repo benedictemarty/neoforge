@@ -1,0 +1,19 @@
+data 1, "a", 2.5, -7
+read a, b$, c, d
+print a; b$; c; d
+restore
+read a
+print a
+dim t(3), s$(2)
+read s$(2), t(1)
+print t(1); s$(2)
+data 42, "fin"
+read e, e2, f$
+print e; e2; f$
+map = alloc(20)
+load "level.map", map
+print peek(map); peek(map+1); peek(map+2); peek(map+3); peek(map+8)
+a = 65: x = 0: y = 0
+sys $FFF1
+print
+print "sys ok"

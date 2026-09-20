@@ -10,9 +10,10 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 3 livré (v0.4.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
-> détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** (`docs/COMPILER.md`), **éditeur de sprites, tuiles
-> et tilemaps** (`docs/GRAPHICS.md`).
+> État : **sprint 4 livré (v0.5.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** couvrant entiers, flottants, chaînes, tableaux,
+> graphisme, sprites, son (`docs/COMPILER.md` ; 34/50 exemples de Trinity, Breakout compilé), **éditeur de
+> sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
 ## Architecture en un coup d'œil

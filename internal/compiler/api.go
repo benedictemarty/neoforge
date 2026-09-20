@@ -27,6 +27,7 @@ const (
 	fnSysKeyStatus = 2 // 1,2 : état de la touche Param0
 
 	fnConsoleSetCursor = 7 // 2,7 : curseur en (Param0, Param1)
+	fnConsoleDefChar   = 5 // 2,5 : définit le caractère Param0 (7 octets suivants)
 
 	fnGfxSetDefaults     = 1  // 5,1 : and, xor, solide, taille, flip
 	fnGfxSetMode         = 9  // 5,9

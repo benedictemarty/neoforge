@@ -715,22 +715,40 @@ func (g *gen) hwCall(x Call) bool {
 		a.Op("lda", asm.Abs, apiParam0+off+1)
 		a.Op("sta", asm.Zp, zACC+1)
 		g.call("SEXT16")
-	case "event": // event(v, r) : v par référence (variable entière), r = période en 1/100 s
-		v, ok := x.Args[0].(Var)
-		if !ok || isStrName(v.Name) {
+	case "event": // event(v, r) : v par référence (variable ou élément de tableau numérique), r = période en 1/100 s
+		switch v := x.Args[0].(type) {
+		case Var: // (une chaîne est déjà refusée par le parseur : argument numérique)
+			g.vars[v.Name] = true
+			g.intExpr(x.Args[1])
+			a.Op("lda", asm.Zp, zACC)
+			a.Op("sta", asm.Zp, zTMP) // période (16 bits)
+			a.Op("lda", asm.Zp, zACC+1)
+			a.Op("sta", asm.Zp, zTMP+1)
+			a.ImmLo("lda", varLabel(v.Name), 1)
+			a.Op("sta", asm.Zp, zPTR)
+			a.ImmHi("lda", varLabel(v.Name), 1)
+			a.Op("sta", asm.Zp, zPTR+1)
+		case Index:
+			if !g.checkArray(v) {
+				return true
+			}
+			g.intExpr(x.Args[1])
+			g.push()
+			g.elemAddr(v) // PTR = élément (type) ; la valeur est à +1
+			a.Op("inc", asm.Zp, zPTR)
+			skip := a.Uniq("ev")
+			a.Branch("bne", skip)
+			a.Op("inc", asm.Zp, zPTR+1)
+			a.Label(skip)
+			g.popACC()
+			a.Op("lda", asm.Zp, zACC)
+			a.Op("sta", asm.Zp, zTMP)
+			a.Op("lda", asm.Zp, zACC+1)
+			a.Op("sta", asm.Zp, zTMP+1)
+		default:
 			g.errorf("event( : le premier argument doit être une variable numérique")
 			return true
 		}
-		g.vars[v.Name] = true
-		g.intExpr(x.Args[1])
-		a.Op("lda", asm.Zp, zACC)
-		a.Op("sta", asm.Zp, zTMP) // période (16 bits)
-		a.Op("lda", asm.Zp, zACC+1)
-		a.Op("sta", asm.Zp, zTMP+1)
-		a.ImmLo("lda", varLabel(v.Name), 1)
-		a.Op("sta", asm.Zp, zPTR)
-		a.ImmHi("lda", varLabel(v.Name), 1)
-		a.Op("sta", asm.Zp, zPTR+1)
 		g.call("EVENT")
 	case "joypad": // joypad(dx, dy) : dx, dy par référence ; résultat = boutons (la forme à 3 arguments n'est pas analysée)
 		for _, arg := range x.Args {

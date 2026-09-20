@@ -19,6 +19,7 @@ const (
 	zTYPE = 0x3C // type de ACC : 0 entier, $40 flottant (comme l'octet de type des registres de l'API)
 	zTMPT = 0x3D // type de TMP
 	zHEAP = 0x3E // pointeur du tas (alloc( : après les données du programme)
+	zDATA = 0x40 // pointeur de lecture du pool data (2 octets)
 	zREG  = 0x30 // registres maths de l'API, entrelacés au pas 2 : REG1 = $30 (type) $32 $34 $36 $38 ; REG2 = $31 $33 $35 $37 $39
 	zREG2 = 0x31
 )
@@ -30,16 +31,18 @@ const Org = 0x800
 type gen struct {
 	a        *asm.Asm
 	prog     *Program
-	vars     map[string]bool // variables entières et chaînes rencontrées
-	strLits  []string        // constantes chaînes émises après le code
-	strTemps int             // tampons temporaires de chaînes (256 o. chacun)
-	loops    []string        // étiquettes de sortie des boucles ouvertes (exit)
-	locals   []string        // variables locales de la procédure en cours (restaurées à endproc)
-	used     map[string]bool // routines runtime utilisées
-	intVars  map[string]bool // variables numériques prouvées entières (chemin natif 32 bits)
-	arrays   map[string]int  // tableaux déclarés (dim) → nombre de dimensions
-	lines    map[int]bool    // lignes numérotées définies
-	gotos    []int           // cibles de goto/gosub à vérifier
+	vars     map[string]bool   // variables entières et chaînes rencontrées
+	strLits  []string          // constantes chaînes émises après le code
+	strTemps int               // tampons temporaires de chaînes (256 o. chacun)
+	loops    []string          // étiquettes de sortie des boucles ouvertes (exit)
+	locals   []string          // variables locales de la procédure en cours (restaurées à endproc)
+	localBuf map[string]string // chaîne locale → tampon de sauvegarde
+	used     map[string]bool   // routines runtime utilisées
+	intVars  map[string]bool   // variables numériques prouvées entières (chemin natif 32 bits)
+	arrays   map[string]int    // tableaux déclarés (dim) → nombre de dimensions
+	lines    map[int]bool      // lignes numérotées définies
+	gotos    []int             // cibles de goto/gosub à vérifier
+	data     []Expr            // pool data (ordre du programme)
 	errs     []string
 }
 
@@ -63,7 +66,7 @@ func compile(src string) (*gen, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}, arrays: map[string]int{}, lines: map[int]bool{}}
+	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}, arrays: map[string]int{}, lines: map[int]bool{}, localBuf: map[string]string{}}
 	g.inferInt()
 	g.program()
 	for _, l := range g.gotos {
@@ -84,6 +87,10 @@ func (g *gen) errorf(format string, args ...any) {
 
 func (g *gen) program() {
 	a := g.a
+	g.collectData(g.prog.Body)
+	for _, name := range sortedProcs(g.prog.Procs) {
+		g.collectData(g.prog.Procs[name].Body)
+	}
 	// Prologue : piles vides, état graphique initial.
 	a.Op("stz", asm.Zp, zSP)
 	a.Op("stz", asm.Zp, zLSP)
@@ -92,6 +99,9 @@ func (g *gen) program() {
 	a.Op("sta", asm.Zp, zHEAP)
 	a.ImmHi("lda", "ENDPROG", 0)
 	a.Op("sta", asm.Zp, zHEAP+1)
+	if len(g.data) > 0 {
+		g.restoreData()
+	}
 	g.stmts(g.prog.Body)
 	g.stop()
 	// Procédures.
@@ -109,7 +119,8 @@ func (g *gen) program() {
 		}
 	}
 	g.runtime()
-	// Données : constantes chaînes, variables, tampons, piles.
+	// Données : pool data, constantes chaînes, variables, tampons, piles.
+	g.emitDataPool()
 	for i, s := range g.strLits {
 		a.Label(fmt.Sprintf("STR_%d", i))
 		a.Bytes(byte(len(s)))
@@ -277,12 +288,15 @@ func (g *gen) stmt(s Stmt) {
 	case *Local:
 		for _, n := range s.Names {
 			g.vars[n] = true
-			if isStrName(n) {
-				g.errorf("local sur une chaîne (%s) non pris en charge", strings.ToLower(n))
-				continue
+			if isStrName(n) { // chaîne : copiée dans un tampon de sauvegarde propre (pas de récursion)
+				buf := g.newTemp()
+				g.localBuf[n] = buf
+				g.setPTR(bufLabel(n))
+				g.call("STRCOPY", buf)
+			} else {
+				g.loadACC(varLabel(n))
+				g.call("LPUSH")
 			}
-			g.loadACC(varLabel(n))
-			g.call("LPUSH")
 			g.locals = append(g.locals, n)
 		}
 	case *Poke:
@@ -308,7 +322,7 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		if !g.arrayStmt(s) {
+		if !g.arrayStmt(s) && !g.dataStmt(s) {
 			g.hwStmt(s)
 		}
 	}
@@ -396,8 +410,14 @@ func (g *gen) callProc(s *CallProc) {
 
 func (g *gen) restoreLocals() {
 	for i := len(g.locals) - 1; i >= 0; i-- {
+		n := g.locals[i]
+		if isStrName(n) {
+			g.setPTR(g.localBuf[n])
+			g.call("STRCOPY", varLabel(n))
+			continue
+		}
 		g.call("LPOP")
-		g.storeACC(varLabel(g.locals[i]))
+		g.storeACC(varLabel(n))
 	}
 }
 
@@ -564,10 +584,8 @@ func (g *gen) binary(x Binary) {
 			g.mathBinary(fn)
 			return
 		}
-		if !compareOps[x.Op] {
-			g.errorf("opérateur « %s » sur un flottant non pris en charge", x.Op)
-			return
-		}
+		// & | ^ << >> : opérations sur la valeur 32 bits telle quelle (l'interpréteur signale
+		// « Type Mismatch » sur un flottant ; un programme valide n'en a donc que sur des entiers).
 	}
 	switch x.Op {
 	case "+", "-":
@@ -1157,4 +1175,182 @@ func (g *gen) isInt(x Expr) bool {
 		}
 	}
 	return false // FloatLit, val(, sin( …
+}
+
+// ─── data / read / restore, load, sys ───────────────────────────────────────
+
+// collectData rassemble les items data dans l'ordre du programme (blocs compris).
+func (g *gen) collectData(ss []Stmt) {
+	for _, s := range ss {
+		switch s := s.(type) {
+		case *Data:
+			g.data = append(g.data, s.Items...)
+		case *Dim: // déclaration connue de tout le programme (un dim peut être dans une procédure d'initialisation)
+			for _, ar := range s.Arrays {
+				g.arrays[ar.Name] = len(ar.Idx)
+			}
+		case *If:
+			g.collectData(s.Then)
+			g.collectData(s.Else)
+		case *While:
+			g.collectData(s.Body)
+		case *Repeat:
+			g.collectData(s.Body)
+		case *Do:
+			g.collectData(s.Body)
+		case *For:
+			g.collectData(s.Body)
+		}
+	}
+}
+
+// emitDataPool : 6 octets par item — [0] 0 = nombre (type + 4 octets) / 1 = chaîne (pointeur, 3 octets nuls).
+func (g *gen) emitDataPool() {
+	a := g.a
+	a.Label("DATA")
+	for _, it := range g.data {
+		switch x := it.(type) {
+		case IntLit:
+			v := uint32(int32(x.V))
+			a.Bytes(0, 0, byte(v), byte(v>>8), byte(v>>16), byte(v>>24))
+		case FloatLit:
+			a.Bytes(0, 0x40, byte(x.Bits), byte(x.Bits>>8), byte(x.Bits>>16), byte(x.Bits>>24))
+		case StrLit:
+			idx := len(g.strLits)
+			g.strLits = append(g.strLits, x.V)
+			a.Bytes(1)
+			a.Word(fmt.Sprintf("STR_%d", idx), 0)
+			a.Bytes(0, 0, 0)
+		}
+	}
+	a.Label("DATAEND")
+}
+
+func (g *gen) restoreData() {
+	g.a.ImmLo("lda", "DATA", 0)
+	g.a.Op("sta", asm.Zp, zDATA)
+	g.a.ImmHi("lda", "DATA", 0)
+	g.a.Op("sta", asm.Zp, zDATA+1)
+}
+
+// dataStmt génère data (rien), read, restore, load, sys ; ok=false sinon.
+func (g *gen) dataStmt(s Stmt) bool {
+	a := g.a
+	switch s := s.(type) {
+	case *Data:
+	case *Restore:
+		g.restoreData()
+	case *Read:
+		for _, t := range s.Targets {
+			str := t.Type() == TStr
+			if ix, ok := t.(Index); ok { // adresse de l'élément sur la pile
+				if !g.checkArray(ix) {
+					continue
+				}
+				g.elemAddr(ix)
+				a.Op("lda", asm.Zp, zPTR)
+				a.Op("sta", asm.Zp, zACC)
+				a.Op("lda", asm.Zp, zPTR+1)
+				a.Op("sta", asm.Zp, zACC+1)
+				g.push()
+			}
+			g.call("READDATA") // nombre → ACC ; chaîne → PTR (l'item est consommé)
+			switch t := t.(type) {
+			case Var:
+				g.vars[t.Name] = true
+				if str {
+					g.call("STRCOPY", varLabel(t.Name))
+				} else {
+					g.storeACC(varLabel(t.Name))
+				}
+			case Index:
+				if str {
+					a.Op("lda", asm.Zp, zPTR)
+					a.Op("sta", asm.Zp, zPTR2)
+					a.Op("lda", asm.Zp, zPTR+1)
+					a.Op("sta", asm.Zp, zPTR2+1)
+					g.popACC()
+					a.Op("lda", asm.Zp, zACC)
+					a.Op("sta", asm.Zp, zPTR)
+					a.Op("lda", asm.Zp, zACC+1)
+					a.Op("sta", asm.Zp, zPTR+1)
+					// (PTR) = tampon élément, (PTR2) = chaîne : STRCOPY copie (PTR) → (PTR2), inverser
+					a.Op("lda", asm.Zp, zPTR)
+					a.Op("pha", asm.Imp, 0)
+					a.Op("lda", asm.Zp, zPTR2)
+					a.Op("sta", asm.Zp, zPTR)
+					a.Op("pla", asm.Imp, 0)
+					a.Op("sta", asm.Zp, zPTR2)
+					a.Op("lda", asm.Zp, zPTR+1)
+					a.Op("pha", asm.Imp, 0)
+					a.Op("lda", asm.Zp, zPTR2+1)
+					a.Op("sta", asm.Zp, zPTR+1)
+					a.Op("pla", asm.Imp, 0)
+					a.Op("sta", asm.Zp, zPTR2+1)
+					g.call("STRCOPY")
+				} else {
+					g.pop() // TMP = adresse
+					a.Op("lda", asm.Zp, zTMP)
+					a.Op("sta", asm.Zp, zPTR)
+					a.Op("lda", asm.Zp, zTMP+1)
+					a.Op("sta", asm.Zp, zPTR+1)
+					g.call("STOREELEM")
+				}
+			}
+		}
+	case *Load: // 3,2 : nom (Param0-1), adresse (Param2-3) via LoadExtended
+		g.intExpr(s.Addr)
+		g.push()
+		g.strExpr(s.Name)
+		g.popACC()
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Abs, apiParam0)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Abs, apiParam0+1)
+		a.Op("lda", asm.Zp, zACC)
+		a.Op("sta", asm.Abs, apiParam0+2)
+		a.Op("lda", asm.Zp, zACC+1)
+		a.Op("sta", asm.Abs, apiParam0+3)
+		a.Op("jsr", asm.Abs, kernelLoadExtended)
+	case *Assert: // expression nulle → message éventuel, « : », « Assert failed », arrêt
+		g.intExpr(s.Cond)
+		g.testACC()
+		ok := a.Uniq("assert")
+		a.Branch("bne", ok)
+		if s.Msg != nil {
+			g.strExpr(s.Msg)
+			g.call("PRSTR")
+			a.Op("lda", asm.Imm, ':')
+			g.call("PRCHR")
+		}
+		idx := len(g.strLits)
+		g.strLits = append(g.strLits, "Assert failed")
+		g.setPTR(fmt.Sprintf("STR_%d", idx))
+		g.call("PRSTR")
+		g.stop()
+		a.Label(ok)
+	case *Defchr: // 2,5 : code puis 7 lignes (décalées de 2 bits, comme l'interpréteur)
+		g.paramBytes(append([]Expr{s.Code}, s.Rows...)...)
+		for i := 1; i <= 7; i++ {
+			a.Op("lda", asm.Abs, apiParam0+i)
+			a.Op("asl", asm.Imp, 0)
+			a.Op("asl", asm.Imp, 0)
+			a.Op("sta", asm.Abs, apiParam0+i)
+		}
+		emitAPICall(a, grpConsole, fnConsoleDefChar)
+	case *Sys: // JSR à l'adresse avec A, X, Y = variables A, X, Y (octets bas)
+		g.vars["A"], g.vars["X"], g.vars["Y"] = true, true, true
+		g.intExpr(s.Addr)
+		a.Op("lda", asm.Zp, zACC)
+		a.Op("sta", asm.Zp, zPTR)
+		a.Op("lda", asm.Zp, zACC+1)
+		a.Op("sta", asm.Zp, zPTR+1)
+		a.OpL("lda", asm.Abs, varLabel("A"), 1)
+		a.OpL("ldx", asm.Abs, varLabel("X"), 1)
+		a.OpL("ldy", asm.Abs, varLabel("Y"), 1)
+		g.call("SYSCALL")
+	default:
+		return false
+	}
+	return true
 }

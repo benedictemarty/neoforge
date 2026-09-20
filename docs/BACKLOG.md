@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) en cours : S4-1 à S4-4 faits ; reste S4-5 (corpus étendu). Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0). Sprint 5 à cadrer : assembleur en ligne `[ ]`, fichiers, `ref`, débogueur (E8), carte réelle. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -62,7 +62,7 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S3-3 | E7    | Import d'image → tuiles dédupliquées + tilemap (validé en navigateur)              | P2   | FAIT |
 | S3-4 | E6    | Snippets `vmode1` (attributs MDA) et `gload` (sprite + tilemap)                    | P3   | FAIT |
 
-## Sprint 4 — Compilateur, suite (v0.5.0) — EN COURS
+## Sprint 4 — Compilateur, suite (v0.5.0) — FAIT
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
@@ -70,7 +70,17 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S4-2 | E5    | Flottants : nombres à type dynamique, inférence des entiers (chemin natif), groupe 4 — 10/10 différentiels | P1   | FAIT |
 | S4-3 | E5    | Tableaux `dim` 1D/2D (dynamiques, chaînes), `goto`/`gosub`/`return` ; `case/when` non implémenté dans NeoBASIC, `ref` reporté | P2   | FAIT |
 | S4-4 | E5    | Graphisme chaîné, sprites, `gload`, `tilemap`, son, `vmode`, `ink`, `cursor`, `palette`, `event( joypad( hit(`… — différentiel texte **et image** 11/11 | P1   | FAIT |
-| S4-5 | E9    | Corpus différentiel étendu (exemples de Trinity compilables)                       | P2   | TODO |
+| S4-5 | E9    | `tools/corpus.sh` : 34/50 exemples de Trinity compilent (+ `data`/`read`, `assert`, `defchr`, `load`, `sys`, `local` chaîne) ; 13 programmes différentiels | P2   | FAIT |
+
+## Sprint 5 — À cadrer (v0.6.0)
+
+| ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
+|------|-------|------------------------------------------------------------------------------------|------|------|
+| S5-1 | E5    | Assembleur en ligne `[ … ]` / `.label` / mnémoniques (5 exemples de Trinity)        | P2   | TODO |
+| S5-2 | E5    | Fichiers (`open`, `close`, `print #`, `input #`, `save`), `mouse(`, `pin`, `i2c`, `uconfig` | P3   | TODO |
+| S5-3 | E5    | Paramètres `ref`, récursion (pile de variables)                                    | P3   | TODO |
+| S5-4 | E8    | Débogueur : exports Phosphoneo (`web_pause`, registres, mémoire), symboles du compilateur | P2   | TODO |
+| S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO |
 
 ## Idées non planifiées
 

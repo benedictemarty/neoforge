@@ -111,3 +111,31 @@ func TestArraysAndGoto(t *testing.T) {
 		t.Error("Index.Type")
 	}
 }
+
+func TestDataAssertMisc(t *testing.T) {
+	src := "data 1, \"a\", 2.5\ndim t(2), s$(1)\nread a, b$, t(1), s$(0)\nrestore\nassert a = 1\nassert a, \"msg\"\ndefchr 192,1,2,3,4,5,6,7\nload \"f\", 100\nsys 65521\nx = event(t(1), 2)\nlocal s$\nx = a & 1.5\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ src, want string }{
+		{"data x", "constante attendue"},
+		{"data (", "expression attendue"},
+		{"read 1", "variable attendue"},
+		{"read (", "expression attendue"},
+		{"assert \"a\"", "nombre attendu"},
+		{"assert 1, 2", "chaîne attendue"},
+		{"defchr 1", "« , » attendu"},
+		{"load 1", "chaîne attendue"},
+		{"load \"a\"", "load : seule la forme"},
+		{"load \"a\", \"b\"", "nombre attendu"},
+		{"sys \"a\"", "nombre attendu"},
+		{"x = event(s$, 1)", "nombre attendu"},
+		{"x = event(t(0), 1)", "avant dim"},
+		{"x = event(1 + 1, 1)", "variable numérique"},
+		{"dim t(1)\nread t(1,2)", "indice(s)"},
+	} {
+		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)
+		}
+	}
+}

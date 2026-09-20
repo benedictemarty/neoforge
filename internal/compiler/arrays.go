@@ -28,7 +28,6 @@ func (g *gen) arrayStmt(s Stmt) bool {
 	switch s := s.(type) {
 	case *Dim:
 		for _, ar := range s.Arrays {
-			g.arrays[ar.Name] = len(ar.Idx)
 			// total = (n+1) [* (m+1)] → ACC (16 bits)
 			g.intExpr(ar.Idx[0])
 			g.call("INC32")

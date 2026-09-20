@@ -22,7 +22,7 @@ var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NE
 	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
-	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM"}
+	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -57,6 +57,39 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "MUL16", "ZEROFILL", "LOADELEM", "STOREELEM":
 		g.emitArrayRoutine(name)
+		return
+	case "READDATA": // item courant du pool : nombre → ACC (type + valeur), chaîne → PTR ; avance de 6 octets
+		str, done := a.Uniq("rd"), a.Uniq("rd")
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zDATA)
+		a.Branch("bne", str)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zDATA)
+		a.Op("sta", asm.Zp, zTYPE)
+		for i := 0; i < 4; i++ {
+			a.Op("iny", asm.Imp, 0)
+			a.Op("lda", asm.ZpIndY, zDATA)
+			a.Op("sta", asm.Zp, zACC+i)
+		}
+		a.Branch("bra", done)
+		a.Label(str)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zDATA)
+		a.Op("sta", asm.Zp, zPTR)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zDATA)
+		a.Op("sta", asm.Zp, zPTR+1)
+		a.Label(done)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("lda", asm.Zp, zDATA)
+		a.Op("adc", asm.Imm, 6)
+		a.Op("sta", asm.Zp, zDATA)
+		a.Op("lda", asm.Zp, zDATA+1)
+		a.Op("adc", asm.Imm, 0)
+		a.Op("sta", asm.Zp, zDATA+1)
+		rts()
+	case "SYSCALL": // jmp (PTR) — l'appelant a fait JSR ici, le code appelé revient par RTS
+		a.Op("jmp", asm.Ind, zPTR)
 		return
 	case "PUSH", "LPUSH": // empile ACC (type + 4 octets) sur STK (expressions) ou LSTK (locales)
 		stk, sp := "STK", zSP

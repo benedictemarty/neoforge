@@ -31,7 +31,7 @@ func screenAndImage(t *testing.T, emu string, args ...string) (string, []byte) {
 	t.Helper()
 	dir := t.TempDir()
 	// Fichiers de données du corpus (graphics.gfx…) disponibles dans le stockage.
-	for _, f := range []string{"graphics.gfx"} {
+	for _, f := range []string{"graphics.gfx", "level.map"} {
 		if data, err := os.ReadFile(filepath.Join("testdata", f)); err == nil {
 			os.WriteFile(filepath.Join(dir, f), data, 0o644)
 		}

@@ -311,6 +311,83 @@ func (p *parser) statement() (Stmt, error) {
 	case "return":
 		p.next()
 		return &Return{}, nil
+	case "data":
+		p.next()
+		d := &Data{}
+		for {
+			x, err := p.unary()
+			if err != nil {
+				return nil, err
+			}
+			switch x.(type) {
+			case IntLit, FloatLit, StrLit:
+			default:
+				return nil, p.errorf("data : constante attendue")
+			}
+			d.Items = append(d.Items, x)
+			if !p.accept(",") {
+				return d, nil
+			}
+		}
+	case "read":
+		p.next()
+		r := &Read{}
+		for {
+			x, err := p.unary()
+			if err != nil {
+				return nil, err
+			}
+			switch x.(type) {
+			case Var, Index:
+			default:
+				return nil, p.errorf("read : variable attendue")
+			}
+			r.Targets = append(r.Targets, x)
+			if !p.accept(",") {
+				return r, nil
+			}
+		}
+	case "restore":
+		p.next()
+		return &Restore{}, nil
+	case "assert":
+		p.next()
+		x, err := p.expr(TInt)
+		if err != nil {
+			return nil, err
+		}
+		as := &Assert{Cond: x}
+		if p.accept(",") {
+			if as.Msg, err = p.expr(TStr); err != nil {
+				return nil, err
+			}
+		}
+		return as, nil
+	case "defchr":
+		p.next()
+		xs, err := p.exprList(8)
+		if err != nil {
+			return nil, err
+		}
+		return &Defchr{Code: xs[0], Rows: xs[1:]}, nil
+	case "load":
+		p.next()
+		name, err := p.expr(TStr)
+		if err != nil {
+			return nil, err
+		}
+		if err := p.expect(","); err != nil {
+			return nil, p.errorf("load : seule la forme load \"fichier\",adresse est compilable")
+		}
+		addr, err := p.expr(TInt)
+		if err != nil {
+			return nil, err
+		}
+		return &Load{Name: name, Addr: addr}, nil
+	case "sys":
+		p.next()
+		x, err := p.expr(TInt)
+		return &Sys{Addr: x}, err
 	case "cls":
 		p.next()
 		return &Cls{}, nil

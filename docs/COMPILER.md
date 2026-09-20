@@ -1,6 +1,9 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants, S4-3 tableaux/goto, S4-4 graphisme/sprites/son livrés).
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 livré (v0.5.0)** — entrées, chaînes, flottants, tableaux, `goto`, graphisme, sprites, son,
+`data`/`read`, `assert`, `defchr`, `load`, `sys`. **34 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) ;
+Breakout (jeu officiel) tourne compilé. Restent : l'assembleur en ligne (5 exemples), les fichiers (`open`/`save`),
+`mouse`, `pin`/`i2c`/`uconfig`, `ref`.
 
 ## Utilisation
 
@@ -20,7 +23,7 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | chaînes : constantes, variables (`x$`, 255 caractères), `+`, comparaisons (`= <> < > <= >=`, lexicographiques → -1/0), `len( asc( chr$( str$( left$( right$( mid$( instr( val( isval( upper$( lower$( spc( inkey$(` | `tab(`, `key(`, `event(` |
 | `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `on error` |
-| `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | `ref`, récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
+| `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers et chaînes), `data`/`read`/`restore`, `assert`, `defchr`, `load "f",adr`, `sys` (A, X, Y) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | `ref`, récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
 | `abs( sgn( int( min( max( rand( alloc( true false` | assembleur `[ ]`, `pin`/`i2c`/`serial`, `mouse`, turtle |
 | **graphisme chaîné** `move line rect ellipse plot text image tiledraw` (`from to by x,y ink solid frame dim`), **`sprite`** (`image to by flip anchor hide`, `sprite clear`), `gload`, `tilemap`, `sound`/`noise`/`sfx`, `vmode`, `ink`, `cursor`, `palette` ; fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` | `joypad(` à 3 arguments, `mouse(`, `frame`, fichiers |
 

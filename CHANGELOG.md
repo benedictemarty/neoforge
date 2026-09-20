@@ -5,6 +5,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.5.0] - 2026-09-21 — sprint 4 : compilateur, suite
+### Ajouté — corpus (S4-5)
+- `data`/`read`/`restore` (pool global typé), `assert`, `defchr`, `load "f",adresse`, `sys` (A, X, Y),
+  `local` sur les chaînes, `event(` sur un élément de tableau, déclarations `dim` visibles de tout le
+  programme, opérateurs bit à bit sur des nombres non prouvés entiers.
+- `tools/corpus.sh` : **34 des 50 exemples `.bsc` de Trinity compilent** (restent l'assembleur en ligne, les
+  fichiers, `mouse`/`pin`/`i2c`/`uconfig`, `ref`) ; Breakout compilé tourne dans Phosphoneo.
+- Différentiel : 13 programmes identiques texte et image (`data.bsc` ajouté, `level.map` fourni au stockage).
 ### Ajouté — compilateur : tableaux et goto (S4-3)
 - `dim a(n[,m])` (bornes incluses, tailles dynamiques, tableaux de chaînes), éléments en lecture/écriture/`input`,
   `goto`/`gosub`/`return` vers des lignes numérotées (marqueurs de ligne conservés par le parseur, cibles

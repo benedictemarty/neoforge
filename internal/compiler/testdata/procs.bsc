@@ -4,6 +4,9 @@ i = 5
 call counter()
 print "out="; i
 call hello()
+s$ = "global"
+call strloc()
+print "s$="; s$
 end
 proc square(x)
   print x * x
@@ -20,4 +23,9 @@ proc counter()
 endproc
 proc hello()
   print "hello"
+endproc
+proc strloc()
+  local s$
+  s$ = "locale"
+  print s$
 endproc

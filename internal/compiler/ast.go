@@ -197,6 +197,47 @@ type LineLabel struct {
 	Line int
 }
 
+// Data : constantes d'un pool global lu séquentiellement par Read.
+type Data struct {
+	stmtMarker
+	Items []Expr // IntLit, FloatLit ou StrLit
+}
+
+// Read : lit les prochaines constantes du pool dans des variables ou éléments de tableau.
+type Read struct {
+	stmtMarker
+	Targets []Expr // Var ou Index
+}
+
+// Restore replace le pointeur de lecture au début du pool.
+type Restore struct{ stmtMarker }
+
+// Load : load "fichier", adresse (chargement mémoire).
+type Load struct {
+	stmtMarker
+	Name, Addr Expr
+}
+
+// Sys : sys adresse — appelle du code machine avec A, X, Y = variables A, X, Y.
+type Sys struct {
+	stmtMarker
+	Addr Expr
+}
+
+// Assert : assert expr[,message] — arrête le programme si l'expression est nulle.
+type Assert struct {
+	stmtMarker
+	Cond Expr
+	Msg  Expr
+}
+
+// Defchr : defchr code, 7 octets (caractère utilisateur 192-255).
+type Defchr struct {
+	stmtMarker
+	Code Expr
+	Rows []Expr
+}
+
 // Input : même forme que Print ; un item Var est lu au clavier (chaîne ou nombre).
 type Input struct {
 	stmtMarker

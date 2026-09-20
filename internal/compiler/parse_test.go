@@ -13,8 +13,6 @@ func TestParseErrors(t *testing.T) {
 	cases := []struct{ src, want string }{
 		{"#define X 1\nprint X", "directive"},
 		{"print \"x", "chaîne non terminée"},
-		{"x = 1.5 & 3", "flottant non pris en charge"},
-		{"x = 1.5 << 3", "flottant non pris en charge"},
 		{"x = \"a\" + 1", "chaîne et nombre"},
 		{"x = \"a\"", "nombre attendu"},
 		{"x$ = 1", "chaîne attendue"},
@@ -57,7 +55,6 @@ func TestParseErrors(t *testing.T) {
 		{"input #1, a", "input sur fichier"},
 		{"input 2 *", "expression attendue"},
 		{"input a(1)", "avant dim"},
-		{"local s$", "local sur une chaîne"},
 		// propagation des erreurs dans chaque construction
 		{"while \"a\"\nwend", "nombre attendu"},
 		{"while 1\nprint 2 *\nwend", "expression attendue"},
