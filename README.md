@@ -10,9 +10,9 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 2 livré (v0.3.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
-> détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** (`neoforgec`, ⚙ Compiler) validé en différentiel
-> contre l'interpréteur. Voir `docs/COMPILER.md`.
+> État : **sprint 3 livré (v0.4.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** (`docs/COMPILER.md`), **éditeur de sprites, tuiles
+> et tilemaps** (`docs/GRAPHICS.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
 ## Architecture en un coup d'œil
@@ -55,6 +55,8 @@ make run          # http://127.0.0.1:8098
 - **⌨ Clavier → Neo** : donne le clavier à l'émulateur (ou cliquer sur l'écran).
 - **📎 Fichiers** : envoie des fichiers de données (`.gfx`, niveaux…) dans `/storage` de l'émulateur
   (essayer `examples/sprites.bsc` avec `examples/graphics.gfx`).
+- **🎨 Graphismes** : éditeur de sprites/tuiles (`graphics.gfx`, planches PNG `makeimg`, import d'image) et de
+  tilemaps (`.map`, code BASIC) — voir `docs/GRAPHICS.md`.
 - **❔ Aide** (F1) : référence des commandes (documentation officielle neo6502-documents, MIT) filtrable,
   clic pour insérer ; la même aide apparaît au survol et dans la complétion.
 

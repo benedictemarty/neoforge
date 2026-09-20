@@ -3,6 +3,9 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"image"
+	_ "image/gif"  // décodeurs pour l'import d'image
+	_ "image/jpeg" //
 	"image/png"
 	"io"
 	"net/http"
@@ -148,4 +151,27 @@ func (s *Server) handleGfxSheetExport(w http.ResponseWriter, r *http.Request) {
 	png.Encode(&buf, gfx.Sheet(objs, k, 0))
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(buf.Bytes())
+}
+
+// handleGfxImage : image (PNG/JPEG/GIF) → tuiles 16×16 dédupliquées + tilemap.
+func (s *Server) handleGfxImage(w http.ResponseWriter, r *http.Request) {
+	img, _, err := image.Decode(http.MaxBytesReader(w, r.Body, 8<<20))
+	if err != nil {
+		writeError(w, 422, "image invalide : "+err.Error())
+		return
+	}
+	tiles, m, err := gfx.ImportImage(img)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
+	pix := [][]int{}
+	for _, o := range tiles {
+		pix = append(pix, pixInts(o))
+	}
+	tm := make([]int, len(m.Tiles))
+	for i, t := range m.Tiles {
+		tm[i] = int(t)
+	}
+	writeJSON(w, 200, map[string]any{"tiles": pix, "map": map[string]any{"w": m.W, "h": m.H, "tiles": tm}})
 }

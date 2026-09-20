@@ -92,5 +92,28 @@ func TestGfxAPI(t *testing.T) {
 	if code, _ := post(t, s, "/api/gfx/sheet/export?kind=tile16", []byte(`{"objects":[[1]]}`), "application/json"); code != 422 {
 		t.Errorf("export taille : %d", code)
 	}
+	// image → tuiles + carte
+	pngBuf.Reset()
+	png.Encode(&pngBuf, gfx.Sheet(set.Tiles, gfx.Tile16, 0))
+	code, body = post(t, s, "/api/gfx/image", pngBuf.Bytes(), "image/png")
+	var im struct {
+		Tiles [][]int
+		Map   struct {
+			W, H  int
+			Tiles []int
+		}
+	}
+	json.Unmarshal(body, &im)
+	if code != 200 || len(im.Tiles) < 1 || im.Map.W*im.Map.H != len(im.Map.Tiles) {
+		t.Errorf("image : %d %.100s", code, body)
+	}
+	if code, _ := post(t, s, "/api/gfx/image", []byte("pas une image"), "image/png"); code != 422 {
+		t.Errorf("image invalide : %d", code)
+	}
+	pngBuf.Reset()
+	png.Encode(&pngBuf, gfx.Sheet(nil, gfx.Sprite32, 300)) // 4080+ px de haut : trop grand
+	if code, _ := post(t, s, "/api/gfx/image", pngBuf.Bytes(), "image/png"); code != 422 {
+		t.Errorf("image trop grande : %d", code)
+	}
 	_ = os.Getenv
 }

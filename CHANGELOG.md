@@ -6,6 +6,18 @@ versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [0.4.0] - 2026-09-21
+### Ajouté — sprint 3, sprites, tuiles, tilemaps
+- `internal/gfx` : modèle de `graphics.gfx` (4 bpp, palette du firmware), planches PNG au format `makeimg`
+  (import **identique à la sortie du script officiel** sur les planches crossdev, export réimportable),
+  tilemaps `[1][w][h][…]`, import d'image → tuiles dédupliquées + carte (S3-1, S3-3).
+- API `/api/gfx/{parse,render,sheet/import,sheet/export,image}`.
+- Éditeur **🎨 Graphismes** dans la page : objets (tuiles `$00…`, sprites `$80…`/`$C0…`), pixels, palette,
+  miroirs, remplissage, `.gfx` ouvrir/télécharger/→ `/storage`, planches PNG, image → tuiles+carte ; éditeur de
+  **tilemap** (`.map`, → `/storage`, → BASIC `alloc`/`poke`/`data`) (S3-1, S3-2). Vérifié en navigateur :
+  `.gfx` + `.map` édités affichés par `gload`/`tiledraw`/`sprite`.
+- Snippets `vmode1` (attributs MDA) et `gload` (S3-4). Doc : `docs/GRAPHICS.md` ; ADR-001 précisé (4 bpp).
+
 ## [0.3.0] - 2026-09-20
 ### Ajouté — sprint 2, compilateur NeoBASIC → 65C02 (fondations)
 - `internal/asm` : assembleur 65C02 programmatique (étiquettes, rétro-correction, relaxation des branches,

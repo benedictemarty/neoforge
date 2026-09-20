@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-20)** : sprints 0, 1 et 2 **livrés** (v0.3.0) ; sprint 3 (sprites, tiles, modes) à ouvrir — et sprint 4 : compilateur, suite (`input`, flottants, chaînes, graphisme). Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) à ouvrir. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -53,16 +53,16 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S2-4 | E5    | Emballage `.neo` (oracle `mkneo.py`), `neoforgec`, ⚙ Compiler dans la page        | P1   | FAIT |
 | S2-5 | E9    | Harnais différentiel interprété/compilé (`make test-emu`, 7 programmes identiques) | P1   | FAIT |
 
-## Sprint 3 — Sprites, tiles, modes (v0.4.0) — À OUVRIR
+## Sprint 3 — Sprites, tiles, modes (v0.4.0) — FAIT
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
-| S3-1 | E7    | Éditeur de sprites 16×16 (palette 256 c.), export mémoire graphique                | P1   | TODO |
-| S3-2 | E7    | Éditeur de tilemap (tiles 16×16, carte w×h), `tilemap`/`tiledraw` générés          | P1   | TODO |
-| S3-3 | E7    | Import d'image → palette + tiles (comme l'import HIRES d'oriced)                   | P2   | TODO |
-| S3-4 | E6    | Snippets/complétion spécifiques `vmode 1` (attributs MDA, 80×25)                   | P3   | TODO |
+| S3-1 | E7    | Éditeur de sprites 16×16/32×32 et tuiles (4 bpp, palette firmware), `.gfx`, planches PNG makeimg | P1   | FAIT |
+| S3-2 | E7    | Éditeur de tilemap (`.map` chargeable par `load`, → BASIC alloc/poke/data)         | P1   | FAIT |
+| S3-3 | E7    | Import d'image → tuiles dédupliquées + tilemap (validé en navigateur)              | P2   | FAIT |
+| S3-4 | E6    | Snippets `vmode1` (attributs MDA) et `gload` (sprite + tilemap)                    | P3   | FAIT |
 
-## Sprint 4 — Compilateur, suite (v0.5.0) — TODO
+## Sprint 4 — Compilateur, suite (v0.5.0) — À OUVRIR
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|

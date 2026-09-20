@@ -3,6 +3,7 @@ package gfx
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"image/png"
 	"os"
 	"os/exec"
@@ -186,5 +187,44 @@ func TestTilemap(t *testing.T) {
 	}
 	if _, err := ParseTilemap([]byte{1, 4, 4, 0}); err == nil {
 		t.Error("tronquée : erreur attendue")
+	}
+}
+
+func TestImportImage(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 40, 20)) // 3×2 tuiles, bords incomplets
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 40; x++ {
+			c := color.RGBA{0, 228, 54, 255} // vert = couleur 2
+			if x < 16 && y < 16 {
+				c = color.RGBA{255, 0, 77, 255} // rouge = couleur 1
+			}
+			img.Set(x, y, c)
+		}
+	}
+	tiles, m, err := ImportImage(img)
+	if err != nil || m.W != 3 || m.H != 2 {
+		t.Fatalf("%v %+v", err, m)
+	}
+	// tuiles distinctes : rouge, vert plein, vert+noir (bord droit), vert+noir (bas), coin
+	if len(tiles) < 3 || tiles[0].Pix[0] != 1 || tiles[1].Pix[0] != 2 || m.Tiles[0] != 0 || m.Tiles[1] != 1 {
+		t.Errorf("tuiles %d, carte %v", len(tiles), m.Tiles)
+	}
+	if tiles[m.Tiles[2]].Pix[15] != 8 { // colonne 32..39 puis noir
+		t.Error("bord incomplet non complété en noir")
+	}
+	if _, _, err := ImportImage(image.NewRGBA(image.Rect(0, 0, 0, 0))); err == nil {
+		t.Error("image vide : erreur attendue")
+	}
+	// Plus de 128 tuiles distinctes : les suivantes restent transparentes.
+	big := image.NewRGBA(image.Rect(0, 0, 16*150, 16))
+	for i := 0; i < 150; i++ {
+		for k := 0; k < 16; k++ {
+			p := Palette[1+(i*7+k)%15]
+			big.Set(i*16+k, i%16, color.RGBA{p[0], p[1], p[2], 255})
+		}
+	}
+	tiles, m, _ = ImportImage(big)
+	if len(tiles) != 128 || m.Tiles[149] != 0xF0 {
+		t.Errorf("limite : %d tuiles, dernière cellule %x", len(tiles), m.Tiles[149])
 	}
 }

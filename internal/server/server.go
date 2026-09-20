@@ -47,6 +47,7 @@ func New(cfg config.Config, version string) *Server {
 	s.mux.HandleFunc("POST /api/gfx/render", s.handleGfxRender)
 	s.mux.HandleFunc("POST /api/gfx/sheet/import", s.handleGfxSheetImport)
 	s.mux.HandleFunc("POST /api/gfx/sheet/export", s.handleGfxSheetExport)
+	s.mux.HandleFunc("POST /api/gfx/image", s.handleGfxImage)
 	s.mux.HandleFunc("GET /api/files", s.handleFiles)
 	s.mux.HandleFunc("GET /api/file", s.handleFileGet)
 	s.mux.HandleFunc("PUT /api/file", s.handleFilePut)

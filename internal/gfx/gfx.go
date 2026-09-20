@@ -331,3 +331,48 @@ func ParseTilemap(b []byte) (*Tilemap, error) {
 	}
 	return &Tilemap{W: w, H: h, Tiles: append([]uint8{}, b[3:3+w*h]...)}, nil
 }
+
+// ─── Import d'image ─────────────────────────────────────────────────────────
+
+// ImportImage découpe une image en tuiles 16×16 (couleurs ramenées à la palette,
+// tuiles identiques dédupliquées, 128 au plus) et renvoie la tilemap correspondante ;
+// les tuiles au-delà de la limite sont remplacées par $F0 (transparent). Les bords
+// incomplets sont complétés en noir (couleur 8).
+func ImportImage(img image.Image) ([]Object, *Tilemap, error) {
+	b := img.Bounds()
+	w, h := (b.Dx()+15)/16, (b.Dy()+15)/16
+	if w < 1 || h < 1 || w > 255 || h > 255 {
+		return nil, nil, fmt.Errorf("image %d×%d : de 1×1 à 4080×4080 pixels", b.Dx(), b.Dy())
+	}
+	m := NewTilemap(w, h, 0xF0)
+	var tiles []Object
+	index := map[string]int{}
+	for ty := 0; ty < h; ty++ {
+		for tx := 0; tx < w; tx++ {
+			o := New(Tile16)
+			for y := 0; y < 16; y++ {
+				for x := 0; x < 16; x++ {
+					px, py := b.Min.X+tx*16+x, b.Min.Y+ty*16+y
+					c := uint8(8)
+					if px < b.Max.X && py < b.Max.Y {
+						col := color.NRGBAModel.Convert(img.At(px, py)).(color.NRGBA)
+						c = nearest(col.R, col.G, col.B)
+					}
+					o.Pix[y*16+x] = c
+				}
+			}
+			key := string(o.Pix)
+			i, seen := index[key]
+			if !seen {
+				if len(tiles) >= 128 {
+					continue // trop de tuiles distinctes : cellule laissée transparente
+				}
+				i = len(tiles)
+				index[key] = i
+				tiles = append(tiles, o)
+			}
+			m.Tiles[ty*w+tx] = uint8(i)
+		}
+	}
+	return tiles, m, nil
+}

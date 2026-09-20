@@ -41,6 +41,7 @@
         <select id="gfx-sheet-kind" title="Genre pour l'import/export de planche PNG (format makeimg)"><option value="tile16">tuiles 16</option><option value="sprite16">sprites 16</option><option value="sprite32">sprites 32</option></select>
         <label class="btn" title="Importer une planche PNG (tile_16.png, sprite_16.png, sprite_32.png)">📥 planche PNG<input type="file" id="gfx-sheet-in" accept="image/png" hidden /></label>
         <button id="gfx-sheet-out" title="Exporter la planche PNG du genre choisi">📤 planche PNG</button>
+        <label class="btn" title="Importer une image (PNG/JPEG/GIF) : couleurs ramenées à la palette, découpe en tuiles 16×16 dédupliquées + tilemap">🖼 image → tuiles+carte<input type="file" id="gfx-image-in" accept="image/*" hidden /></label>
         <span id="gfx-count" class="dim"></span>
       </div>
       <div class="gfx-body">

@@ -14,8 +14,10 @@ MJPEG, compilateur BASIC → 6502 (≈ 11 000 lignes hors tests) dont le runtime
    80 colonnes) de Trinity. Le « mode 2 » retiré de Trinity n'est pas réintroduit.
 2. **Compilateur porté dès le début** (épopée E5) : nouveau backend runtime sur l'API firmware `$FF00`
    (au lieu des routines ROM Oric) ; frontend et assembleur d'oriced réutilisés.
-3. **Sprites et tiles** : les éditeurs graphiques ciblent les formats Neo6502 (sprites 16×16 et
-   tilemaps du mode 0, mémoire graphique `$FFFF` du `.neo`, palette 256 couleurs).
+3. **Sprites et tiles** : les éditeurs graphiques ciblent les formats Neo6502 (sprites 16×16/32×32 et
+   tuiles 16×16 du mode 0, fichier `graphics.gfx` chargé par `gload`, tilemaps). Précision apportée au
+   sprint 3 : ces objets sont en **4 bits par pixel, 16 couleurs de la palette du firmware** (le « 256
+   couleurs » ne concerne que l'écran), cf. `gconvert.py`/`reference/graphics.md`.
 4. **Émulateur = Phosphoneo WebAssembly dans la page** (cible `make wasm` existante) : pas de flux
    MJPEG ni d'API HTTP à ajouter à Phosphoneo, latence nulle, déploiement d'un seul binaire + un dossier.
 

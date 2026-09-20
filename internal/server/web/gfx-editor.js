@@ -157,6 +157,21 @@ export function setupGfxEditor({ status, sendToStorage, insertText }) {
     download({ tile16: "tile_16.png", sprite16: "sprite_16.png", sprite32: "sprite_32.png" }[kind], await r.arrayBuffer(), "image/png");
   });
 
+  el("gfx-image-in").addEventListener("change", async (ev) => {
+    const f = ev.target.files[0];
+    if (!f) return;
+    const j = await fetch("/api/gfx/image", { method: "POST", body: await f.arrayBuffer() }).then((r) => r.json());
+    if (j.error) { status(j.error, true); return; }
+    objects = objects.filter((o) => o.kind !== "tile16").concat(j.tiles.map((p) => ({ kind: "tile16", pix: p })));
+    objects.sort((a, b) => Object.keys(KINDS).indexOf(a.kind) - Object.keys(KINDS).indexOf(b.kind));
+    map = { w: j.map.w, h: j.map.h, tiles: j.map.tiles };
+    el("map-w").value = map.w; el("map-h").value = map.h;
+    select(objects.length ? 0 : -1);
+    renderMap();
+    status(f.name + " : " + j.tiles.length + " tuile(s), carte " + map.w + "×" + map.h + " (tuiles précédentes remplacées)");
+    ev.target.value = "";
+  });
+
   // ─── Tilemap ────────────────────────────────────────────────────────────
   const mapCell = (ev) => {
     const r = mapCanvas.getBoundingClientRect();

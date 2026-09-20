@@ -57,6 +57,8 @@ export function registerNeoBasic(monaco, keywords, help = []) {
     { label: "sprite", detail: "Sprite : image, position, dessin", body: "sprite ${1:0} image ${2:0} to ${3:100},${4:100}$0" },
     { label: "tile", detail: "Tilemap : définition + affichage", body: "tilemap ${1:addr},${2:w},${3:h}\ntiledraw ${4:0},${5:0} to ${6:320},${7:240}$0" },
     { label: "vmode", detail: "Mode vidéo (0 = 320×240, 1 = Hercules 80 col.)", body: "vmode ${1:0}$0" },
+    { label: "vmode1", detail: "Hercules 80×25 : attributs MDA (encre 1 allumé, 2 souligné, 4 gras, 8 clignotant ; papier bit 0 = inverse)", body: "vmode 1\nink ${1:1}: print \"${2:texte}\"\nink 2: print \"souligne\"\nink 4: print \"gras\"\nink 1,1: print \"inverse\"\nink 1$0" },
+    { label: "gload", detail: "Charger graphics.gfx puis afficher un sprite et une tilemap", body: "gload \"${1:graphics.gfx}\"\nsprite 0 image \\$80 to ${2:160},${3:120}\nmap = alloc(${4:303})\nload \"${5:level.map}\",map\ntilemap map,0,0\ntiledraw 0,0 to 320,240$0" },
   ];
 
   monaco.languages.registerCompletionItemProvider("neobasic", {
