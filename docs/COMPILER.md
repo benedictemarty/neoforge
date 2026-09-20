@@ -1,6 +1,6 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 livré : entrées et chaînes).
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants livrés).
 
 ## Utilisation
 
@@ -16,7 +16,7 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 
 | Pris en charge | Hors périmètre (sprints suivants) |
 |---|---|
-| entiers 32 bits signés (`+ - * \ % & \| ^ << >>`, comparaisons → -1/0, `not` logique, `-` unaire) | flottants (`/`, constantes décimales, `sin(`…) |
+| entiers 32 bits signés (`+ - * \ % & \| ^ << >>`, comparaisons → -1/0, `not` logique, `-` unaire) ; **flottants** simple précision (constantes décimales, `/`, `sin( cos( tan( atan( atan2( log( exp( sqr( pow( rnd( int( abs( sgn(`, mixte entier/flottant) | `& \| ^ << >>` sur un flottant |
 | chaînes : constantes, variables (`x$`, 255 caractères), `+`, comparaisons (`= <> < > <= >=`, lexicographiques → -1/0), `len( asc( chr$( str$( left$( right$( mid$( instr( val( isval( upper$( lower$( spc( inkey$(` | `tab(`, `key(`, `event(` |
 | `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `goto`/`gosub`, `on error`, `case/when` |
@@ -32,6 +32,18 @@ base 1 (`instr(a$,"")` = 1, `mid$(a$,20)` = ""), `right$(a$,50)` = la chaîne en
 Divergences assumées (l'interpréteur signale une erreur, le compilé continue) : `mid$(a$,0,…)` est traité
 comme `mid$(a$,1,…)`, un argument négatif de `left$`/`right$`/`mid$`/`spc` vaut 0, `val(` d'un texte non
 numérique vaut 0.
+
+## Nombres : entiers natifs, flottants par l'API
+
+Chaque nombre porte un **type dynamique** (octet `$3C` pour ACC, `$3D` pour TMP, premier octet des variables :
+0 entier, `$40` flottant — la convention des registres de l'API). Les opérations dont les deux opérandes sont
+**prouvés entiers** (constante entière, variable jamais affectée d'une expression non entière ni saisie par
+`input`, fonctions entières) sont compilées en 65C02 natif ; sinon `+ - * / \ %`, `-`, `abs sgn int` et les
+fonctions passent par le groupe 4 de l'API, qui applique exactement les règles de l'interpréteur (résultat
+flottant si un opérande l'est, `int(` = plancher, `sgn(` entier). L'inférence est un point fixe sur tout le
+programme (affectations, `input`, arguments de `call`). `print`/`str$(` utilisent 4,34 : un flottant s'affiche
+avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont converties par la formule du firmware
+(`float32(entier) + float32(chiffres)/float32(10^n)`).
 
 ## Code généré
 

@@ -26,6 +26,20 @@ const (
 
 	kernelReadChar = 0xFFEE // vecteur noyau ReadCharacter : attend une touche (curseur), A = caractère
 
+	fnMathAdd      = 0  // 4,0 : REG1 := REG1 + REG2 (entier ou flottant selon les types)
+	fnMathSub      = 1  // 4,1
+	fnMathFDiv     = 3  // 4,3 : division décimale (flottant)
+	fnMathPow      = 7  // 4,7
+	fnMathAtan2    = 9  // 4,9
+	fnMathNeg      = 16 // 4,16
+	fnMathFloor    = 17 // 4,17 : int( (flottant → entier)
+	fnMathSqrt     = 18 // 4,18
+	fnMathSin      = 19 // 4,19 … 4,22 : sin cos tan atan (degrés par défaut)
+	fnMathExp      = 23 // 4,23
+	fnMathLog      = 24 // 4,24
+	fnMathAbs      = 25 // 4,25
+	fnMathSgn      = 26 // 4,26 (résultat entier)
+	fnMathRandDec  = 27 // 4,27 : rnd( (flottant)
 	fnMathMul      = 2  // 4,2 : REG1 := REG1 * REG2
 	fnMathIDiv     = 4  // 4,4 : division entière (tronquée vers zéro)
 	fnMathMod      = 5  // 4,5 : modulo (signes ignorés)

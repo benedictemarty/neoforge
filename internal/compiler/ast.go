@@ -14,6 +14,13 @@ type Expr interface{ Type() Type }
 // IntLit est une constante entière.
 type IntLit struct{ V int64 }
 
+// FloatLit est une constante décimale : Bits = float32 IEEE calculé comme le firmware
+// (4,32 : partie entière + décimales/10^n en simple précision).
+type FloatLit struct {
+	Bits uint32
+	Text string
+}
+
 // StrLit est une constante chaîne.
 type StrLit struct{ V string }
 
@@ -38,8 +45,9 @@ type Call struct {
 	Args []Expr
 }
 
-func (IntLit) Type() Type { return TInt }
-func (StrLit) Type() Type { return TStr }
+func (IntLit) Type() Type   { return TInt }
+func (FloatLit) Type() Type { return TInt } // numérique (le genre entier/flottant est dynamique)
+func (StrLit) Type() Type   { return TStr }
 func (v Var) Type() Type {
 	if isStrName(v.Name) {
 		return TStr

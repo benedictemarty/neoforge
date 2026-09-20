@@ -49,55 +49,46 @@ func (g *gen) emitRoutine(name string) {
 	case "STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE":
 		g.emitStringRoutine(name)
 		return
-	case "PUSH": // empile ACC
-		a.Op("ldx", asm.Zp, zSP)
+	case "PUSH", "LPUSH": // empile ACC (type + 4 octets) sur STK (expressions) ou LSTK (locales)
+		stk, sp := "STK", zSP
+		if name == "LPUSH" {
+			stk, sp = "LSTK", zLSP
+		}
+		a.Op("ldx", asm.Zp, sp)
+		a.Op("lda", asm.Zp, zTYPE)
+		a.OpL("sta", asm.AbsX, stk, 0)
 		for i := 0; i < 4; i++ {
 			a.Op("lda", asm.Zp, zACC+i)
-			a.OpL("sta", asm.AbsX, "STK", i)
+			a.OpL("sta", asm.AbsX, stk, i+1)
 		}
 		a.Op("txa", asm.Imp, 0)
 		a.Op("clc", asm.Imp, 0)
-		a.Op("adc", asm.Imm, 4)
-		a.Op("sta", asm.Zp, zSP)
+		a.Op("adc", asm.Imm, 5)
+		a.Op("sta", asm.Zp, sp)
 		rts()
-	case "POP", "POPACC": // dépile dans TMP (POP) ou ACC (POPACC)
-		dst := zTMP
-		if name == "POPACC" {
-			dst = zACC
+	case "POP", "POPACC", "LPOP": // dépile dans TMP (POP) ou ACC (POPACC, LPOP)
+		dst, typ, stk, sp := zTMP, zTMPT, "STK", zSP
+		if name != "POP" {
+			dst, typ = zACC, zTYPE
 		}
-		a.Op("lda", asm.Zp, zSP)
+		if name == "LPOP" {
+			stk, sp = "LSTK", zLSP
+		}
+		a.Op("lda", asm.Zp, sp)
 		a.Op("sec", asm.Imp, 0)
-		a.Op("sbc", asm.Imm, 4)
-		a.Op("sta", asm.Zp, zSP)
+		a.Op("sbc", asm.Imm, 5)
+		a.Op("sta", asm.Zp, sp)
 		a.Op("tax", asm.Imp, 0)
+		a.OpL("lda", asm.AbsX, stk, 0)
+		a.Op("sta", asm.Zp, typ)
 		for i := 0; i < 4; i++ {
-			a.OpL("lda", asm.AbsX, "STK", i)
+			a.OpL("lda", asm.AbsX, stk, i+1)
 			a.Op("sta", asm.Zp, dst+i)
 		}
 		rts()
-	case "LPUSH": // pile des locales : empile ACC
-		a.Op("ldx", asm.Zp, zLSP)
-		for i := 0; i < 4; i++ {
-			a.Op("lda", asm.Zp, zACC+i)
-			a.OpL("sta", asm.AbsX, "LSTK", i)
-		}
-		a.Op("txa", asm.Imp, 0)
-		a.Op("clc", asm.Imp, 0)
-		a.Op("adc", asm.Imm, 4)
-		a.Op("sta", asm.Zp, zLSP)
-		rts()
-	case "LPOP": // dépile dans ACC
-		a.Op("lda", asm.Zp, zLSP)
-		a.Op("sec", asm.Imp, 0)
-		a.Op("sbc", asm.Imm, 4)
-		a.Op("sta", asm.Zp, zLSP)
-		a.Op("tax", asm.Imp, 0)
-		for i := 0; i < 4; i++ {
-			a.OpL("lda", asm.AbsX, "LSTK", i)
-			a.Op("sta", asm.Zp, zACC+i)
-		}
-		rts()
 	case "TMPTOACC":
+		a.Op("lda", asm.Zp, zTMPT)
+		a.Op("sta", asm.Zp, zTYPE)
 		for i := 0; i < 4; i++ {
 			a.Op("lda", asm.Zp, zTMP+i)
 			a.Op("sta", asm.Zp, zACC+i)
@@ -176,6 +167,7 @@ func (g *gen) emitRoutine(name string) {
 			a.Op("stz", asm.Zp, zACC+i)
 		}
 		a.Label(done)
+		a.Op("stz", asm.Zp, zTYPE)
 		rts()
 	case "INC32":
 		done := a.Uniq("inc")
@@ -290,7 +282,7 @@ func (g *gen) emitStringRoutine(name string) {
 		a.Op("sta", asm.Zp, zCNT) // longueur gauche
 		a.Op("lda", asm.ZpIndY, zPTR)
 		a.Op("sta", asm.Zp, zCNT+1) // longueur droite ($2F)
-		a.Label(loop)                 // y = caractères déjà égaux
+		a.Label(loop)               // y = caractères déjà égaux
 		a.Op("cpy", asm.Zp, zCNT)
 		a.Branch("beq", leftdone) // gauche épuisée
 		a.Op("cpy", asm.Zp, zCNT+1)
@@ -357,11 +349,13 @@ func (g *gen) emitStringRoutine(name string) {
 		a.Op("stz", asm.Zp, zACC+1)
 		a.Op("stz", asm.Zp, zACC+2)
 		a.Op("stz", asm.Zp, zACC+3)
+		a.Op("stz", asm.Zp, zTYPE)
 		rts()
 		a.Label(notfound)
 		for i := 0; i < 4; i++ {
 			a.Op("stz", asm.Zp, zACC+i)
 		}
+		a.Op("stz", asm.Zp, zTYPE)
 		rts()
 	case "STRSUB": // (PTR2) := (TMP)[X+1 …], Y caractères au plus (borné par la longueur de la source)
 		loop, copy, done := a.Uniq("sub"), a.Uniq("sub"), a.Uniq("sub")
@@ -516,12 +510,14 @@ func (g *gen) boolFromZ(whenZ bool) {
 	for i := 0; i < 4; i++ {
 		a.Op("stz", asm.Zp, zACC+i)
 	}
+	a.Op("stz", asm.Zp, zTYPE)
 	a.Op("rts", asm.Imp, 0)
 	a.Label(yes)
 	a.Op("lda", asm.Imm, 0xFF)
 	for i := 0; i < 4; i++ {
 		a.Op("sta", asm.Zp, zACC+i)
 	}
+	a.Op("stz", asm.Zp, zTYPE)
 	a.Label(done)
 	a.Op("rts", asm.Imp, 0)
 }

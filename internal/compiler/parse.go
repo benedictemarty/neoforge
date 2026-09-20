@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/bmarty/neoforge/internal/neobasic"
@@ -493,6 +494,19 @@ func (p *parser) binary(minPrec int) (Expr, error) {
 	}
 }
 
+// decimalBits reproduit MATHProcessDecimal du firmware : entier converti en float32,
+// plus (float32(chiffres)/float32(10^n)) — accumulations en uint32 (enroulement compris).
+func decimalBits(whole uint64, frac string) uint32 {
+	f := float32(int32(uint32(whole)))
+	var dec, div uint32 = 0, 1
+	for i := 0; i < len(frac); i++ {
+		dec = dec*10 + uint32(frac[i]-'0')
+		div *= 10
+	}
+	f += float32(dec) / float32(div)
+	return math.Float32bits(f)
+}
+
 var compareOps = map[string]bool{"=": true, "<>": true, "<": true, ">": true, "<=": true, ">=": true}
 
 func checkBinary(op string, l, r Expr) error {
@@ -501,9 +515,6 @@ func checkBinary(op string, l, r Expr) error {
 			return nil
 		}
 		return fmt.Errorf("opérateur « %s » entre chaîne et nombre non pris en charge", op)
-	}
-	if op == "/" {
-		return fmt.Errorf("division flottante « / » non prise en charge (utiliser « \\ »)")
 	}
 	return nil
 }
@@ -517,7 +528,7 @@ func (p *parser) unary() (Expr, error) {
 	case neobasic.ItemInt, neobasic.ItemHex: // tronquée à 32 bits comme l'interpréteur (2147483648 → -2147483648)
 		return IntLit{V: int64(int32(uint32(it.Int)))}, nil
 	case neobasic.ItemFloat:
-		return nil, fmt.Errorf("ligne %d : constante décimale %s : flottants non pris en charge", it.line, it.String())
+		return FloatLit{Bits: decimalBits(it.Int, it.Frac), Text: it.String()}, nil
 	case neobasic.ItemString:
 		return StrLit{V: it.Text}, nil
 	case neobasic.ItemIdent:
@@ -562,6 +573,8 @@ var builtins = map[string][]Type{
 	"min": {TInt, TInt}, "max": {TInt, TInt}, "len": {TStr}, "asc": {TStr}, "chr$": {TInt}, "str$": {TInt},
 	"left$": {TStr, TInt}, "right$": {TStr, TInt}, "mid$": {TStr, TInt, TInt}, "instr": {TStr, TStr},
 	"val": {TStr}, "isval": {TStr}, "upper$": {TStr}, "lower$": {TStr}, "spc": {TInt}, "inkey$": {},
+	"sin": {TInt}, "cos": {TInt}, "tan": {TInt}, "atan": {TInt}, "log": {TInt}, "exp": {TInt}, "sqr": {TInt},
+	"pow": {TInt, TInt}, "atan2": {TInt, TInt}, "rnd": {TInt},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {

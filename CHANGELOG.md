@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : flottants (S4-2)
+- Nombres à type dynamique (octet de type comme les registres de l'API), variables numériques sur 5 octets,
+  inférence par point fixe des variables entières (chemin 65C02 natif conservé), opérations et fonctions
+  flottantes par le groupe 4 (`/`, `sin cos tan atan atan2 log exp sqr pow rnd int abs sgn`), constantes
+  décimales converties par la formule du firmware. Différentiel : 10 programmes identiques (dont `floats.bsc`).
 ### Ajouté — compilateur : entrées et chaînes (S4-1)
 - `input` (boucle de saisie identique à l'interpréteur : 80 caractères, écho, retour arrière, « ?? » si le
   nombre est invalide), `inkey$(`, comparaisons de chaînes, `left$( right$( mid$( instr( val( isval( upper$(

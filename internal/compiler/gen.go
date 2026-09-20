@@ -16,6 +16,8 @@ const (
 	zSP   = 0x2C // indice de la pile d'expressions (octets, pas de 4)
 	zLSP  = 0x2D // indice de la pile des locales
 	zCNT  = 0x2E // compteur (décalages, copies)
+	zTYPE = 0x3C // type de ACC : 0 entier, $40 flottant (comme l'octet de type des registres de l'API)
+	zTMPT = 0x3D // type de TMP
 	zREG  = 0x30 // registres maths de l'API, entrelacés au pas 2 : REG1 = $30 (type) $32 $34 $36 $38 ; REG2 = $31 $33 $35 $37 $39
 	zREG2 = 0x31
 )
@@ -33,6 +35,7 @@ type gen struct {
 	loops    []string        // étiquettes de sortie des boucles ouvertes (exit)
 	locals   []string        // variables locales de la procédure en cours (restaurées à endproc)
 	used     map[string]bool // routines runtime utilisées
+	intVars  map[string]bool // variables numériques prouvées entières (chemin natif 32 bits)
 	errs     []string
 }
 
@@ -57,6 +60,7 @@ func compile(src string) (*gen, []byte, error) {
 		return nil, nil, err
 	}
 	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
+	g.inferInt()
 	g.program()
 	if len(g.errs) > 0 {
 		return nil, nil, fmt.Errorf("%s", strings.Join(g.errs, "\n"))
@@ -103,7 +107,7 @@ func (g *gen) program() {
 			a.Label(bufLabel(v))
 			g.fill(256)
 		} else {
-			a.Bytes(0, 0, 0, 0)
+			a.Bytes(0, 0, 0, 0, 0) // [type][valeur 32 bits]
 		}
 	}
 	for i := 0; i < g.strTemps; i++ {
@@ -114,7 +118,7 @@ func (g *gen) program() {
 	g.fill(16)
 	a.Label("INBUF") // ligne saisie par input (80 caractères max, comme l'interpréteur)
 	g.fill(82)
-	a.Label("STK") // pile d'expressions : 64 entrées de 4 octets
+	a.Label("STK") // pile d'expressions : 51 entrées de 5 octets (type + valeur)
 	g.fill(256)
 	a.Label("LSTK") // pile des locales
 	g.fill(256)
@@ -288,6 +292,7 @@ func (g *gen) forStmt(s *For) {
 	g.intExpr(s.To)
 	g.storeACC(varLabel(lim))
 	g.intExpr(s.From)
+	a.Op("stz", asm.Zp, zTYPE) // l'indice de boucle est entier (l'interpréteur l'exige)
 	g.storeACC(varLabel(s.Name))
 	top, end := a.Uniq("for"), a.Uniq("next")
 	a.Label(top)
@@ -432,25 +437,24 @@ func (g *gen) intExpr(x Expr) {
 	a := g.a
 	switch x := x.(type) {
 	case IntLit:
-		v := uint32(int32(x.V))
-		for i := 0; i < 4; i++ {
-			b := byte(v >> (8 * i))
-			if b == 0 {
-				a.Op("stz", asm.Zp, zACC+i)
-			} else {
-				a.Op("lda", asm.Imm, int(b))
-				a.Op("sta", asm.Zp, zACC+i)
-			}
-		}
+		g.loadConst(uint32(int32(x.V)))
+		a.Op("stz", asm.Zp, zTYPE)
+	case FloatLit:
+		g.loadConst(x.Bits)
+		a.Op("lda", asm.Imm, 0x40)
+		a.Op("sta", asm.Zp, zTYPE)
 	case Var:
 		g.vars[x.Name] = true
 		g.loadACC(varLabel(x.Name))
 	case Unary:
 		g.intExpr(x.X)
-		if x.Op == "-" {
-			g.call("NEG")
-		} else {
+		switch {
+		case x.Op == "not":
 			g.call("NOT")
+		case g.isInt(x.X):
+			g.call("NEG")
+		default:
+			g.mathUnary(fnMathNeg)
 		}
 	case Binary:
 		g.binary(x)
@@ -477,7 +481,17 @@ func (g *gen) binary(x Binary) {
 	g.intExpr(x.L)
 	g.push()
 	g.intExpr(x.R)
-	g.pop() // TMP = gauche, ACC = droite
+	g.pop()                                            // TMP = gauche, ACC = droite
+	if !g.isInt(x.L) || !g.isInt(x.R) || x.Op == "/" { // opérandes flottants ou incertains : API (types dynamiques)
+		if fn, ok := map[string]int{"+": fnMathAdd, "-": fnMathSub, "*": fnMathMul, "/": fnMathFDiv, "\\": fnMathIDiv, "%": fnMathMod}[x.Op]; ok {
+			g.mathBinary(fn)
+			return
+		}
+		if !compareOps[x.Op] {
+			g.errorf("opérateur « %s » sur un flottant non pris en charge", x.Op)
+			return
+		}
+	}
 	switch x.Op {
 	case "+", "-":
 		if x.Op == "+" {
@@ -494,6 +508,7 @@ func (g *gen) binary(x Binary) {
 			}
 			a.Op("sta", asm.Zp, zACC+i)
 		}
+		a.Op("stz", asm.Zp, zTYPE)
 	case "&", "|", "^":
 		mn := map[string]string{"&": "and", "|": "ora", "^": "eor"}[x.Op]
 		for i := 0; i < 4; i++ {
@@ -501,6 +516,7 @@ func (g *gen) binary(x Binary) {
 			a.Op(mn, asm.Zp, zACC+i)
 			a.Op("sta", asm.Zp, zACC+i)
 		}
+		a.Op("stz", asm.Zp, zTYPE)
 	case "*":
 		g.mathBinary(fnMathMul)
 	case "\\":
@@ -532,6 +548,14 @@ func (g *gen) compareResult(op string, fromAPI bool) {
 	}
 }
 
+// mathUnary : REG1 = ACC (REG2 typé entier), appel 4,fn, ACC = REG1.
+func (g *gen) mathUnary(fn int) {
+	g.accToReg1()
+	g.a.Op("stz", asm.Zp, zREG2) // 4,17 consulte aussi le type de REG2
+	emitMathCall(g.a, fn)
+	g.reg1ToACC()
+}
+
 // mathBinary : REG1 = TMP, REG2 = ACC, appel 4,fn, ACC = REG1.
 func (g *gen) mathBinary(fn int) {
 	g.tmpToReg1()
@@ -551,12 +575,33 @@ func (g *gen) intCall(x Call) {
 	switch x.Name {
 	case "abs":
 		g.intExpr(x.Args[0])
-		g.call("ABS")
+		if g.isInt(x.Args[0]) {
+			g.call("ABS")
+		} else {
+			g.mathUnary(fnMathAbs)
+		}
 	case "sgn":
 		g.intExpr(x.Args[0])
-		g.call("SGN")
+		if g.isInt(x.Args[0]) {
+			g.call("SGN")
+		} else {
+			g.mathUnary(fnMathSgn)
+		}
 	case "int":
 		g.intExpr(x.Args[0])
+		if !g.isInt(x.Args[0]) {
+			g.mathUnary(fnMathFloor)
+		}
+	case "sin", "cos", "tan", "atan", "log", "exp", "sqr", "rnd":
+		g.intExpr(x.Args[0])
+		g.mathUnary(map[string]int{"sin": fnMathSin, "cos": fnMathSin + 1, "tan": fnMathSin + 2, "atan": fnMathSin + 3,
+			"log": fnMathLog, "exp": fnMathExp, "sqr": fnMathSqrt, "rnd": fnMathRandDec}[x.Name])
+	case "pow", "atan2":
+		g.intExpr(x.Args[0])
+		g.push()
+		g.intExpr(x.Args[1])
+		g.pop()
+		g.mathBinary(map[string]int{"pow": fnMathPow, "atan2": fnMathAtan2}[x.Name])
 	case "peek", "deek":
 		g.intExpr(x.Args[0])
 		a.Op("lda", asm.Zp, zACC)
@@ -573,6 +618,7 @@ func (g *gen) intCall(x Call) {
 		}
 		a.Op("stz", asm.Zp, zACC+2)
 		a.Op("stz", asm.Zp, zACC+3)
+		a.Op("stz", asm.Zp, zTYPE)
 	case "rand":
 		g.intExpr(x.Args[0])
 		g.accToReg1()
@@ -623,6 +669,7 @@ func (g *gen) intCall(x Call) {
 			for i := 0; i < 4; i++ {
 				a.Op("stz", asm.Zp, zACC+i)
 			}
+			a.Op("stz", asm.Zp, zTYPE)
 			a.Label(ok)
 		}
 	case "len", "asc":
@@ -640,6 +687,7 @@ func (g *gen) intCall(x Call) {
 		a.Op("stz", asm.Zp, zACC+1)
 		a.Op("stz", asm.Zp, zACC+2)
 		a.Op("stz", asm.Zp, zACC+3)
+		a.Op("stz", asm.Zp, zTYPE)
 	}
 }
 
@@ -788,23 +836,43 @@ func (g *gen) setParamAddr(n int, label string) {
 
 // ─── Aides de bas niveau ────────────────────────────────────────────────────
 
-func (g *gen) loadACC(label string) {
+// loadConst : ACC := constante 32 bits (sans le type).
+func (g *gen) loadConst(v uint32) {
 	for i := 0; i < 4; i++ {
-		g.a.OpL("lda", asm.Abs, label, i)
+		b := byte(v >> (8 * i))
+		if b == 0 {
+			g.a.Op("stz", asm.Zp, zACC+i)
+		} else {
+			g.a.Op("lda", asm.Imm, int(b))
+			g.a.Op("sta", asm.Zp, zACC+i)
+		}
+	}
+}
+
+// Variables numériques : [type][4 octets] ; ACC = zTYPE + zACC.
+func (g *gen) loadACC(label string) {
+	g.a.OpL("lda", asm.Abs, label, 0)
+	g.a.Op("sta", asm.Zp, zTYPE)
+	for i := 0; i < 4; i++ {
+		g.a.OpL("lda", asm.Abs, label, i+1)
 		g.a.Op("sta", asm.Zp, zACC+i)
 	}
 }
 
 func (g *gen) storeACC(label string) {
+	g.a.Op("lda", asm.Zp, zTYPE)
+	g.a.OpL("sta", asm.Abs, label, 0)
 	for i := 0; i < 4; i++ {
 		g.a.Op("lda", asm.Zp, zACC+i)
-		g.a.OpL("sta", asm.Abs, label, i)
+		g.a.OpL("sta", asm.Abs, label, i+1)
 	}
 }
 
 func (g *gen) loadTMP(label string) {
+	g.a.OpL("lda", asm.Abs, label, 0)
+	g.a.Op("sta", asm.Zp, zTMPT)
 	for i := 0; i < 4; i++ {
-		g.a.OpL("lda", asm.Abs, label, i)
+		g.a.OpL("lda", asm.Abs, label, i+1)
 		g.a.Op("sta", asm.Zp, zTMP+i)
 	}
 }
@@ -828,7 +896,12 @@ func (g *gen) accToReg2() { g.regCopy(zACC, zREG2) }
 func (g *gen) tmpToReg2() { g.regCopy(zTMP, zREG2) }
 
 func (g *gen) regCopy(from, reg int) {
-	g.a.Op("stz", asm.Zp, reg)
+	typ := zTYPE
+	if from == zTMP {
+		typ = zTMPT
+	}
+	g.a.Op("lda", asm.Zp, typ)
+	g.a.Op("sta", asm.Zp, reg)
 	for i := 0; i < 4; i++ {
 		g.a.Op("lda", asm.Zp, from+i)
 		g.a.Op("sta", asm.Zp, reg+2*(i+1))
@@ -836,6 +909,8 @@ func (g *gen) regCopy(from, reg int) {
 }
 
 func (g *gen) reg1ToACC() {
+	g.a.Op("lda", asm.Zp, zREG)
+	g.a.Op("sta", asm.Zp, zTYPE)
 	for i := 0; i < 4; i++ {
 		g.a.Op("lda", asm.Zp, zREG+2*(i+1))
 		g.a.Op("sta", asm.Zp, zACC+i)
@@ -850,4 +925,133 @@ func (g *gen) call(name string, args ...string) {
 		g.setPTR2(args[0])
 	}
 	g.a.OpL("jsr", asm.Abs, "RT_"+name, 0)
+}
+
+// ─── Genre numérique statique ───────────────────────────────────────────────
+
+// inferInt détermine les variables numériques prouvées entières : point fixe où une
+// variable perd le statut entier si elle reçoit une expression non prouvée entière,
+// une saisie (input) ou un argument d'appel non entier.
+func (g *gen) inferInt() {
+	g.intVars = map[string]bool{}
+	var collect func(ss []Stmt)
+	collect = func(ss []Stmt) {
+		for _, s := range ss {
+			switch s := s.(type) {
+			case *Assign:
+				if !isStrName(s.Name) {
+					g.intVars[s.Name] = true
+				}
+			case *For:
+				g.intVars[s.Name] = true
+				collect(s.Body)
+			case *If:
+				collect(s.Then)
+				collect(s.Else)
+			case *While:
+				collect(s.Body)
+			case *Repeat:
+				collect(s.Body)
+			case *Do:
+				collect(s.Body)
+			case *Input:
+				for _, it := range s.Items {
+					if v, ok := it.X.(Var); ok && !isStrName(v.Name) {
+						g.intVars[v.Name] = true
+					}
+				}
+			}
+		}
+	}
+	collect(g.prog.Body)
+	for _, pr := range g.prog.Procs {
+		collect(pr.Body)
+		for _, p := range pr.Params {
+			if !isStrName(p) {
+				g.intVars[p] = true
+			}
+		}
+	}
+	for changed := true; changed; {
+		changed = false
+		var walk func(ss []Stmt)
+		drop := func(name string) {
+			if g.intVars[name] {
+				delete(g.intVars, name)
+				changed = true
+			}
+		}
+		walk = func(ss []Stmt) {
+			for _, s := range ss {
+				switch s := s.(type) {
+				case *Assign:
+					if !isStrName(s.Name) && !g.isInt(s.X) {
+						drop(s.Name)
+					}
+				case *Input:
+					for _, it := range s.Items {
+						if v, ok := it.X.(Var); ok && !isStrName(v.Name) {
+							drop(v.Name)
+						}
+					}
+				case *CallProc:
+					if pr, ok := g.prog.Procs[s.Name]; ok && len(pr.Params) == len(s.Args) {
+						for i, x := range s.Args {
+							if !isStrName(pr.Params[i]) && !g.isInt(x) {
+								drop(pr.Params[i])
+							}
+						}
+					}
+				case *For:
+					walk(s.Body)
+				case *If:
+					walk(s.Then)
+					walk(s.Else)
+				case *While:
+					walk(s.Body)
+				case *Repeat:
+					walk(s.Body)
+				case *Do:
+					walk(s.Body)
+				}
+			}
+		}
+		walk(g.prog.Body)
+		for _, pr := range g.prog.Procs {
+			walk(pr.Body)
+		}
+	}
+}
+
+// Fonctions dont le résultat est toujours entier.
+var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true}
+
+// isInt : l'expression numérique est-elle prouvée entière ?
+func (g *gen) isInt(x Expr) bool {
+	switch x := x.(type) {
+	case IntLit:
+		return true
+	case Var:
+		return g.intVars[x.Name]
+	case Unary:
+		return x.Op == "not" || g.isInt(x.X)
+	case Binary:
+		if compareOps[x.Op] {
+			return true
+		}
+		return x.Op != "/" && x.L.Type() == TInt && g.isInt(x.L) && g.isInt(x.R)
+	case Call:
+		if intFuncs[x.Name] {
+			return true
+		}
+		if x.Name == "abs" || x.Name == "min" || x.Name == "max" {
+			for _, a := range x.Args {
+				if !g.isInt(a) {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	return false // FloatLit, val(, sin( …
 }

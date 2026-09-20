@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,13 +13,13 @@ func TestParseErrors(t *testing.T) {
 	cases := []struct{ src, want string }{
 		{"#define X 1\nprint X", "directive"},
 		{"print \"x", "chaîne non terminée"},
-		{"print 1.5", "flottants"},
-		{"x = 3 / 2", "division flottante"},
+		{"x = 1.5 & 3", "flottant non pris en charge"},
+		{"x = 1.5 << 3", "flottant non pris en charge"},
 		{"x = \"a\" + 1", "chaîne et nombre"},
 		{"x = \"a\"", "nombre attendu"},
 		{"x$ = 1", "chaîne attendue"},
 		{"print 2 * ", "expression attendue"},
-		{"print sin(1)", "fonction sin("},
+		{"print key(1)", "fonction key("},
 		{"print abs(1", "« ) » attendu"},
 		{"print (1", "« ) » attendu"},
 		{"print min(1 2)", "« , » attendu"},
@@ -88,6 +89,31 @@ func TestParseErrors(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%q : erreur %v, attendu « %s »", c.src, err, c.want)
 		}
+	}
+}
+
+func TestFloatsCompile(t *testing.T) {
+	// Constantes décimales : formule du firmware (float32(entier) + float32(chiffres)/float32(10^n)).
+	if decimalBits(1, "5") != math.Float32bits(1.5) || decimalBits(0, "1") != math.Float32bits(float32(1)/float32(10)) {
+		t.Error("decimalBits")
+	}
+	src := "a = 1.5\nb = 2\nprint a + b; -a; abs(a); sgn(a); int(a); sin(a); pow(a, b); atan2(a, b); rnd(1); a / b; a \\ b; a % b; a * b; a - b\n" +
+		"print abs(b); sgn(b); int(b); not a; a < b; min(a, b)\ninput c\nprint c + 1\ncall p(a)\nend\nproc p(x)\nprint x\nendproc\nfor i = 1 to 2: next\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	// Point fixe de l'inférence : y dépend de x qui devient flottant plus loin.
+	prog, _ := Parse("y = x\nx = 0.5\nz = 1\n")
+	g := &gen{a: nil, prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
+	g.inferInt()
+	if g.intVars["X"] || g.intVars["Y"] || !g.intVars["Z"] {
+		t.Errorf("inférence : %v", g.intVars)
+	}
+	if !g.isInt(Binary{Op: "<", L: FloatLit{}, R: FloatLit{}}) || g.isInt(Binary{Op: "/", L: IntLit{}, R: IntLit{}}) {
+		t.Error("isInt sur binaires")
+	}
+	if !g.isInt(Call{Name: "abs", Args: []Expr{IntLit{}}}) || g.isInt(Call{Name: "abs", Args: []Expr{FloatLit{}}}) || g.isInt(Call{Name: "sin"}) || !g.isInt(Unary{Op: "not", X: FloatLit{}}) {
+		t.Error("isInt sur appels")
 	}
 }
 
