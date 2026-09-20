@@ -5,7 +5,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Corrigé — exécution dans le navigateur (S1-2)
+- `phosphoneo.js` résolvait `phosphoneo.data`/`.wasm` relativement à la page (404) : `Module.locateFile`
+  les renvoie sous `/emu/`.
+- Le programme par défaut contenait un « — » non ASCII, refusé par le tokeniseur.
 ### Ajouté
+- `tools/browser_e2e.mjs` + `make e2e-browser` : Chrome headless piloté par CDP ouvre l'IDE, clique
+  ▶ Exécuter et capture l'écran (programme vérifié en cours d'exécution dans Phosphoneo WASM).
 - Dépôt distant public https://github.com/benedictemarty/neoforge et CI GitHub Actions
   (gofmt, vet, couverture 100 %, tests JS, build) — S1-1.
 

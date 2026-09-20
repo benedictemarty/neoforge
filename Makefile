@@ -7,7 +7,7 @@ PHOSPHONEO ?= $(HOME)/Phosphoneo
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build run test test-js cover cover-check vet fmt clean emu-wasm e2e
+.PHONY: all build run test test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser
 
 all: test test-js build
 
@@ -63,3 +63,8 @@ e2e: build
 		--load-at 15000000:storage/hello.bas --cycles 40000000 --screenshot-text out.txt >/dev/null 2>&1
 	@grep -q "NEOFORGE OK" /tmp/neoforge-e2e/out.txt && grep -q "x=42" /tmp/neoforge-e2e/out.txt \
 		&& echo "e2e OK" || (echo "e2e ÉCHEC"; cat /tmp/neoforge-e2e/out.txt; exit 1)
+
+# Validation dans un vrai navigateur (Chrome headless piloté par CDP) : ouvre neoforge,
+# clique ▶ Exécuter, capture /tmp/neoforge-browser.png. Le serveur doit tourner (make run).
+e2e-browser:
+	node tools/browser_e2e.mjs http://127.0.0.1:8098/ /tmp/neoforge-browser.png

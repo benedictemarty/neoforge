@@ -33,7 +33,7 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S1-1 | E4    | Dépôt distant GitHub `benedictemarty/neoforge` + CI (gofmt, vet, cover-check, JS)   | P1   | FAIT |
-| S1-2 | E2    | Vérifier le chargement à chaud WASM dans un vrai navigateur (capture, clavier)      | P1   | TODO |
+| S1-2 | E2    | Vérifier le chargement à chaud WASM dans un vrai navigateur (`make e2e-browser`)    | P1   | FAIT |
 | S1-3 | E1    | Onglets multi-programmes, indicateur « ● » non enregistré                          | P2   | TODO |
 | S1-4 | E1    | Détokeniseur `.bas` → source (`listbasic.py`) : ouvrir un `.bas` de la clé         | P2   | TODO |
 | S1-5 | E1    | Aide des commandes (panneau filtrable, clic pour insérer) depuis `basic.txt`        | P2   | TODO |

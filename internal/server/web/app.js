@@ -6,7 +6,7 @@ const el = (id) => document.getElementById(id);
 const status = (msg, err) => { const s = el("status"); s.textContent = msg; s.classList.toggle("err", !!err); };
 const diag = (msg, err) => { const d = el("diag"); d.textContent = msg; d.classList.toggle("err", !!err); };
 
-const DEFAULT_SOURCE = `' neoforge — premier programme NeoBASIC
+const DEFAULT_SOURCE = `' neoforge - premier programme NeoBASIC
 cls
 print "Bonjour depuis neoforge !"
 for i = 1 to 10
@@ -21,6 +21,8 @@ let emuReady = false;
 window.Module = {
   canvas: el("canvas"),
   arguments: ["--sdl", "--scale", "1"],
+  // .wasm et .data sont résolus relativement à la page par emscripten : les renvoyer sous /emu/.
+  locateFile: (path) => "/emu/" + path.split("/").pop(),
   print: (t) => console.log(t),
   printErr: (t) => { console.log(t); if (/^phosphoneo|^sdl/.test(t)) el("emu-status").textContent = t; },
   setStatus: (t) => { if (t) el("emu-status").textContent = t; },
