@@ -6,6 +6,23 @@ versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [0.3.0] - 2026-09-20
+### Ajouté — sprint 2, compilateur NeoBASIC → 65C02 (fondations)
+- `internal/asm` : assembleur 65C02 programmatique (étiquettes, rétro-correction, relaxation des branches,
+  listing 64tass) — **719 octets identiques à 64tass** sur tous les mnémoniques et modes (S2-2).
+- `internal/neo` : emballage `.neo` (oracle `mkneo.py`) ; `internal/neobasic.Lex`/`Encode` (éléments
+  structurés, différentiel inchangé).
+- `internal/compiler` : parseur sur le flux d'éléments (priorités de la table des tokens), générateur et
+  runtime sur l'API `$FF00` — entiers 32 bits, chaînes, `print`, `if`, `while`, `repeat`, `do/exit/loop`,
+  `for`, `proc`/`call`/`local`, `poke`/`doke`/`peek(`/`deek(`, `abs( sgn( min( max( rand( len( asc( chr$( str$(`
+  (S2-1, S2-3). Périmètre et conventions : `docs/COMPILER.md` ; conception : `docs/adr/ADR-002`.
+- Harnais différentiel (`make test-emu`) : **7 programmes du corpus produisent le même écran** interprété
+  et compilé dans Phosphoneo ; le listing de chaque programme est ré-assemblé par 64tass (S2-5). Faits
+  relevés sur l'interpréteur : `else` interdit après `if … then` sur une ligne, `exit` seulement dans
+  `do … loop`, `proc` après `end`, `for` exécute le corps au moins une fois, constantes tronquées à 32 bits.
+- `neoforgec` (CLI : `.neo`, `-bin`, `-list`), `POST /api/compile`, bouton **⚙ Compiler** (F6) dans la page
+  (vérifié en navigateur) (S2-4).
+
 ## [0.2.0] - 2026-09-20
 ### Ajouté — onglets (S1-3)
 - Onglets multi-programmes : un modèle Monaco par onglet, « ● » quand le contenu diffère de la version

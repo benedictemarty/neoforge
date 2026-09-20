@@ -10,8 +10,9 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 1 livré (v0.2.0)** — socle, tokeniseur/détokeniseur NeoBASIC, éditeur à onglets + aide,
-> émulateur Trinity dans la page (Stop/Reset, `vmode 1`, fichiers de données), CLI `neobas`.
+> État : **sprint 2 livré (v0.3.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** (`neoforgec`, ⚙ Compiler) validé en différentiel
+> contre l'interpréteur. Voir `docs/COMPILER.md`.
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
 ## Architecture en un coup d'œil
@@ -43,6 +44,8 @@ make run          # http://127.0.0.1:8098
 
 - **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
   dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
+- **⚙ Compiler** (F6) : compile en code machine 65C02 (`.neo`) et lance dans l'émulateur
+  (périmètre : `docs/COMPILER.md`).
 - **■ Stop** : envoie Échap à l'émulateur (Break de NeoBASIC) ; **⟳ Reset** : redémarrage à froid
   (firmware + 65C02, retour à NeoBASIC via `boot/auto.txt`).
 - **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel ;
@@ -71,12 +74,15 @@ go build -o neobas ./cmd/neobas
 ./neobas -o hello.bas examples/hello.bsc     # équivalent de makebasic.py (identique octet pour octet)
 ./neobas -library -o lib.bas lib.bsc         # bibliothèque (numéros de ligne à 0)
 ./neobas -list hello.bas                     # détokenise (= listbasic.py) ; -n sans numéros
+go build -o neoforgec ./cmd/neoforgec
+./neoforgec examples/hello.bsc               # compile → hello.neo (65C02) ; -bin, -list
 ```
 
 ## Développement
 
 ```bash
 make test         # tests Go
+make test-emu     # + différentiel interprété/compilé dans Phosphoneo natif
 make test-js      # logique de l'éditeur (node --test)
 make cover-check  # porte : 100 % de couverture
 make vet fmt

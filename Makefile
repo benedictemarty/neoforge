@@ -7,19 +7,24 @@ PHOSPHONEO ?= $(HOME)/Phosphoneo
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build run test test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json
+.PHONY: all build run test test-emu test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json
 
 all: test test-js build
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/neoforge
 	go build -ldflags "$(LDFLAGS)" -o neobas ./cmd/neobas
+	go build -ldflags "$(LDFLAGS)" -o neoforgec ./cmd/neoforgec
 
 run: build
 	./$(BIN)
 
 test:
 	go test $(PKG)
+
+# Tests exigeant Phosphoneo natif (différentiel interprété/compilé, squelette API).
+test-emu:
+	NEOFORGE_EMU_TESTS=1 go test -count=1 $(PKG)
 
 # Tests de la logique pure de l'éditeur (JS, node --test).
 test-js:
@@ -48,7 +53,7 @@ fmt:
 	gofmt -l -w .
 
 clean:
-	rm -rf $(BIN) neobas dist coverage.out
+	rm -rf $(BIN) neobas neoforgec dist coverage.out
 
 # Construit le build WebAssembly de Phosphoneo (exige emsdk) servi sous /emu/.
 emu-wasm:

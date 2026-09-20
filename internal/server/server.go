@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bmarty/neoforge/internal/compiler"
 	"github.com/bmarty/neoforge/internal/config"
 	"github.com/bmarty/neoforge/internal/neobasic"
 )
@@ -41,6 +42,7 @@ func New(cfg config.Config, version string) *Server {
 	s.mux.HandleFunc("GET /api/keywords", s.handleKeywords)
 	s.mux.HandleFunc("POST /api/build", s.handleBuild)
 	s.mux.HandleFunc("POST /api/detok", s.handleDetok)
+	s.mux.HandleFunc("POST /api/compile", s.handleCompile)
 	s.mux.HandleFunc("GET /api/files", s.handleFiles)
 	s.mux.HandleFunc("GET /api/file", s.handleFileGet)
 	s.mux.HandleFunc("PUT /api/file", s.handleFilePut)
@@ -109,6 +111,23 @@ func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]any{"bas": p.Render(), "lines": p.Lines()})
+}
+
+// handleCompile compile un source ; réponse : {"neo": [octets], "bytes": n} ou {"error": msg}.
+func (s *Server) handleCompile(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Source string `json:"source"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+		writeError(w, 400, "requête JSON invalide : "+err.Error())
+		return
+	}
+	bin, err := compiler.CompileNeo(req.Source)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin)})
 }
 
 // handleDetok détokenise un .bas (corps binaire) ; réponse : {"source": texte}.

@@ -176,6 +176,28 @@ async function main() {
     el("btn-run").addEventListener("click", run);
     editor.addCommand(monaco.KeyCode.F5, run);
 
+    // ⚙ Compiler : /api/compile → .neo dans /storage → web_load_neo (NeoBASIC tape load "prog.neo").
+    const compile = async () => {
+      const r = await fetch("/api/compile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: editor.getValue() }) });
+      const j = await r.json();
+      const model = editor.getModel();
+      if (j.error) {
+        const ln = errorLine(j.error);
+        monaco.editor.setModelMarkers(model, "neoforgec", ln ? [{ startLineNumber: ln, endLineNumber: ln, startColumn: 1, endColumn: model.getLineMaxColumn(ln), message: j.error, severity: monaco.MarkerSeverity.Error }] : []);
+        diag(j.error, true);
+        return;
+      }
+      monaco.editor.setModelMarkers(model, "neoforgec", []);
+      diag("compilé : " + j.bytes + " octets (.neo)");
+      if (!emuReady) { status("Émulateur non prêt", true); return; }
+      const path = "/storage/" + storageName(el("fname").value).replace(/\.bas$/, ".neo");
+      Module.FS.writeFile(path, decodeBase64(j.neo));
+      const rc = Module.ccall("web_load_neo", "number", ["string"], [path]);
+      if (rc === 0) { status(path.slice(9) + " compilé et lancé"); Module.canvas.focus(); } else status("échec du lancement", true);
+    };
+    el("btn-compile").addEventListener("click", compile);
+    editor.addCommand(monaco.KeyCode.F6, compile);
+
     el("btn-download").addEventListener("click", async () => {
       const bas = await build();
       if (!bas) return;

@@ -105,6 +105,20 @@ func TestBuild(t *testing.T) {
 	}
 }
 
+func TestCompile(t *testing.T) {
+	s, _ := newTest(t)
+	code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"print 1"}`)
+	if code != 200 || m["neo"] == nil || m["bytes"].(float64) < 8 {
+		t.Errorf("compile : %d %v", code, m)
+	}
+	if code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"goto 1"}`); code != 422 || !strings.Contains(m["error"].(string), "ligne 1") {
+		t.Errorf("erreur de compilation : %d %v", code, m)
+	}
+	if code, _, _ := do(t, s, "POST", "/api/compile", `{bad`); code != 400 {
+		t.Errorf("JSON invalide : %d", code)
+	}
+}
+
 func TestDetok(t *testing.T) {
 	s, _ := newTest(t)
 	_, m, _ := do(t, s, "POST", "/api/build", `{"source":"print 1"}`)

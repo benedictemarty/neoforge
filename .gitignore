@@ -1,6 +1,7 @@
 # Binaires
 /neoforge
 /neobas
+/neoforgec
 
 # Artefacts Go
 *.test

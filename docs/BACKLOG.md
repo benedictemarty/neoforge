@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-20)** : sprints 0 et 1 **livrés** (v0.2.0) ; sprint 2 (compilateur, fondations) à ouvrir. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-20)** : sprints 0, 1 et 2 **livrés** (v0.3.0) ; sprint 3 (sprites, tiles, modes) à ouvrir — et sprint 4 : compilateur, suite (`input`, flottants, chaînes, graphisme). Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -43,17 +43,17 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S1-7 | E3    | 📎 Fichiers : données du programme (.gfx, niveaux…) envoyées dans `/storage` (validé : démo sprites crossdev) | P2   | FAIT |
 | S1-8 | E6    | Aperçu `vmode 1` (80 col.) : rendu Hercules vérifié dans la page (WASM Trinity)      | P2   | FAIT |
 
-## Sprint 2 — Compilateur, fondations (v0.3.0) — À OUVRIR
+## Sprint 2 — Compilateur, fondations (v0.3.0) — FAIT
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
-| S2-1 | E5    | Reprise du frontend (lexeur/parseur) d'oriced adapté à la grammaire NeoBASIC       | P1   | TODO |
-| S2-2 | E5    | Reprise de l'assembleur 6502 (+ opcodes 65C02 : BRA, PHX/PHY, STZ, TRB/TSB…)       | P1   | TODO |
-| S2-3 | E5    | Runtime minimal sur l'API `$FF00` : PRINT, INPUT, entiers, chaînes, FOR/WHILE/IF   | P1   | TODO |
-| S2-4 | E5    | Emballage `.neo` (`mkneo.py`) et exécution du binaire compilé dans Phosphoneo      | P1   | TODO |
-| S2-5 | E9    | Harnais différentiel interprété/compilé sur `--screenshot-text`                    | P1   | TODO |
+| S2-1 | E5    | Parseur NeoBASIC sur le flux d'éléments (`neobasic.Lex`), priorités de la table    | P1   | FAIT |
+| S2-2 | E5    | Assembleur 65C02 (`internal/asm`) validé contre 64tass (719 octets, 66 mnémoniques) | P1   | FAIT |
+| S2-3 | E5    | Runtime sur l'API `$FF00` : print, entiers 32 bits, chaînes, boucles, procs (`input` reporté) | P1   | FAIT |
+| S2-4 | E5    | Emballage `.neo` (oracle `mkneo.py`), `neoforgec`, ⚙ Compiler dans la page        | P1   | FAIT |
+| S2-5 | E9    | Harnais différentiel interprété/compilé (`make test-emu`, 7 programmes identiques) | P1   | FAIT |
 
-## Sprint 3 — Sprites, tiles, modes (v0.4.0) — TODO
+## Sprint 3 — Sprites, tiles, modes (v0.4.0) — À OUVRIR
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
@@ -61,6 +61,16 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S3-2 | E7    | Éditeur de tilemap (tiles 16×16, carte w×h), `tilemap`/`tiledraw` générés          | P1   | TODO |
 | S3-3 | E7    | Import d'image → palette + tiles (comme l'import HIRES d'oriced)                   | P2   | TODO |
 | S3-4 | E6    | Snippets/complétion spécifiques `vmode 1` (attributs MDA, 80×25)                   | P3   | TODO |
+
+## Sprint 4 — Compilateur, suite (v0.5.0) — TODO
+
+| ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
+|------|-------|------------------------------------------------------------------------------------|------|------|
+| S4-1 | E5    | `input`, `inkey$(`, comparaison de chaînes, `mid$(`/`left$(`/`right$(`/`val(`/`instr(` | P1   | TODO |
+| S4-2 | E5    | Flottants via le groupe 4 (`/`, constantes décimales, `sin(`…) et type mixte       | P1   | TODO |
+| S4-3 | E5    | Tableaux `dim`, `ref`, `case/when`, `goto`/`gosub` (listings d'époque)             | P2   | TODO |
+| S4-4 | E5    | Graphisme (5,x), sprites (6,x), tilemaps, son (8,x), `event(`, `vmode`             | P1   | TODO |
+| S4-5 | E9    | Corpus différentiel étendu (exemples de Trinity compilables)                       | P2   | TODO |
 
 ## Idées non planifiées
 
