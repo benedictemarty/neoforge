@@ -37,6 +37,9 @@ type gen struct {
 	locals   []string        // variables locales de la procédure en cours (restaurées à endproc)
 	used     map[string]bool // routines runtime utilisées
 	intVars  map[string]bool // variables numériques prouvées entières (chemin natif 32 bits)
+	arrays   map[string]int  // tableaux déclarés (dim) → nombre de dimensions
+	lines    map[int]bool    // lignes numérotées définies
+	gotos    []int           // cibles de goto/gosub à vérifier
 	errs     []string
 }
 
@@ -60,9 +63,14 @@ func compile(src string) (*gen, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
+	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}, arrays: map[string]int{}, lines: map[int]bool{}}
 	g.inferInt()
 	g.program()
+	for _, l := range g.gotos {
+		if !g.lines[l] {
+			g.errorf("goto/gosub vers la ligne %d : ligne absente", l)
+		}
+	}
 	if len(g.errs) > 0 {
 		return nil, nil, fmt.Errorf("%s", strings.Join(g.errs, "\n"))
 	}
@@ -132,7 +140,21 @@ func (g *gen) program() {
 	g.fill(256)
 	a.Label("LSTK") // pile des locales
 	g.fill(256)
-	a.Label("ENDPROG") // début du tas (alloc()
+	for _, name := range sortedKeys(mapKeys(g.arrays)) {
+		a.Label(arrLabel(name))
+		a.Bytes(0, 0)
+		a.Label(colsLabel(name))
+		a.Bytes(0, 0)
+	}
+	a.Label("ENDPROG") // début du tas (alloc(, dim)
+}
+
+func mapKeys(m map[string]int) map[string]bool {
+	out := map[string]bool{}
+	for k := range m {
+		out[k] = true
+	}
+	return out
 }
 
 func (g *gen) fill(n int) {
@@ -286,7 +308,9 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		g.hwStmt(s)
+		if !g.arrayStmt(s) {
+			g.hwStmt(s)
+		}
 	}
 }
 
@@ -404,32 +428,44 @@ func (g *gen) input(s *Input) {
 	a := g.a
 	for _, it := range s.Items {
 		v, isVar := it.X.(Var)
+		ix, isIdx := it.X.(Index)
 		switch {
 		case it.Sep == ",":
 			g.call("TAB")
 		case it.Sep == ";":
+		case isIdx: // élément de tableau : adresse sur la pile, saisie, puis rangement
+			if !g.checkArray(ix) {
+				continue
+			}
+			g.elemAddr(ix)
+			a.Op("lda", asm.Zp, zPTR)
+			a.Op("sta", asm.Zp, zACC)
+			a.Op("lda", asm.Zp, zPTR+1)
+			a.Op("sta", asm.Zp, zACC+1)
+			g.push()
+			g.inputValue(isStrName(ix.Name))
+			g.pop()
+			if isStrName(ix.Name) { // ACC → PTR2, INBUF → (PTR2)
+				a.Op("lda", asm.Zp, zTMP)
+				a.Op("sta", asm.Zp, zPTR2)
+				a.Op("lda", asm.Zp, zTMP+1)
+				a.Op("sta", asm.Zp, zPTR2+1)
+				g.setPTR("INBUF")
+				g.call("STRCOPY")
+			} else {
+				a.Op("lda", asm.Zp, zTMP)
+				a.Op("sta", asm.Zp, zPTR)
+				a.Op("lda", asm.Zp, zTMP+1)
+				a.Op("sta", asm.Zp, zPTR+1)
+				g.call("STOREELEM")
+			}
 		case isVar:
 			g.vars[v.Name] = true
+			g.inputValue(isStrName(v.Name))
 			if isStrName(v.Name) {
-				g.call("INPUTLINE")
 				g.setPTR("INBUF")
 				g.call("STRCOPY", varLabel(v.Name))
 			} else {
-				again := a.Uniq("input")
-				a.Label(again)
-				g.call("INPUTLINE")
-				g.setParamAddr(4, "INBUF")
-				emitMathCall(a, fnMathStrToNum)
-				ok := a.Uniq("input")
-				a.Op("lda", asm.Abs, apiError)
-				a.Branch("beq", ok)
-				a.Op("lda", asm.Imm, '?')
-				g.call("PRCHR")
-				a.Op("lda", asm.Imm, '?')
-				g.call("PRCHR")
-				a.Branch("bra", again)
-				a.Label(ok)
-				g.reg1ToACC()
 				g.storeACC(varLabel(v.Name))
 			}
 		case it.X.Type() == TStr:
@@ -444,6 +480,30 @@ func (g *gen) input(s *Input) {
 		a.Op("lda", asm.Imm, 13)
 		g.call("PRCHR")
 	}
+}
+
+// inputValue : lit une ligne dans INBUF ; pour un nombre, la convertit dans ACC
+// (« ?? » et relecture si invalide, comme l'interpréteur).
+func (g *gen) inputValue(str bool) {
+	a := g.a
+	if str {
+		g.call("INPUTLINE")
+		return
+	}
+	again, ok := a.Uniq("input"), a.Uniq("input")
+	a.Label(again)
+	g.call("INPUTLINE")
+	g.setParamAddr(4, "INBUF")
+	emitMathCall(a, fnMathStrToNum)
+	a.Op("lda", asm.Abs, apiError)
+	a.Branch("beq", ok)
+	a.Op("lda", asm.Imm, '?')
+	g.call("PRCHR")
+	a.Op("lda", asm.Imm, '?')
+	g.call("PRCHR")
+	a.Branch("bra", again)
+	a.Label(ok)
+	g.reg1ToACC()
 }
 
 // ─── Expressions entières (résultat dans ACC) ───────────────────────────────
@@ -461,6 +521,8 @@ func (g *gen) intExpr(x Expr) {
 	case Var:
 		g.vars[x.Name] = true
 		g.loadACC(varLabel(x.Name))
+	case Index:
+		g.indexValue(x)
 	case Unary:
 		g.intExpr(x.X)
 		switch {
@@ -741,6 +803,8 @@ func (g *gen) strExpr(x Expr) {
 	case Var:
 		g.vars[x.Name] = true
 		g.setPTR(bufLabel(x.Name))
+	case Index:
+		g.indexValue(x) // PTR = élément
 	case Binary: // concaténation dans un tampon propre au nœud
 		buf := g.newTemp()
 		g.strExpr(x.L)

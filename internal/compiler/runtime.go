@@ -21,7 +21,8 @@ var rtDeps = map[string][]string{
 var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NEG", "NOT", "ABS", "SGN", "BOOLEQ", "BOOLNE",
 	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
-	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT"}
+	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
+	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -53,6 +54,9 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT":
 		g.emitHwRoutine(name)
+		return
+	case "MUL16", "ZEROFILL", "LOADELEM", "STOREELEM":
+		g.emitArrayRoutine(name)
 		return
 	case "PUSH", "LPUSH": // empile ACC (type + 4 octets) sur STK (expressions) ou LSTK (locales)
 		stk, sp := "STK", zSP

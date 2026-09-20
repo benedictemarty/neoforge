@@ -11,8 +11,9 @@ import (
 // item est un élément lexical annoté de sa ligne (1-based) ; eol marque une fin de ligne.
 type item struct {
 	neobasic.Item
-	line int
-	eol  bool
+	line   int
+	eol    bool
+	lineNo int // > 0 : marqueur de début de ligne numérotée
 }
 
 // parser consomme le flux d'éléments produit par neobasic.Lex.
@@ -38,9 +39,11 @@ func Parse(src string) (*Program, error) {
 		if strings.HasPrefix(line, "#") {
 			return nil, fmt.Errorf("ligne %d : directive « %s » non prise en charge par le compilateur", n+1, line)
 		}
-		if line != "" && line[0] >= '0' && line[0] <= '9' { // numéro de ligne : ignoré
+		lineNo := 0
+		if line != "" && line[0] >= '0' && line[0] <= '9' { // numéro de ligne : cible possible de goto/gosub
 			i := 0
 			for i < len(line) && line[i] >= '0' && line[i] <= '9' {
+				lineNo = lineNo*10 + int(line[i]-'0')
 				i++
 			}
 			line = line[i:]
@@ -48,6 +51,9 @@ func Parse(src string) (*Program, error) {
 		its, err := neobasic.Lex(ts, line)
 		if err != nil {
 			return nil, fmt.Errorf("ligne %d : %v", n+1, err)
+		}
+		if lineNo > 0 {
+			p.items = append(p.items, item{line: n + 1, lineNo: lineNo})
 		}
 		for _, it := range its {
 			if it.Kind != neobasic.ItemComment {
@@ -171,6 +177,10 @@ func (p *parser) lineStmts(stopAtElse bool) ([]Stmt, error) {
 
 func (p *parser) statement() (Stmt, error) {
 	it := p.peek()
+	if it.lineNo > 0 {
+		p.next()
+		return &LineLabel{Line: it.lineNo}, nil
+	}
 	if it.Kind == neobasic.ItemIdent {
 		return p.assign()
 	}
@@ -274,6 +284,33 @@ func (p *parser) statement() (Stmt, error) {
 	case "end":
 		p.next()
 		return &End{}, nil
+	case "dim":
+		p.next()
+		d := &Dim{}
+		for {
+			v := p.next()
+			if v.Kind != neobasic.ItemIdent || !strings.HasSuffix(v.Text, "(") {
+				return nil, p.errorf("tableau attendu après dim (nom suivi de « ( »)")
+			}
+			idx, err := p.indices()
+			if err != nil {
+				return nil, err
+			}
+			d.Arrays = append(d.Arrays, Index{Name: strings.TrimSuffix(v.Text, "("), Idx: idx})
+			if !p.accept(",") {
+				return d, nil
+			}
+		}
+	case "goto", "gosub":
+		p.next()
+		n := p.next()
+		if n.Kind != neobasic.ItemInt {
+			return nil, p.errorf("numéro de ligne constant attendu après %s", it.Tok.Name)
+		}
+		return &Goto{Line: int(n.Int), Gosub: it.Tok.Name == "gosub"}, nil
+	case "return":
+		p.next()
+		return &Return{}, nil
 	case "cls":
 		p.next()
 		return &Cls{}, nil
@@ -281,13 +318,46 @@ func (p *parser) statement() (Stmt, error) {
 	return nil, p.errorf("instruction « %s » non prise en charge par le compilateur", it.Tok.Name)
 }
 
+// indices lit « i[,j] ) » (1 ou 2 indices) après un nom de tableau.
+func (p *parser) indices() ([]Expr, error) {
+	var idx []Expr
+	for {
+		x, err := p.expr(TInt)
+		if err != nil {
+			return nil, err
+		}
+		idx = append(idx, x)
+		if p.accept(")") {
+			if len(idx) > 2 {
+				return nil, p.errorf("au plus deux indices")
+			}
+			return idx, nil
+		}
+		if err := p.expect(","); err != nil {
+			return nil, err
+		}
+	}
+}
+
 func (p *parser) assign() (Stmt, error) {
 	v := p.next()
 	if v.Kind != neobasic.ItemIdent {
 		return nil, p.errorf("variable attendue")
 	}
-	if strings.HasSuffix(v.Text, "(") {
-		return nil, p.errorf("tableaux non pris en charge par le compilateur (%s)", strings.ToLower(v.Text))
+	if strings.HasSuffix(v.Text, "(") { // élément de tableau
+		idx, err := p.indices()
+		if err != nil {
+			return nil, err
+		}
+		target := Index{Name: strings.TrimSuffix(v.Text, "("), Idx: idx}
+		if err := p.expect("="); err != nil {
+			return nil, err
+		}
+		x, err := p.expr(target.Type())
+		if err != nil {
+			return nil, err
+		}
+		return &AssignIndex{Target: target, X: x}, nil
 	}
 	if err := p.expect("="); err != nil {
 		return nil, err
@@ -536,7 +606,11 @@ func (p *parser) unary() (Expr, error) {
 		return StrLit{V: it.Text}, nil
 	case neobasic.ItemIdent:
 		if strings.HasSuffix(it.Text, "(") {
-			return nil, fmt.Errorf("ligne %d : tableaux non pris en charge (%s)", it.line, strings.ToLower(it.Text))
+			idx, err := p.indices()
+			if err != nil {
+				return nil, err
+			}
+			return Index{Name: strings.TrimSuffix(it.Text, "("), Idx: idx}, nil
 		}
 		return Var{Name: it.Text}, nil
 	}

@@ -85,10 +85,10 @@ func TestDifferential(t *testing.T) {
 			// <nom>.keys : frappe automatique (syntaxe --type-keys) pour les programmes à input.
 			var extra []string
 			if keys, err := os.ReadFile(strings.TrimSuffix(f, ".bsc") + ".keys"); err == nil {
-				extra = []string{"--type-keys", "4000000:" + strings.TrimSpace(string(keys))}
+				extra = []string{"--type-keys", "12000000:" + strings.TrimSpace(string(keys))}
 			}
-			want, wantImg := screenAndImage(t, emu, append([]string{basic + "@800", basFile, "--cycles", "20000000"}, extra...)...)
-			got, gotImg := screenAndImage(t, emu, append([]string{neoFile, "--cycles", "20000000"}, extra...)...)
+			want, wantImg := screenAndImage(t, emu, append([]string{basic + "@800", basFile, "--cycles", "30000000"}, extra...)...)
+			got, gotImg := screenAndImage(t, emu, append([]string{neoFile, "--cycles", "30000000"}, extra...)...)
 			if got != want {
 				t.Errorf("écrans différents\n--- interprété\n%q\n--- compilé\n%q", want, got)
 			} else if n := imageDiff(wantImg, gotImg); n != 0 {

@@ -80,3 +80,34 @@ func TestHwForms(t *testing.T) {
 		}
 	}
 }
+
+func TestArraysAndGoto(t *testing.T) {
+	src := "dim a(3), b$(2), m(1,2)\na(1) = 2: b$(0) = \"x\": m(1,2) = a(1)\nprint a(1); b$(0); m(1,2); len(b$(1))\ninput a(0), b$(1)\n10 goto 30\n20 gosub 40\n30 return\n40 print 1\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ src, want string }{
+		{"dim 1", "tableau attendu"},
+		{"dim a(1,2,3)", "au plus deux indices"},
+		{"dim a(\"x\")", "nombre attendu"},
+		{"dim a(1 2)", "« , » attendu"},
+		{"a(1) = 2", "avant dim"},
+		{"dim a(1)\na(1,2) = 2", "indice(s)"},
+		{"dim a(1)\nprint a(1,2)", "indice(s)"},
+		{"dim a(1)\ninput a(1,2)", "indice(s)"},
+		{"dim a(1)\na(\"x\") = 2", "nombre attendu"},
+		{"dim a(1)\na(1) = \"x\"", "nombre attendu"},
+		{"dim a$(1)\na$(1) = 2", "chaîne attendue"},
+		{"dim a(1)\na(1) 2", "« = » attendu"},
+		{"goto x", "numéro de ligne constant"},
+		{"goto 99", "ligne absente"},
+		{"10 print 1\n10 print 2", "définie deux fois"},
+	} {
+		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)
+		}
+	}
+	if (Index{Name: "A$"}).Type() != TStr || (Index{Name: "A"}).Type() != TInt {
+		t.Error("Index.Type")
+	}
+}

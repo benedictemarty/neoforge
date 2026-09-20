@@ -1,6 +1,6 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants, S4-4 graphisme/sprites/son livrés).
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants, S4-3 tableaux/goto, S4-4 graphisme/sprites/son livrés).
 
 ## Utilisation
 
@@ -19,8 +19,8 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | entiers 32 bits signés (`+ - * \ % & \| ^ << >>`, comparaisons → -1/0, `not` logique, `-` unaire) ; **flottants** simple précision (constantes décimales, `/`, `sin( cos( tan( atan( atan2( log( exp( sqr( pow( rnd( int( abs( sgn(`, mixte entier/flottant) | `& \| ^ << >>` sur un flottant |
 | chaînes : constantes, variables (`x$`, 255 caractères), `+`, comparaisons (`= <> < > <= >=`, lexicographiques → -1/0), `len( asc( chr$( str$( left$( right$( mid$( instr( val( isval( upper$( lower$( spc( inkey$(` | `tab(`, `key(`, `event(` |
 | `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
-| `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `goto`/`gosub`, `on error`, `case/when` |
-| `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers) | `ref`, tableaux (`dim`), récursion |
+| `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `on error` |
+| `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | `ref`, récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
 | `abs( sgn( int( min( max( rand( alloc( true false` | assembleur `[ ]`, `pin`/`i2c`/`serial`, `mouse`, turtle |
 | **graphisme chaîné** `move line rect ellipse plot text image tiledraw` (`from to by x,y ink solid frame dim`), **`sprite`** (`image to by flip anchor hide`, `sprite clear`), `gload`, `tilemap`, `sound`/`noise`/`sfx`, `vmode`, `ink`, `cursor`, `palette` ; fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` | `joypad(` à 3 arguments, `mouse(`, `frame`, fichiers |
 
@@ -32,7 +32,10 @@ base 1 (`instr(a$,"")` = 1, `mid$(a$,20)` = ""), `right$(a$,50)` = la chaîne en
 
 Divergences assumées (l'interpréteur signale une erreur, le compilé continue) : `mid$(a$,0,…)` est traité
 comme `mid$(a$,1,…)`, un argument négatif de `left$`/`right$`/`mid$`/`spc` vaut 0, `val(` d'un texte non
-numérique vaut 0.
+numérique vaut 0 ; les indices de tableau ne sont pas contrôlés (l'interpréteur signale « Out Of Range »).
+
+Tableaux : alloués sur le tas à l'exécution de `dim` (éléments numériques de 5 octets, chaînes de 256 octets —
+`dim s$(100)` occupe 25 Ko), adressés par `i × colonnes + j` (multiplication 16 bits), mis à zéro.
 
 ## Matériel : mêmes appels API que l'interpréteur
 

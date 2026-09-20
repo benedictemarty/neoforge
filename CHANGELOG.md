@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : tableaux et goto (S4-3)
+- `dim a(n[,m])` (bornes incluses, tailles dynamiques, tableaux de chaînes), éléments en lecture/écriture/`input`,
+  `goto`/`gosub`/`return` vers des lignes numérotées (marqueurs de ligne conservés par le parseur, cibles
+  vérifiées à la compilation). Différentiel : 12 programmes identiques (texte et image).
+- Fait relevé : `case`/`when` répond « Not Implemented » dans NeoBASIC — non implémenté.
 ### Ajouté — compilateur : matériel (S4-4)
 - Commandes graphiques chaînées (`move line rect ellipse plot text image tiledraw` + `from to by ink solid frame
   dim`), `sprite` (héritage du bloc entre sprites d'une même commande, comme l'interpréteur), `gload`, `tilemap`,

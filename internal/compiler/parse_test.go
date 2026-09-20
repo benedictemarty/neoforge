@@ -25,9 +25,9 @@ func TestParseErrors(t *testing.T) {
 		{"print min(1 2)", "« , » attendu"},
 		{"x = then", "« then » inattendu"},
 		{"x = -\"a\"", "nombre attendu après"},
-		{"a(1) = 2", "tableaux"},
-		{"print a(1)", "tableaux"},
-		{"goto 10", "non prise en charge"},
+		{"a(1) = 2", "avant dim"},
+		{"print a(1)", "avant dim"},
+		{"case x", "non prise en charge"},
 		{"= 1", "non prise en charge"},
 		{"\"x\" = 1", "instruction attendue"},
 		{"let 1 = 2", "variable attendue"},
@@ -50,13 +50,13 @@ func TestParseErrors(t *testing.T) {
 		{"endif", "non prise en charge"},
 		{"print 1 )", "inattendu"},
 		{"poke 1 2", "« , » attendu"},
-		{"x = zz(", "tableaux"},
+		{"x = zz(", "expression attendue"},
 		{"call a(1)\nend\nproc a()\nendproc", "argument(s)"},
 		{"call a(1)\nend\nproc a(s$)\nendproc", "type incompatible"},
 		{"exit", "exit hors"},
 		{"input #1, a", "input sur fichier"},
 		{"input 2 *", "expression attendue"},
-		{"input a(1)", "tableaux"},
+		{"input a(1)", "avant dim"},
 		{"local s$", "local sur une chaîne"},
 		// propagation des erreurs dans chaque construction
 		{"while \"a\"\nwend", "nombre attendu"},
@@ -124,7 +124,7 @@ func TestParseForms(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prog.Body) != 9 || len(prog.Procs) != 1 {
+	if len(prog.Body) != 11 || len(prog.Procs) != 1 { // dont 2 étiquettes de ligne
 		t.Errorf("%d instructions, %d procédures", len(prog.Body), len(prog.Procs))
 	}
 	if _, err := Compile(src); err != nil {

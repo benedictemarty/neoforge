@@ -1,0 +1,25 @@
+dim a(5), b$(3), m(2,3)
+for i = 0 to 5: a(i) = i * i: next
+print a(0); a(5); a(2) + a(3)
+b$(0) = "x": b$(3) = "yz"
+print b$(0) + b$(3); len(b$(1)); b$(3) = "yz"
+m(2,3) = 7: m(0,0) = 1: m(1,2) = 2.5
+print m(2,3); m(0,0); m(1,1); m(1,2) * 2
+n = 3
+dim c(n)
+c(n) = 42: c(0) = -1
+print c(3); c(0); c(1)
+s = 0
+for i = 0 to 2: for j = 0 to 3: m(i,j) = i * 10 + j: next: next
+for i = 0 to 2: for j = 0 to 3: s = s + m(i,j): next: next
+print "somme="; s
+input a(1)
+print a(1) + 1
+1000 print "mille"
+gosub 1100
+goto 1030
+1020 print "jamais"
+1030 print "trente"
+end
+1100 print "sous-programme"
+return

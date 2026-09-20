@@ -27,6 +27,12 @@ type StrLit struct{ V string }
 // Var est une variable (nom en majuscules, suffixe $ pour une chaîne).
 type Var struct{ Name string }
 
+// Index est un élément de tableau : a(i) ou m(i,j) (Name avec le suffixe « ( » retiré).
+type Index struct {
+	Name string
+	Idx  []Expr
+}
+
 // Binary est une opération binaire (Op : nom du token, ex. "+", "<>", "\").
 type Binary struct {
 	Op   string
@@ -61,6 +67,12 @@ func (b Binary) Type() Type {
 	return TInt // comparaisons de chaînes comprises
 }
 func (Unary) Type() Type { return TInt }
+func (x Index) Type() Type {
+	if isStrName(x.Name) {
+		return TStr
+	}
+	return TInt
+}
 func (c Call) Type() Type {
 	if (len(c.Name) > 0 && c.Name[len(c.Name)-1] == '$') || c.Name == "spc" {
 		return TStr
@@ -155,6 +167,34 @@ type CallProc struct {
 type Local struct {
 	stmtMarker
 	Names []string
+}
+
+// Dim : dim a(n[,m]), … (bornes incluses : indices 0..n).
+type Dim struct {
+	stmtMarker
+	Arrays []Index
+}
+
+// AssignIndex : a(i[,j]) = expression.
+type AssignIndex struct {
+	stmtMarker
+	Target Index
+	X      Expr
+}
+
+// Goto / Gosub / Return : numéros de ligne constants (portage de listings).
+type Goto struct {
+	stmtMarker
+	Line  int
+	Gosub bool
+}
+
+type Return struct{ stmtMarker }
+
+// LineLabel marque le début d'une ligne numérotée (cible de goto/gosub).
+type LineLabel struct {
+	stmtMarker
+	Line int
 }
 
 // Input : même forme que Print ; un item Var est lu au clavier (chaîne ou nombre).
