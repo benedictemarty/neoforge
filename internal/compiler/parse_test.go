@@ -127,8 +127,7 @@ func TestParseForms(t *testing.T) {
 	if (Binary{Op: "+", L: StrLit{}, R: StrLit{}}).Type() != TStr || (Binary{Op: "=", L: IntLit{}, R: IntLit{}}).Type() != TInt {
 		t.Error("types binaires")
 	}
-	var s Stmt = &End{}
-	s.stmt()
+	stmtMarker{}.stmt()
 }
 
 // Le corpus compile sans l'émulateur et chaque programme est déterministe.

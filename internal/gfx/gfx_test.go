@@ -144,6 +144,43 @@ func TestObjects(t *testing.T) {
 	}
 }
 
+// Sans fichiers externes : ensemble synthétique des trois genres, aller-retour, numéros, planches.
+func TestSyntheticSet(t *testing.T) {
+	s := &Set{Tiles: []Object{Blank(Tile16), New(Tile16)}, Sprites16: []Object{New(Sprite16)}, Sprites32: []Object{New(Sprite32)}}
+	s.Tiles[1].Pix[3] = 5
+	s.Sprites16[0].Pix[0] = 1
+	s.Sprites32[0].Pix[1023] = 15
+	data, err := s.Render()
+	if err != nil || len(data) != 256+128*3+512 {
+		t.Fatalf("Render : %v, %d octets", err, len(data))
+	}
+	back, err := Parse(data)
+	if err != nil || len(back.Tiles) != 2 || back.Tiles[1].Pix[3] != 5 || back.Sprites16[0].Pix[0] != 1 || back.Sprites32[0].Pix[1023] != 15 {
+		t.Fatalf("Parse : %v %+v", err, back)
+	}
+	objs, ids := back.Objects()
+	if len(objs) != 4 || ids[0] != 0 || ids[1] != 1 || ids[2] != 0x80 || ids[3] != 0xC0 {
+		t.Errorf("Objects : %v", ids)
+	}
+	// Planche de tuiles sur deux rangées (17 objets), réimportée.
+	var many []Object
+	for i := 0; i < 17; i++ {
+		o := Blank(Tile16)
+		o.Pix[i] = uint8(1 + i%7) // jamais 8 (noir = tuile vide pour makeimg)
+		many = append(many, o)
+	}
+	again := ImportSheet(Sheet(many, Tile16, 0), Tile16)
+	if len(again) != 17 || again[16].Pix[16] != 3 {
+		t.Errorf("planche 2 rangées : %d objets", len(again))
+	}
+	// Planche de sprites 32 avec un objet.
+	sp := New(Sprite32)
+	sp.Pix[0] = 9
+	if got := ImportSheet(Sheet([]Object{sp}, Sprite32, 0), Sprite32); len(got) != 1 || got[0].Pix[0] != 9 {
+		t.Error("planche sprites 32")
+	}
+}
+
 func TestSetErrors(t *testing.T) {
 	if _, err := Parse([]byte{1, 2}); err == nil {
 		t.Error("court : erreur attendue")
