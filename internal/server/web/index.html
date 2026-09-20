@@ -27,10 +27,43 @@
       <button id="btn-fullscreen" title="Émulateur en plein écran">⛶</button>
       <label class="btn" title="Envoyer des fichiers de données (.gfx, niveaux, .bas…) dans le stockage de l'émulateur (/storage)">📎 Fichiers<input type="file" id="storage-files" multiple hidden /></label>
       <button id="btn-help" title="Aide des commandes NeoBASIC (F1)">❔ Aide</button>
+      <button id="btn-gfx" title="Éditeur de sprites, tuiles et tilemaps (graphics.gfx)">🎨 Graphismes</button>
     </div>
     <span id="status" class="status"></span>
   </header>
   <main>
+    <section id="gfx-pane" hidden aria-label="Graphismes">
+      <div class="gfx-bar">
+        <input id="gfx-name" type="text" value="graphics.gfx" size="14" title="Nom du fichier .gfx" />
+        <label class="btn" title="Ouvrir un .gfx">📂 .gfx<input type="file" id="gfx-open" accept=".gfx" hidden /></label>
+        <button id="gfx-save" title="Télécharger le .gfx">⬇ .gfx</button>
+        <button id="gfx-storage" title="Envoyer dans /storage de l'émulateur (gload)">→ /storage</button>
+        <select id="gfx-sheet-kind" title="Genre pour l'import/export de planche PNG (format makeimg)"><option value="tile16">tuiles 16</option><option value="sprite16">sprites 16</option><option value="sprite32">sprites 32</option></select>
+        <label class="btn" title="Importer une planche PNG (tile_16.png, sprite_16.png, sprite_32.png)">📥 planche PNG<input type="file" id="gfx-sheet-in" accept="image/png" hidden /></label>
+        <button id="gfx-sheet-out" title="Exporter la planche PNG du genre choisi">📤 planche PNG</button>
+        <span id="gfx-count" class="dim"></span>
+      </div>
+      <div class="gfx-body">
+        <div class="gfx-col">
+          <div class="gfx-tools"><button id="gfx-add-tile16">+ tuile</button><button id="gfx-add-sprite16">+ sprite 16</button><button id="gfx-add-sprite32">+ sprite 32</button><button id="gfx-delete" title="Supprimer l'objet">🗑</button></div>
+          <div id="gfx-list"></div>
+        </div>
+        <div class="gfx-col">
+          <div class="gfx-tools"><button id="gfx-pen" title="Crayon">✏️</button><button id="gfx-fill" title="Remplissage">🪣</button><button id="gfx-fliph" title="Miroir horizontal">↔</button><button id="gfx-flipv" title="Miroir vertical">↕</button><button id="gfx-clear" title="Effacer">⌫</button></div>
+          <div id="gfx-palette"></div>
+          <canvas id="gfx-canvas" width="256" height="256"></canvas>
+        </div>
+        <div class="gfx-col">
+          <div class="gfx-tools">
+            <b>Tilemap</b> <span id="map-size" class="dim"></span> <span id="map-tile" class="dim"></span>
+            <input id="map-w" type="number" min="1" max="255" value="20" size="3" title="largeur" /> × <input id="map-h" type="number" min="1" max="255" value="15" size="3" title="hauteur" /><button id="map-resize">redimensionner</button>
+          </div>
+          <div class="gfx-tools"><button id="map-use" title="Peindre avec la tuile sélectionnée">tuile sélectionnée</button><button id="map-transparent" title="$F0">transparent</button><button id="map-solid" title="$F1-$FF : plein de la couleur courante">plein</button></div>
+          <canvas id="map-canvas" width="320" height="240" title="clic : poser ; clic droit : prélever"></canvas>
+          <div class="gfx-tools"><input id="map-name" type="text" value="level.map" size="10" /><label class="btn">📂 .map<input type="file" id="map-open" hidden /></label><button id="map-save">⬇ .map</button><button id="map-storage">→ /storage</button><button id="map-basic" title="Insérer le code NeoBASIC (alloc/poke/data) dans l'éditeur">→ BASIC</button></div>
+        </div>
+      </div>
+    </section>
     <section id="editor-pane">
       <div id="tabs" role="tablist"></div>
       <div id="editor" aria-label="Éditeur"></div>

@@ -17,6 +17,7 @@ button.primary { background: #2c4a9a; border-color: #3b62c4; }
 main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
 main.with-help { grid-template-columns: 1fr 320px 1fr; }
 #editor-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
+#editor-pane[hidden] { display: none; }
 #editor { flex: 1; min-height: 0; }
 #tabs { display: flex; gap: 2px; padding: 4px 6px 0; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tab { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-bottom: none; border-radius: 6px 6px 0 0; color: var(--dim); cursor: pointer; white-space: nowrap; font-size: 13px; }
@@ -40,3 +41,19 @@ canvas:focus { box-shadow: 0 0 0 2px var(--accent); }
 .help-item .notes { color: var(--dim); font-size: 12px; margin-top: 2px; }
 .help-item .section { color: var(--dim); font-size: 11px; float: right; }
 .help-credit { color: var(--dim); font-size: 11px; margin: 0; padding: 6px 10px; border-top: 1px solid var(--line); }
+#gfx-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); overflow: auto; }
+#gfx-pane[hidden] { display: none; }
+.gfx-bar, .gfx-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px; border-bottom: 1px solid var(--line); }
+.gfx-body { display: flex; gap: 10px; padding: 6px; align-items: flex-start; flex-wrap: wrap; }
+.gfx-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+#gfx-list { display: flex; flex-wrap: wrap; gap: 4px; max-width: 200px; max-height: 60vh; overflow: auto; }
+.gfx-item { display: flex; flex-direction: column; align-items: center; padding: 3px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font-size: 11px; color: var(--dim); }
+.gfx-item.active { border-color: var(--accent); color: var(--ink); }
+.gfx-item canvas { image-rendering: pixelated; }
+#gfx-palette { display: grid; grid-template-columns: repeat(8, 24px); gap: 3px; }
+.swatch { width: 24px; height: 24px; padding: 0; border: 2px solid var(--line); border-radius: 4px; }
+.swatch.active { border-color: #fff; }
+#gfx-canvas, #map-canvas { image-rendering: pixelated; border: 1px solid var(--line); background: #000; max-width: 100%; }
+#gfx-canvas { width: 256px; height: 256px; }
+#map-canvas { max-width: 480px; }
+.dim { color: var(--dim); font-size: 12px; }

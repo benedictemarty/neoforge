@@ -1,6 +1,7 @@
 // Application neoforge : éditeur Monaco (NeoBASIC) + émulateur Phosphoneo (WASM).
 import { registerNeoBasic } from "/neobasic-lang.js";
 import { decodeBase64, errorLine, storageName, filterHelp, tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle } from "/editor-logic.js";
+import { setupGfxEditor } from "/gfx-editor.js";
 
 const el = (id) => document.getElementById(id);
 const status = (msg, err) => { const s = el("status"); s.textContent = msg; s.classList.toggle("err", !!err); };
@@ -277,6 +278,20 @@ async function main() {
     });
 
     el("btn-new").addEventListener("click", () => { openTab("", DEFAULT_SOURCE); diag(""); });
+
+    // ─── 🎨 Graphismes : panneau à la place de l'éditeur (S3-1, S3-2) ────────
+    const sendToStorage = (name, bytes) => {
+      if (!emuReady) { status("Émulateur non prêt", true); return; }
+      Module.FS.writeFile("/storage/" + storageName(name, true), bytes);
+      status(storageName(name, true) + " envoyé dans /storage");
+    };
+    setupGfxEditor({ status, sendToStorage, insertText: (text) => { editor.trigger("gfx", "type", { text }); toggleGfx(false); editor.focus(); } });
+    const toggleGfx = (show) => {
+      const pane = el("gfx-pane");
+      pane.hidden = show === undefined ? !pane.hidden : !show;
+      el("editor-pane").hidden = !pane.hidden;
+    };
+    el("btn-gfx").addEventListener("click", () => toggleGfx());
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
     // Stop : web_type("\\e") (frappe automatique de Phosphoneo) si l'export existe, sinon touche synthétique.
     el("btn-stop").addEventListener("click", () => {
