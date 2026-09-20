@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Marqueur ESM pour node --test sur web/*.js et webtest/*.js (non embarqué, ignoré par Go)."
+}

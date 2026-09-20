@@ -1,0 +1,12 @@
+# Binaires
+/neoforge
+/neobas
+
+# Artefacts Go
+*.test
+*.out
+coverage.out
+/dist/
+
+# Émulateur WASM (servi depuis ~/Phosphoneo/web, jamais versionné ici)
+/internal/server/web/emu/

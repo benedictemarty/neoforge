@@ -1,0 +1,77 @@
+# neoforge
+
+**Éditeur NeoBASIC moderne pour Neo6502** — portage de la Forge Oric ([oriced](../forge)) sur le
+Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
+
+[![Licence: EUPL 1.2](https://img.shields.io/badge/licence-EUPL--1.2-blue.svg)](LICENSE)
+
+`neoforge` est un serveur Go qui embarque l'éditeur **Monaco** (moteur de VS Code) avec un langage
+**NeoBASIC** (coloration, complétion, aide au survol) et l'émulateur **[Phosphoneo](../Phosphoneo)**
+compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
+page*, à droite, sur le vrai firmware Neo6502.
+
+> État : **sprint 0 livré (v0.1.0)** — socle, tokeniseur NeoBASIC, page éditeur + émulateur, CLI `neobas`.
+> Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
+
+## Architecture en un coup d'œil
+
+```
+Navigateur : Monaco (édition NeoBASIC)      Phosphoneo WASM (65C02 + firmware Trinity, canvas)
+        │ POST /api/build {source}                  ▲ Module.FS /storage/prog.bas + web_load_neo
+        ▼                                           │
+Serveur Go (neoforge) ── internal/neobasic ── prog.bas (tokenisé, = makebasic.py) ──┘
+                        ── /emu/ ← ~/Phosphoneo/web (phosphoneo.js/.wasm/.data)
+```
+
+Voir `docs/ARCHITECTURE.md`.
+
+## Prérequis
+
+- Go ≥ 1.26 ; `node` pour les tests JS ; `python3` pour le test différentiel (optionnel).
+- **Phosphoneo** construit en WebAssembly : `make -C ~/Phosphoneo wasm` (emsdk) → `~/Phosphoneo/web/`.
+  Sans lui, l'éditeur fonctionne (tokenisation, `.bas` téléchargeable) mais l'écran reste vide.
+
+## Démarrer
+
+```bash
+make run          # http://127.0.0.1:8098
+```
+
+- **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
+  dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
+- **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel.
+- **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.
+- **⌨ Clavier → Neo** : donne le clavier à l'émulateur (ou cliquer sur l'écran).
+
+## Configuration (variables d'environnement)
+
+| Variable                  | Défaut              | Rôle                                            |
+|---------------------------|---------------------|-------------------------------------------------|
+| `NEOFORGE_ADDR`           | `127.0.0.1:8098`    | Adresse d'écoute HTTP                           |
+| `NEOFORGE_PHOSPHONEO_WEB` | `~/Phosphoneo/web`  | Build WASM de Phosphoneo (servi sous `/emu/`)   |
+| `NEOFORGE_PROJECTS_DIR`   | `~/NeoPrograms`     | Programmes `.bsc` (Ouvrir/Enregistrer)          |
+
+## Outil en ligne de commande
+
+```bash
+go build -o neobas ./cmd/neobas
+./neobas -o hello.bas examples/hello.bsc     # équivalent de makebasic.py (identique octet pour octet)
+./neobas -library -o lib.bas lib.bsc         # bibliothèque (numéros de ligne à 0)
+```
+
+## Développement
+
+```bash
+make test         # tests Go
+make test-js      # logique de l'éditeur (node --test)
+make cover-check  # porte : 100 % de couverture
+make vet fmt
+make e2e          # neobas → Phosphoneo natif → écran vérifié
+```
+
+La tokenisation est vérifiée en **différentiel** contre `makebasic.py` (75 programmes `.bsc` du firmware,
+identiques octet pour octet) — test sauté si les scripts ou `python3` sont absents.
+
+## Licence
+
+**EUPL-1.2** — voir `LICENSE`. © bmarty.

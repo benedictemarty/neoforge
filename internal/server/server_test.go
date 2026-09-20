@@ -1,0 +1,138 @@
+package server
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/bmarty/neoforge/internal/config"
+)
+
+func newTest(t *testing.T) (*Server, config.Config) {
+	t.Helper()
+	cfg := config.Config{PhosphoneoWeb: t.TempDir(), ProjectsDir: filepath.Join(t.TempDir(), "progs")}
+	return New(cfg, "test"), cfg
+}
+
+func do(t *testing.T, s *Server, method, url, body string) (int, map[string]any, string) {
+	t.Helper()
+	var r *http.Request
+	if body != "" {
+		r = httptest.NewRequest(method, url, strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+	} else {
+		r = httptest.NewRequest(method, url, nil)
+	}
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, r)
+	var m map[string]any
+	json.Unmarshal(w.Body.Bytes(), &m)
+	return w.Code, m, w.Body.String()
+}
+
+func TestStaticAndConfig(t *testing.T) {
+	s, cfg := newTest(t)
+	if code, _, body := do(t, s, "GET", "/", ""); code != 200 || !strings.Contains(body, "neoforge") {
+		t.Errorf("/ : %d", code)
+	}
+	if code, _, _ := do(t, s, "GET", "/vendor/vs/loader.js", ""); code != 200 {
+		t.Errorf("Monaco : %d", code)
+	}
+	code, m, _ := do(t, s, "GET", "/api/config", "")
+	if code != 200 || m["version"] != "test" || m["emulator"] != false {
+		t.Errorf("config : %d %v", code, m)
+	}
+	os.WriteFile(filepath.Join(cfg.PhosphoneoWeb, "phosphoneo.wasm"), []byte("wasm"), 0o644)
+	if _, m, _ := do(t, s, "GET", "/api/config", ""); m["emulator"] != true {
+		t.Error("émulateur non détecté")
+	}
+	if code, _, body := do(t, s, "GET", "/emu/phosphoneo.wasm", ""); code != 200 || body != "wasm" {
+		t.Errorf("/emu/ : %d %q", code, body)
+	}
+}
+
+func TestKeywords(t *testing.T) {
+	s, _ := newTest(t)
+	code, _, body := do(t, s, "GET", "/api/keywords", "")
+	var kws []Keyword
+	json.Unmarshal([]byte(body), &kws)
+	if code != 200 || len(kws) < 200 {
+		t.Fatalf("keywords : %d, %d entrées", code, len(kws))
+	}
+	seen := map[string]string{}
+	for _, k := range kws {
+		seen[k.Name] = k.Kind
+	}
+	if seen["PRINT"] != "statement" || seen["RND("] != "function" || seen["LDA"] != "asm" || seen["WHILE"] != "structure" {
+		t.Errorf("genres : %v %v %v %v", seen["PRINT"], seen["RND("], seen["LDA"], seen["WHILE"])
+	}
+	if _, ok := seen["!!STR"]; ok {
+		t.Error("token interne exposé")
+	}
+}
+
+func TestBuild(t *testing.T) {
+	s, _ := newTest(t)
+	code, m, _ := do(t, s, "POST", "/api/build", `{"source":"print 1\nprint 2\n"}`)
+	if code != 200 || m["lines"] != 2.0 || m["bas"] == nil {
+		t.Errorf("build : %d %v", code, m)
+	}
+	if code, m, _ := do(t, s, "POST", "/api/build", `{"source":"print \"x\n"}`); code != 422 || !strings.Contains(m["error"].(string), "ligne 1") {
+		t.Errorf("erreur de source : %d %v", code, m)
+	}
+	if code, _, _ := do(t, s, "POST", "/api/build", `{bad`); code != 400 {
+		t.Errorf("JSON invalide : %d", code)
+	}
+	if code, _, _ := do(t, s, "GET", "/api/build", ""); code != 405 && code != 404 {
+		t.Errorf("GET /api/build : %d", code)
+	}
+}
+
+func TestFiles(t *testing.T) {
+	s, cfg := newTest(t)
+	// Répertoire absent : liste vide.
+	if code, _, body := do(t, s, "GET", "/api/files", ""); code != 200 || strings.TrimSpace(body) != "[]" {
+		t.Errorf("files (absent) : %d %q", code, body)
+	}
+	if code, _, _ := do(t, s, "PUT", "/api/file?name=../x.bsc", `{"source":"x"}`); code != 400 {
+		t.Errorf("nom invalide : %d", code)
+	}
+	if code, _, _ := do(t, s, "PUT", "/api/file?name=a.bsc", `{bad`); code != 400 {
+		t.Errorf("JSON invalide : %d", code)
+	}
+	if code, _, _ := do(t, s, "PUT", "/api/file?name=a.bsc", `{"source":"print 1"}`); code != 200 {
+		t.Errorf("enregistrement : %d", code)
+	}
+	os.Mkdir(filepath.Join(cfg.ProjectsDir, "dir.bsc"), 0o755)
+	os.WriteFile(filepath.Join(cfg.ProjectsDir, "notes.txt"), nil, 0o644)
+	if code, _, body := do(t, s, "GET", "/api/files", ""); code != 200 || strings.TrimSpace(body) != `["a.bsc"]` {
+		t.Errorf("files : %d %q", code, body)
+	}
+	if code, m, _ := do(t, s, "GET", "/api/file?name=a.bsc", ""); code != 200 || m["source"] != "print 1" {
+		t.Errorf("lecture : %d %v", code, m)
+	}
+	if code, _, _ := do(t, s, "GET", "/api/file?name=zz.bsc", ""); code != 404 {
+		t.Errorf("absent : %d", code)
+	}
+	if code, _, _ := do(t, s, "GET", "/api/file?name=.hidden.bsc", ""); code != 400 {
+		t.Errorf("caché : %d", code)
+	}
+	// Erreurs d'E/S : répertoire de projets = fichier.
+	bad := New(config.Config{ProjectsDir: filepath.Join(cfg.ProjectsDir, "notes.txt")}, "t")
+	if code, _, _ := do(t, bad, "GET", "/api/files", ""); code != 500 {
+		t.Errorf("ReadDir sur fichier : %d", code)
+	}
+	if code, _, _ := do(t, bad, "PUT", "/api/file?name=a.bsc", `{"source":"x"}`); code != 500 {
+		t.Errorf("MkdirAll sur fichier : %d", code)
+	}
+	ro := New(config.Config{ProjectsDir: filepath.Join(cfg.ProjectsDir, "dir.bsc")}, "t")
+	os.Chmod(filepath.Join(cfg.ProjectsDir, "dir.bsc"), 0o555)
+	defer os.Chmod(filepath.Join(cfg.ProjectsDir, "dir.bsc"), 0o755)
+	if code, _, _ := do(t, ro, "PUT", "/api/file?name=a.bsc", `{"source":"x"}`); code != 500 && os.Getuid() != 0 {
+		t.Errorf("WriteFile en lecture seule : %d", code)
+	}
+}

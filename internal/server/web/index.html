@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>neoforge — éditeur NeoBASIC pour Neo6502</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header id="ribbon">
+    <div class="brand">neoforge <small>NeoBASIC · Neo6502 · Phosphoneo</small></div>
+    <div class="group">
+      <select id="files" title="Programmes du répertoire de projets"></select>
+      <button id="btn-open" title="Ouvrir le programme sélectionné">Ouvrir</button>
+      <input id="fname" type="text" placeholder="nom.bsc" size="14" title="Nom du programme" />
+      <button id="btn-save" title="Enregistrer (Ctrl+S)">💾 Enregistrer</button>
+      <button id="btn-new" title="Nouveau programme">📄 Nouveau</button>
+    </div>
+    <div class="group">
+      <button id="btn-run" class="primary" title="Tokeniser et lancer dans l'émulateur (F5)">▶ Exécuter</button>
+      <button id="btn-download" title="Télécharger le .bas tokenisé (clé USB du Neo6502)">⬇ .bas</button>
+      <button id="btn-focus" title="Donner le clavier à l'émulateur">⌨ Clavier → Neo</button>
+      <button id="btn-fullscreen" title="Émulateur en plein écran">⛶</button>
+    </div>
+    <span id="status" class="status"></span>
+  </header>
+  <main>
+    <section id="editor" aria-label="Éditeur"></section>
+    <section id="emu" aria-label="Émulateur">
+      <div id="frame"><canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas></div>
+      <div id="emu-status">Chargement de l'émulateur…</div>
+    </section>
+  </main>
+  <footer id="diag"></footer>
+  <script src="/vendor/vs/loader.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

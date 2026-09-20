@@ -1,0 +1,23 @@
+# Changelog
+
+Toutes les modifications notables de **neoforge** sont consignées ici.
+Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
+versionnage [SemVer](https://semver.org/lang/fr/).
+
+## [Non publié]
+
+## [0.1.0] - 2026-09-20
+### Ajouté — sprint 0, socle du portage de la Forge Oric sur Neo6502
+- Cadrage (`docs/adr/ADR-001`) : modes `vmode 0`/`vmode 1` de Trinity, compilateur porté dès le début,
+  sprites 16×16 + tilemaps, émulateur Phosphoneo en WebAssembly dans la page.
+- `internal/neobasic` : table des tokens et tokeniseur NeoBASIC reproduits de `makebasic.py`
+  (`#define`, `#library`, numérotation automatique) ; **75 programmes `.bsc` de Trinity identiques
+  octet pour octet** à la référence (test différentiel, sauté sans `python3`).
+- `cmd/neobas` : tokeniseur en ligne de commande (`-o`, `-library`, `-version`).
+- `internal/server` + `web/` : page Monaco avec langage NeoBASIC (coloration, complétion, snippets
+  sprite/tile/vmode, survol des tokens), Phosphoneo WASM servi sous `/emu/`, ▶ Exécuter (F5) =
+  `/api/build` → `/storage/prog.bas` → `web_load_neo` ; Ouvrir/Enregistrer `.bsc` ; ⬇ `.bas`.
+- `cmd/neoforge` : serveur (`NEOFORGE_ADDR`, `NEOFORGE_PHOSPHONEO_WEB`, `NEOFORGE_PROJECTS_DIR`).
+- Qualité : couverture Go 100 % (`make cover-check`), tests JS (`node --test`), `make e2e`
+  (Phosphoneo natif : `NEOFORGE OK`, `x=42` lus à l'écran), documentation agile (README,
+  ARCHITECTURE, BACKLOG, ROADMAP, CHANGELOG).
