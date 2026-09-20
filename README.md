@@ -43,6 +43,8 @@ make run          # http://127.0.0.1:8098
   **⬆ .bas** : importe un `.bas` (détokenisé dans l'éditeur).
 - **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.
 - **⌨ Clavier → Neo** : donne le clavier à l'émulateur (ou cliquer sur l'écran).
+- **❔ Aide** (F1) : référence des commandes (documentation officielle neo6502-documents, MIT) filtrable,
+  clic pour insérer ; la même aide apparaît au survol et dans la complétion.
 
 ## Configuration (variables d'environnement)
 

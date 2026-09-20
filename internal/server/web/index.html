@@ -22,11 +22,17 @@
       <button id="btn-download" title="Télécharger le .bas tokenisé (clé USB du Neo6502)">⬇ .bas</button>
       <button id="btn-focus" title="Donner le clavier à l'émulateur">⌨ Clavier → Neo</button>
       <button id="btn-fullscreen" title="Émulateur en plein écran">⛶</button>
+      <button id="btn-help" title="Aide des commandes NeoBASIC (F1)">❔ Aide</button>
     </div>
     <span id="status" class="status"></span>
   </header>
   <main>
     <section id="editor" aria-label="Éditeur"></section>
+    <aside id="help" hidden aria-label="Aide">
+      <div class="help-head"><input id="help-filter" type="search" placeholder="Filtrer (print, sprite, tile…)" /><button id="help-close" title="Fermer">✕</button></div>
+      <div id="help-list"></div>
+      <p class="help-credit">Référence : neo6502-documents (MIT © Paul Robson) ; extensions Trinity.</p>
+    </aside>
     <section id="emu" aria-label="Émulateur">
       <div id="frame"><canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas></div>
       <div id="emu-status">Chargement de l'émulateur…</div>

@@ -10,6 +10,11 @@ versionnage [SemVer](https://semver.org/lang/fr/).
   les renvoie sous `/emu/`.
 - Le programme par défaut contenait un « — » non ASCII, refusé par le tokeniseur.
 ### Ajouté
+- Aide des commandes NeoBASIC (S1-5) : `help.json` généré par `tools/gen_help.py` depuis la
+  documentation officielle **neo6502-documents** (MIT © Paul Robson, `reference/basic.md`) + extensions
+  Trinity (`vmode`) — 190 entrées ; panneau ❔ (F1) filtrable avec insertion au clic, descriptions au
+  survol et dans la complétion. Les mnémoniques 65C02 et les mots de structure (`endif`, `wend`…)
+  n'ont pas d'entrée propre.
 - Détokeniseur `.bas` → source (`internal/neobasic.List`, reproduction de `listbasic.py`, 61 listings
   du corpus identiques à la référence) ; `neobas -list [-n]`, `POST /api/detok`, bouton ⬆ .bas dans
   l'éditeur (S1-4). Limite héritée de la référence : `print .5` est listé `print.5`.

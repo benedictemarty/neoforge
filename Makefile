@@ -7,7 +7,7 @@ PHOSPHONEO ?= $(HOME)/Phosphoneo
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build run test test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser
+.PHONY: all build run test test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json
 
 all: test test-js build
 
@@ -68,3 +68,8 @@ e2e: build
 # clique ▶ Exécuter, capture /tmp/neoforge-browser.png. Le serveur doit tourner (make run).
 e2e-browser:
 	node tools/browser_e2e.mjs http://127.0.0.1:8098/ /tmp/neoforge-browser.png
+
+# Régénère l'aide des commandes depuis la documentation officielle (dépôt neo6502-documents cloné).
+NEO_DOCS ?= /tmp/claude-1000/neo6502-documents
+help-json:
+	python3 tools/gen_help.py $(NEO_DOCS) > internal/server/web/help.json

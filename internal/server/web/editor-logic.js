@@ -42,3 +42,15 @@ export function splitKinds(keywords) {
   const by = (k) => keywords.filter((x) => x.kind === k).map((x) => x.name);
   return { statements: by("statement"), functions: by("function"), structures: by("structure"), asm: by("asm") };
 }
+
+// filterHelp : entrées d'aide dont le nom, la syntaxe ou la description contient
+// le filtre (insensible à la casse) ; filtre vide = toutes, triées par nom.
+export function filterHelp(entries, filter) {
+  const f = (filter || "").trim().toLowerCase();
+  return entries.filter((e) => !f || e.name.includes(f) || e.syntax.toLowerCase().includes(f) || e.notes.toLowerCase().includes(f));
+}
+
+// helpByName : Map nom de token (majuscules) → entrée d'aide, pour le survol.
+export function helpByName(entries) {
+  return new Map(entries.map((e) => [e.name.toUpperCase(), e]));
+}

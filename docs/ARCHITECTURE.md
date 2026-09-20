@@ -36,7 +36,8 @@ neoforge reprend l'architecture d'oriced (Forge Oric) en remplaçant deux maillo
   Format `.bas` : `[pages × 256 o. d'identifiants][len][no lo][no hi][tokens…][$C0]…[0]`.
 - `internal/config` — variables `NEOFORGE_*`.
 - `internal/server` — gestionnaire HTTP ; `web/` embarqué (index.html, app.js, neobasic-lang.js,
-  editor-logic.js testé sous node, style.css, vendor/vs = Monaco).
+  editor-logic.js testé sous node, style.css, vendor/vs = Monaco, help.json = aide générée par
+  `tools/gen_help.py` depuis neo6502-documents).
 - `cmd/neoforge` — serveur ; `cmd/neobas` — tokeniseur en ligne de commande.
 
 ## Émulateur

@@ -1,6 +1,6 @@
 // Application neoforge : éditeur Monaco (NeoBASIC) + émulateur Phosphoneo (WASM).
 import { registerNeoBasic } from "/neobasic-lang.js";
-import { decodeBase64, errorLine, storageName } from "/editor-logic.js";
+import { decodeBase64, errorLine, storageName, filterHelp } from "/editor-logic.js";
 
 const el = (id) => document.getElementById(id);
 const status = (msg, err) => { const s = el("status"); s.textContent = msg; s.classList.toggle("err", !!err); };
@@ -61,6 +61,7 @@ async function refreshFiles() {
 async function main() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   const keywords = await fetch("/api/keywords").then((r) => r.json());
+  const help = await fetch("/help.json").then((r) => r.json()).then((j) => j.entries).catch(() => []);
   loadEmulator(cfg);
   refreshFiles();
 
@@ -74,7 +75,7 @@ async function main() {
   };
 
   require(["vs/editor/editor.main"], () => {
-    registerNeoBasic(monaco, keywords);
+    registerNeoBasic(monaco, keywords, help);
     const editor = monaco.editor.create(el("editor"), {
       value: DEFAULT_SOURCE, language: "neobasic", theme: "vs-dark", fontSize: 15,
       minimap: { enabled: false }, automaticLayout: true,
@@ -142,6 +143,32 @@ async function main() {
       status(f.name + " détokenisé");
       ev.target.value = "";
     });
+
+    // ─── Panneau d'aide (F1) : liste filtrable, clic = insertion de la syntaxe ─────
+    const renderHelp = () => {
+      const list = el("help-list");
+      list.innerHTML = "";
+      for (const h of filterHelp(help, el("help-filter").value)) {
+        const d = document.createElement("div");
+        d.className = "help-item";
+        d.innerHTML = '<span class="section"></span><div class="syntax"></div><div class="notes"></div>';
+        d.querySelector(".section").textContent = h.section;
+        d.querySelector(".syntax").textContent = h.syntax;
+        d.querySelector(".notes").textContent = h.notes;
+        d.addEventListener("click", () => { editor.trigger("help", "type", { text: h.name }); editor.focus(); });
+        list.appendChild(d);
+      }
+    };
+    const toggleHelp = (show) => {
+      const panel = el("help");
+      panel.hidden = show === undefined ? !panel.hidden : !show;
+      document.querySelector("main").classList.toggle("with-help", !panel.hidden);
+      if (!panel.hidden) { renderHelp(); el("help-filter").focus(); }
+    };
+    el("btn-help").addEventListener("click", () => toggleHelp());
+    el("help-close").addEventListener("click", () => toggleHelp(false));
+    el("help-filter").addEventListener("input", renderHelp);
+    editor.addCommand(monaco.KeyCode.F1, () => toggleHelp(true));
 
     el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());

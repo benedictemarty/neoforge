@@ -32,3 +32,16 @@ test("splitKinds", () => {
   const r = splitKinds([{ name: "PRINT", kind: "statement" }, { name: "RND(", kind: "function" }, { name: "IF", kind: "structure" }, { name: "LDA", kind: "asm" }]);
   assert.deepEqual(r, { statements: ["PRINT"], functions: ["RND("], structures: ["IF"], asm: ["LDA"] });
 });
+
+import { filterHelp, helpByName } from "../web/editor-logic.js";
+
+test("filterHelp / helpByName", () => {
+  const entries = [
+    { name: "print", syntax: "print …", notes: "Affiche", section: "s" },
+    { name: "rnd(", syntax: "rnd(n)", notes: "Random number", section: "s" },
+  ];
+  assert.equal(filterHelp(entries, "").length, 2);
+  assert.deepEqual(filterHelp(entries, "RANDOM").map((e) => e.name), ["rnd("]);
+  assert.deepEqual(filterHelp(entries, "print").map((e) => e.name), ["print"]);
+  assert.equal(helpByName(entries).get("RND(").syntax, "rnd(n)");
+});

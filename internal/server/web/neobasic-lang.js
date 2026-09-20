@@ -1,8 +1,9 @@
 // Définition du langage NeoBASIC (Neo6502, firmware Trinity) pour Monaco :
 // coloration syntaxique + autocomplétion. Les mots-clés viennent de /api/keywords.
-import { keywordAt, splitKinds } from "/editor-logic.js";
+import { keywordAt, splitKinds, helpByName } from "/editor-logic.js";
 
-export function registerNeoBasic(monaco, keywords) {
+export function registerNeoBasic(monaco, keywords, help = []) {
+  const helpMap = helpByName(help);
   const { statements, functions, structures, asm } = splitKinds(keywords);
   const kwByName = new Map(keywords.map((k) => [k.name, k]));
 
@@ -63,7 +64,7 @@ export function registerNeoBasic(monaco, keywords) {
       const word = model.getWordUntilPosition(position);
       const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
       const kind = (k) => (k === "function" ? monaco.languages.CompletionItemKind.Function : k === "asm" ? monaco.languages.CompletionItemKind.Operator : monaco.languages.CompletionItemKind.Keyword);
-      const items = keywords.map((k) => ({ label: k.name.toLowerCase(), kind: kind(k.kind), detail: k.kind, insertText: k.name.toLowerCase(), range }));
+      const items = keywords.map((k) => { const h = helpMap.get(k.name); return { label: k.name.toLowerCase(), kind: kind(k.kind), detail: h ? h.syntax : k.kind, documentation: h ? h.notes : undefined, insertText: k.name.toLowerCase(), range }; });
       for (const s of SNIPPETS) {
         items.push({ label: s.label, kind: monaco.languages.CompletionItemKind.Snippet, detail: s.detail, insertText: s.body, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range });
       }
@@ -74,7 +75,11 @@ export function registerNeoBasic(monaco, keywords) {
   monaco.languages.registerHoverProvider("neobasic", {
     provideHover(model, position) {
       const k = keywordAt(model.getLineContent(position.lineNumber), position.column - 1, kwByName);
-      return k ? { contents: [{ value: "**" + k.name + "** — " + k.kind + " (token $" + k.id.toString(16).toUpperCase() + ")" }] } : null;
+      if (!k) return null;
+      const h = helpMap.get(k.name);
+      const contents = [{ value: "**" + k.name + "** — " + k.kind + " (token $" + k.id.toString(16).toUpperCase() + ")" }];
+      if (h) contents.push({ value: "`" + h.syntax + "`\n\n" + h.notes });
+      return { contents };
     },
   });
 }

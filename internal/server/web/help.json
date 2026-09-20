@@ -1,0 +1,1145 @@
+{
+ "source": "neo6502-documents (MIT © 2024 Paul Robson) reference/basic.md ; extensions Trinity : Neo6502Basic/docs",
+ "entries": [
+  {
+   "name": "%",
+   "syntax": "%",
+   "notes": "Modulus of integer division ignoring signs (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "&",
+   "syntax": "&",
+   "notes": "Binary AND operator on integers (précédence 1)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "'",
+   "syntax": "' {string}",
+   "notes": "Comment. This is a string for syntactic consistency. The tokeniser will process a line that doesn't have speech marks as this is not common, so you can type in ' hello world and it will be represented as ' \"hello world\" in code.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "*",
+   "syntax": "*",
+   "notes": "Opérateur binaire (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "+",
+   "syntax": "+",
+   "notes": "Opérateur binaire (précédence 3)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "-",
+   "syntax": "-",
+   "notes": "Opérateur binaire (précédence 3)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "/",
+   "syntax": "/",
+   "notes": "Forward slash is floating point divide. 22/7 is 3.142857 (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "<",
+   "syntax": "<",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "<<",
+   "syntax": "<<",
+   "notes": "Logical shift left (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "<=",
+   "syntax": "<=",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "<>",
+   "syntax": "<>",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "=",
+   "syntax": "=",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": ">",
+   "syntax": ">",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": ">=",
+   "syntax": ">=",
+   "notes": "Return -1 for true,0 for false (précédence 2)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": ">>",
+   "syntax": ">>",
+   "notes": "Logical shift right, highest bit zero (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "\\",
+   "syntax": "\\",
+   "notes": "Backward slash is integer divide, 22\\7 is  3 (précédence 4)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "\\",
+   "syntax": "\\",
+   "notes": "| Binary OR operator on integers (précédence 1)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "^",
+   "syntax": "^",
+   "notes": "Binary XOR operator on integers (précédence 1)",
+   "section": "Binary Operators"
+  },
+  {
+   "name": "alloc(",
+   "syntax": "alloc(n)",
+   "notes": "Allocate n bytes of memory, return address",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "analog(",
+   "syntax": "analog(n)",
+   "notes": "Read voltage level on pin n — returns a value from 0 to 4095",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "asc(",
+   "syntax": "asc(s$)",
+   "notes": "Return ASCII value of first character or zero for empty string",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "assert",
+   "syntax": "assert {expr}[,{msg}]",
+   "notes": "Error generated if {expr} is zero, with optional message.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "atan(",
+   "syntax": "atan(n)",
+   "notes": "Arctangent of n in degrees",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "atan2(",
+   "syntax": "atan2(y,x)",
+   "notes": "Arctangent 2 calculation, dy / dx => angle",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "by",
+   "syntax": "by x,y",
+   "notes": "Same as to but x and y are an offset from the current position",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "call",
+   "syntax": "call {name}(p1,p2,p3)",
+   "notes": "Call named procedure with optional parameters.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "cat",
+   "syntax": "cat [{pattern}]",
+   "notes": "Show contents of current directory, can take an optional string which only displays filenames containing those characters, so cat \"ac\" only displays files with the sequence ac in them.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "chr$(",
+   "syntax": "chr$(n)",
+   "notes": "Convert ASCII to string",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "clear",
+   "syntax": "clear [{address}]",
+   "notes": "Clear out stack, strings, reset all variables. If an address is provided then memory above that will not be touched by BASIC. Note because this resets the stack, it cannot be done in a loop, subroutine or procedure — they will be forgotten. Also clears the sprites and the sprite layer.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "close",
+   "syntax": "close [handle]",
+   "notes": "Close a file by handle. If the handle is not provided, close all files.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "cls",
+   "syntax": "cls",
+   "notes": "Clear the graphics screen to current background colour. This does not clear sprites.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "cos(",
+   "syntax": "cos(n)",
+   "notes": "Cosine of n, n Is in degrees.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "cursor",
+   "syntax": "cursor {x},{y}",
+   "notes": "Set the text cursor position",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "data",
+   "syntax": "data {const},....",
+   "notes": "DATA statement. For syntactic consistency, strings must be enclosed in quote marks e.g. data",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "deek(",
+   "syntax": "deek(a)",
+   "notes": "Read word value at a",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "defchr",
+   "syntax": "defchr ch,....",
+   "notes": "Define UDG ch (192-255) as a 6x7 font — should be followed by 7 values from 0-63 representing the",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "delete",
+   "syntax": "delete",
+   "notes": "Delete a line or range of lines",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "dim",
+   "syntax": "dim {array}(n,[m]), $...",
+   "notes": "Dimension a one or two dimension string or number array, up to 255",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "dim",
+   "syntax": "dim n",
+   "notes": "Set the scaling to n (for TEXT, IMAGE, TILEMAP only), so text \"Hello\" dim 2 to 10,10 to 10,100 will draw it twice double size. Tiles can only be 1 or 2 (when 2, tiles are drawn double size giving a 32x32 tile map)",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "do",
+   "syntax": "do ... exit ... loop",
+   "notes": "General loop you can break out of at any point.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "doke",
+   "syntax": "doke {addr},{data}",
+   "notes": "Write word to address",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "edit",
+   "syntax": "edit",
+   "notes": "Basic Screen Editor",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "ellipse",
+   "syntax": "ellipse [solid|frame] [ink c] x,y to x,y",
+   "notes": "Graphics command: draws a circle or ellipse (solid = filled, frame = outline).",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "end",
+   "syntax": "end",
+   "notes": "End Program",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "eof(",
+   "syntax": "eof(f)",
+   "notes": "Returns non-zero value if at end of file f.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "erl",
+   "syntax": "erl",
+   "notes": "Current error line number",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "err",
+   "syntax": "err",
+   "notes": "Current error number",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "event(",
+   "syntax": "event(v,r)",
+   "notes": "event takes an integer variable and a fire rate (r) in 1/100 s, and uses the integer variable to return -1 at that rate. If the value in 'v' is zero, it resets (if you pause say), if the value in v is -1 the timer will not fire — to unfreeze, set it to zero and it will resynchronise.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "exists(",
+   "syntax": "exists(file$)",
+   "notes": "Returns true (-1) if the file exists, false (0) otherwise",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "exp(",
+   "syntax": "exp(n)",
+   "notes": "e to the power n",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "false",
+   "syntax": "false",
+   "notes": "Return constant 0, improves boolean readability",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "fkey",
+   "syntax": "fkey",
+   "notes": "Lists the defined function keys",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "fkey",
+   "syntax": "fkey {key},{string}",
+   "notes": "Define the behaviour of F1..F10 — the characters in the string",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "for",
+   "syntax": "for {var} = {start} to/downto",
+   "notes": "For loop. Note this is non standard,Limitations are : the index must be an integer. Step can only be 1 (to) or -1 (downto). Next does not specify an index and cannot be used to terminate loops using the 'wrong' index.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "forward",
+   "syntax": "forward {n}",
+   "notes": "Move turtle forward n (pixel distance)",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "frame",
+   "syntax": "frame",
+   "notes": "Just draw the outline of rectangles and ellipses",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "from",
+   "syntax": "from x,y",
+   "notes": "Sets the origin position, can be repeated and optional.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "gload",
+   "syntax": "gload {filename}",
+   "notes": "Load filename into graphics memory.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "gosub",
+   "syntax": "gosub {expr}",
+   "notes": "Call subroutine at line number. For porting only. See goto.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "goto",
+   "syntax": "goto {expr}",
+   "notes": "Transfer execution to line number. For porting only. Use in general coding is a capital offence. If I write RENUMBER it",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "havemouse(",
+   "syntax": "havemouse()",
+   "notes": "Return non zero if a mouse is connected.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "himem",
+   "syntax": "himem",
+   "notes": "First byte after end of memory — the stack is allocated below here, and string memory below that.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "hit(",
+   "syntax": "hit(sprite#1,sprite#2,distance)",
+   "notes": "The hit function is designed to do sprite collision. It returns true if the pixel distance between the centre of sprite 1 and the centre of sprite 2 is less than or equal to the distance.",
+   "section": "Sprite Support"
+  },
+  {
+   "name": "idevice(",
+   "syntax": "idevice(device)",
+   "notes": "Returns true if i2c device present.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "if",
+   "syntax": "if {expr} then ....",
+   "notes": "Standard BASIC if, executes command or line number. (IF .. GOTO doesn't work, use IF .. THEN nn)",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "if",
+   "syntax": "if {expr}: .. else .. endif",
+   "notes": "Extended multiline if, without THEN. The else clause is optional.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "image",
+   "syntax": "image n [dim s] [solid] to x,y",
+   "notes": "Graphics command: draws a sprite or tile image n. dim sets the scaling ; solid forces black background.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "ink",
+   "syntax": "ink fgr[,bgr]",
+   "notes": "Set the ink foreground and optionally background for the console.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "ink",
+   "syntax": "ink c",
+   "notes": "Draw in solid colour c",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "ink",
+   "syntax": "ink a,x",
+   "notes": "Draw by anding the colour with a, and xoring it with x.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "inkey$(",
+   "syntax": "inkey$()",
+   "notes": "Return the key stroke if one is in the keyboard buffer, otherwise returns a n empty string.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "input",
+   "syntax": "input {stuff}",
+   "notes": "Input has an identical syntax and behaviour to Print except that variables are entered via the keyboard rather than printed.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "input",
+   "syntax": "input #{channel},{var},{var}",
+   "notes": "Reads a sequence of variables from the open file.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "input",
+   "syntax": "input line #{channel}.{var}.{var}",
+   "notes": "Reads text from an ASCII file. This is processed from the source, primarily due to Windows' usage of CR/LF. So this at current, by default, ignores all characters before space, except for LF (10) which marks the end of line, and TAB (9) which is converted into a space. All variables are strings",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "instr(",
+   "syntax": "instr(str$,search$)",
+   "notes": "Returns the first position of search$ in str$, indexed from 1. Returns zero if not found.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "int(",
+   "syntax": "int(n)",
+   "notes": "Whole part of the float value n. Integers are unchanged.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "iread(",
+   "syntax": "iread(device,register)",
+   "notes": "Read byte from I2C Device Register",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "ireceive",
+   "syntax": "ireceive {d},{a},{s}",
+   "notes": "Send or receive bytes starting at a, count s to or from device d.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "isend",
+   "syntax": "isend {device},{data}",
+   "notes": "Send data to i2c {device} ; this is comma seperated data, numbers or strings. If a semicolon is used as a seperator e.g. 4137; then the constant is sent as a 16 bit value.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "isval(",
+   "syntax": "isval(s$)",
+   "notes": "Converts string to number, returns -1 if okay, 0 if fails.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "itransmit",
+   "syntax": "itransmit {d},{a},{s}",
+   "notes": " ",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "iwrite",
+   "syntax": "iwrite {dev},{reg},{b}",
+   "notes": "Write byte to I2C Device Register",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "joycount(",
+   "syntax": "joycount()",
+   "notes": "Read the number of attached joypads, not including keyboard emulation of one.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "joypad(",
+   "syntax": "joypad([index],dx,dy)",
+   "notes": "Reads the current joypad. The return value has bit 0 set if A is pressed, bit 1 set if B is pressed. Values -1,0 or 1 are placed into dx,dy representing movement on the D-Pad. If there is no gamepad plugged in (at the time of writing it doesn't work) the key equivalents are WASDOP and the cursor keys. If [index] is provided it is a specific joypad (from 1,0 is the keyboard), otherwise it is a composite of all of them.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "key(",
+   "syntax": "key(n)",
+   "notes": "Return the state of the given key. The key is the USB HID key scan code.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "left",
+   "syntax": "left {n}",
+   "notes": "Rotate turtle at current position",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "left$(",
+   "syntax": "left$(a$,n)",
+   "notes": "Left most n characters of a$",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "len(",
+   "syntax": "len(a$)",
+   "notes": "Return length of string in characters.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "let",
+   "syntax": "let {var} = {expr}",
+   "notes": "Assignment statement. The LET is optional.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "library",
+   "syntax": "library",
+   "notes": "Librarise / Unlibrarise code.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "line",
+   "syntax": "line x,y to x,y [to x,y…]",
+   "notes": "Graphics command: draws a line. E.g. LINE 0,0 TO 100,10 TO 120,120 TO 0,0 draws an outline triangle.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "list",
+   "syntax": "list [{from}][,][{to}]",
+   "notes": "List program to display by line number or procedure name.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "list",
+   "syntax": "list {procedure}()",
+   "notes": " ",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "load",
+   "syntax": "load \"file\"[,{address}]",
+   "notes": "Load file to BASIC space or given address.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "local",
+   "syntax": "local {var},{var}",
+   "notes": "Local variables, use after PROC, restored at ENDPROC variables can",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "locale",
+   "syntax": "locale a$",
+   "notes": "Sets the locale to the 2 character country code a$ e.g. locale \"de\"",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "log(",
+   "syntax": "log(n)",
+   "notes": "Natural Logarithm (e.g. ln2) of n.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "lower$(",
+   "syntax": "lower$(a$)",
+   "notes": "Convert a string to lower case",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "max(",
+   "syntax": "max(a,b)",
+   "notes": "Return the largest of a and b (numbers or strings)",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "mid$(",
+   "syntax": "mid$(a$,f[,s])",
+   "notes": "Characters from a$ starting at f (1 indexed), s characters, s is optional and defaults to the rest of the line.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "min(",
+   "syntax": "min(a,b)",
+   "notes": "Return the smaller of a and b (numbers or strings)",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "mon",
+   "syntax": "mon",
+   "notes": "Enter the machine code monitor",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "mos",
+   "syntax": "mos {command}",
+   "notes": "Execute MOS command.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "mos(",
+   "syntax": "mos(command)",
+   "notes": "Like the mos command, but returns an non zero error code if the command caused an error.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "mouse",
+   "syntax": "mouse cursor {n}",
+   "notes": "Select mouse cursor {n} [0 is the default hand pointer]",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "mouse",
+   "syntax": "mouse show",
+   "notes": "hide",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "mouse",
+   "syntax": "mouse TO {x},{y}",
+   "notes": "Position mouse cursor",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "mouse(",
+   "syntax": "mouse(x,y[,scroll])",
+   "notes": "Reads the mouse. The return value indicates button state (bit 0 left, bit 1 right), and the mouse position and also the scrolling wheel position are updated into the given variables.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "move",
+   "syntax": "move [from x,y] x,y | to x,y | by x,y",
+   "notes": "Graphics command: sets the current position. Modifiers: from, to, by, ink, solid, frame, dim (see Basic Commands (Graphics)).",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "new",
+   "syntax": "new",
+   "notes": "Erase Program",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "next",
+   "syntax": "next {variable}",
+   "notes": "Ends for loop. The variable parameter is optional. You cannot unwind nested FOR/NEXTs , next must operate in order.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "noise",
+   "syntax": "noise {channel},{frequency},{time}[,{slide}]",
+   "notes": "To use the white noise feature use the keyword \"noise\" instead of sound.",
+   "section": "Sound Commands"
+  },
+  {
+   "name": "not",
+   "syntax": "not [term]",
+   "notes": "Returns the logical not of a term.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "notes(",
+   "syntax": "notes(c)",
+   "notes": "Return the number of notes outstanding on channel c including the one currently playing — so will be zero when the channel goes silent.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "old",
+   "syntax": "old",
+   "notes": "Undoes a new. This can fail depending on what has been done since the 'new'.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "on",
+   "syntax": "on error {code}",
+   "notes": "Install an error handler that is called when an error occurs. Effectively this is doing a GOTO that code, so recovery is dependent on what you actually",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "open",
+   "syntax": "open input\\",
+   "notes": "output [channel],[file]     | Open a file for input or output on the given channel, using the given file name. Output erases the current file. This gives an error if the file does not exist ; rather than trap this error it is recommended to use the exists() function if you think the file may not be present.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "page",
+   "syntax": "page",
+   "notes": "Return the address of the program base (e.g. the variable table)",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "palette",
+   "syntax": "palette c,r,g,b",
+   "notes": "Set colour c to r,g,b values — these are all 0-255 however it is actually 3:2:3 colour, so they will be approximations.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "palette",
+   "syntax": "palette clear",
+   "notes": "Reset palette to default",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "peek(",
+   "syntax": "peek(a)",
+   "notes": "Read byte value at a",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "pendown",
+   "syntax": "pendown",
+   "notes": "Draw as the turtle moves in the current colour",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "pendown",
+   "syntax": "pendown {n}",
+   "notes": "Draw as the turtle moves in colour {n}",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "penup",
+   "syntax": "penup",
+   "notes": "Does not draw as the turtle moves",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "pin",
+   "syntax": "pin {pin},{value}",
+   "notes": "Set UEXT {pin} to given value.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "pin",
+   "syntax": "pin {pin} INPUT",
+   "notes": "output",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "pin(",
+   "syntax": "pin(n)",
+   "notes": "Return value on UEXT pin n if input, output latch value if output.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "plot",
+   "syntax": "plot [ink c] to x,y",
+   "notes": "Graphics command: draws a pixel. Modifiers: from, to, by, ink, solid, frame, dim.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "point(",
+   "syntax": "point(x,y)",
+   "notes": "Read the screen pixel at coordinates x,y. This is graphics data only.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "poke",
+   "syntax": "poke {addr},{data}",
+   "notes": "Write byte to address",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "pow(",
+   "syntax": "pow(a,b)",
+   "notes": "Returns a raised to the power b ; the result is always floating point.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "print",
+   "syntax": "print {stuff}",
+   "notes": "Print strings and numbers, standard format - , is used for",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "print",
+   "syntax": "print #{channel},{expr},{expr}",
+   "notes": "Writes a sequence of expressions to the open file.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "print",
+   "syntax": "print line #{channel}.{var}.{var}",
+   "notes": "Prints a line to an output channel as an ASCII file, in LF format (e.g. lines are seperated by character code 10). This can be mixed with the above format *but* the sequence has to be the same ; you ann't write a string using print line and read it back with input and vice versa. All variables must be strings.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "proc",
+   "syntax": "proc {name>([ref] p1,p2,...) .. endproc",
+   "notes": "Delimits procedures, optional parameters, must match call. Parameters can be defined as reference parameters and will return values. Parameters cannot be arrays.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "rand(",
+   "syntax": "rand(n)",
+   "notes": "Random integer 0 { x { n (e.g. 0 to n-1)",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "read",
+   "syntax": "read {var},...",
+   "notes": "Read variables from data statements. Types must match those in data statements.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "rect",
+   "syntax": "rect [solid|frame] [ink c] x,y to x,y",
+   "notes": "Graphics command: draws a rectangle (solid = filled, frame = outline).",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "renumber",
+   "syntax": "renumber [{start}]",
+   "notes": "Renumber the program from start, or from 1000 by default. This does *not* handle GOTO and GOSUB. Use those, you are on your own.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "repeat",
+   "syntax": "repeat .. until {expr}",
+   "notes": "Execute code until {expr} is true",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "restore",
+   "syntax": "restore",
+   "notes": "Restore data pointer to program start",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "restore",
+   "syntax": "restore {line}",
+   "notes": "Restore data pointer to line number",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "return",
+   "syntax": "return",
+   "notes": "Return from subroutine called with gosub.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "right",
+   "syntax": "right {n}",
+   "notes": " ",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "right$(",
+   "syntax": "right$(a$,n)",
+   "notes": "Rightmost n characters of a$",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "rnd(",
+   "syntax": "rnd(n)",
+   "notes": "Random number 0 { x { 1, ignores n.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "run",
+   "syntax": "run",
+   "notes": "Run Program",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "run",
+   "syntax": "run \"{program}\"",
+   "notes": "Load & Run program.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "save",
+   "syntax": "save \"file\"[,{adr},{sz}]",
+   "notes": "Save BASIC program or memory from {adr} length {sz}",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "sfx",
+   "syntax": "sfx {channel},{effect}",
+   "notes": "Sfx plays sound effects. Sound effects are played immediately as they are usually in response to an event.",
+   "section": "Sound Commands"
+  },
+  {
+   "name": "sin(",
+   "syntax": "sin(n)",
+   "notes": "Sine of n, n Is in degrees.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "solid",
+   "syntax": "solid",
+   "notes": "Fill in rectangles and ellipses. For images and text, forces black background.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "sound",
+   "syntax": "sound clear | sound {channel} clear | sound {channel},{frequency},{time}[,{slide}]",
+   "notes": "The Neo6502 has four sound channels, 0-3 which can generate a square wave or white noise sounds. Sound clear: resets the entire sound system, silences all channels, empties all queues. Sound {channel} clear: resets a single channel. Sound {channel},{frequency},{time}[,{slide}]: queues a note on the given channel of the given frequency (in Hz) and time (in centiseconds); the slide value adds that much to the frequency every centisecond.",
+   "section": "Sound Commands"
+  },
+  {
+   "name": "spc(",
+   "syntax": "spc(n)",
+   "notes": "Returns a string of n spaces.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "spoint(",
+   "syntax": "spoint(x,y)",
+   "notes": "Reads the colour index on the sprite layer. 0 is transparency",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "sprite",
+   "syntax": "sprite {n} [image {i}] [to {x},{y}] [by {x},{y}] [flip {f}] [anchor {a}] | sprite clear",
+   "notes": "Sprite commands closely resemble the graphics commands. They begin with SPRITE {n} which sets the working sprite. Options include IMAGE {n} which sets the image, TO {x},{y} which sets the position, FLIP {n} which sets the flip to a number (bit 0 is horizontal flip, bit 1 is vertical flip), ANCHOR {n} which sets the anchor point and BY {x},{y} which sets the position by offset. SPRITE can also take the single command CLEAR ; this resets all sprites and removes them from the display. Up to 128 sprites are supported (sprite 127 is used for the turtle sprite).",
+   "section": "Sprite Commands"
+  },
+  {
+   "name": "spritex(",
+   "syntax": "spritex(n)",
+   "notes": "Returns the x coordinate of the sprite's draw position (currently the centre).",
+   "section": "Sprite Support"
+  },
+  {
+   "name": "spritey(",
+   "syntax": "spritey(n)",
+   "notes": "Returns the y coordinate of the sprite's draw position (currently the centre).",
+   "section": "Sprite Support"
+  },
+  {
+   "name": "sqr(",
+   "syntax": "sqr(n)",
+   "notes": "Square root of n",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "sreceive",
+   "syntax": "sreceive {a},{s}",
+   "notes": "Send or receive bytes starting at a, count s to SPI device",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "ssend",
+   "syntax": "ssend {data}",
+   "notes": "Send data to SPI device ; this is comma seperated data, numbers or strings. If a semicolon is used as a seperator e.g. 4137; then the constant is sent as a 16 bit value.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "stop",
+   "syntax": "stop",
+   "notes": "Halt program with error",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "str$(",
+   "syntax": "str$(n)",
+   "notes": "Convert n to a string",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "stransmit",
+   "syntax": "stransmit {a},{s}",
+   "notes": " ",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "sys",
+   "syntax": "sys {address}",
+   "notes": "Call 65C02 machine code at given address. Passes contents of variables A,X,Y in those registers.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "tab(",
+   "syntax": "tab(n)",
+   "notes": "Advance to screen column n if not past it already.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "tan(",
+   "syntax": "tan(n)",
+   "notes": "Tangent of n, n Is in degrees.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "text",
+   "syntax": "text \"s\" [dim s] [ink c] [solid] to x,y",
+   "notes": "Graphics command: draws text. dim sets the scaling, e.g. text \"Hello\" dim 2 to 10,10.",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "tiledraw",
+   "syntax": "tiledraw [from x,y] [dim 1|2] to x,y",
+   "notes": "Graphics command: draws a tilemap (defined by tilemap addr,x,y). Tiles can only be dim 1 or 2 (when 2, tiles are drawn double size giving a 32x32 tile map).",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "tilemap",
+   "syntax": "tilemap addr,x,y",
+   "notes": "Define a tilemap. The tilemap data format is in the API. The tilemap is stored in memory at addr, and the offset into the",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "time(",
+   "syntax": "time()",
+   "notes": "Return time since power on in 100^th^ of a seconds.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "to",
+   "syntax": "to x,y",
+   "notes": "Draw the element at x,y or between the current position and x,y depending on the command. So you could have text \"Hello\" to 10,10 or rect 0,0 to 100,50",
+   "section": "Basic Commands (Graphics)"
+  },
+  {
+   "name": "true",
+   "syntax": "true",
+   "notes": "Return constant -1, improves boolean readability",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "turtle",
+   "syntax": "turtle home",
+   "notes": "Reset turtle to home position, facing up the screen.",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "turtle",
+   "syntax": "turtle hide",
+   "notes": "Hide the turtle",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "turtle",
+   "syntax": "turtle show",
+   "notes": "Show the turtle",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "turtle",
+   "syntax": "turtle fast",
+   "notes": "The turtle is deliberately slowed to give it an animated feel so you can see the drawing, this is because it's primary purpose is educational. This makes it go full speed.",
+   "section": "Turtle Graphics"
+  },
+  {
+   "name": "uconfig",
+   "syntax": "uconfig {baud}[,{prt}]",
+   "notes": "Set the baud rate and protocol for the UART. Currently only 8N1 is supported.",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "uhasdata(",
+   "syntax": "uhasdata()",
+   "notes": "Return true if there is data in the UART Receive buffer.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "upper$(",
+   "syntax": "upper$(a$)",
+   "notes": "Convert a string to upper case",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "ureceive",
+   "syntax": "ureceive {d},{a},{s}",
+   "notes": "Send or receive bytes to/from the UART starting at a, count s",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "usend",
+   "syntax": "usend {device},{data}",
+   "notes": "Send data to UART ; this is comma seperated data, numbers or strings. If a semicolon is used",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "utransmit",
+   "syntax": "utransmit {d},{a},{s}",
+   "notes": " ",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "val(",
+   "syntax": "val(s$)",
+   "notes": "Convert string to number. Error if bad number.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "vblanks(",
+   "syntax": "vblanks()",
+   "notes": "Return the number of vblanks since power on. This is updated at the start of the vblank period.",
+   "section": "Arithmetic functions"
+  },
+  {
+   "name": "vmode",
+   "syntax": "vmode {n}",
+   "section": "Trinity — vidéo",
+   "notes": "Sélectionne le mode d'affichage et réinitialise écran, palette et console : 0 = 320×240, 256 couleurs (console 40×30 ; sprites, tilemaps, images) ; 1 = Hercules/MDA 720×350 monochrome, attributs MDA, 2 pages (console 80×25). Hardware error (22) si le firmware ne connaît pas le mode."
+  },
+  {
+   "name": "vmode(",
+   "syntax": "vmode()",
+   "section": "Trinity — vidéo",
+   "notes": "Renvoie le mode d'affichage courant (0 ou 1)."
+  },
+  {
+   "name": "wait",
+   "syntax": "wait {cs}",
+   "notes": "Waits for {cs} hundredths of a second",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "while",
+   "syntax": "while {expr} .. wend",
+   "notes": "Repeat code while expression is true",
+   "section": "BASIC Commands (General)"
+  },
+  {
+   "name": "who",
+   "syntax": "who",
+   "notes": "Display contributors list.",
+   "section": "BASIC Commands (General)"
+  }
+ ]
+}
