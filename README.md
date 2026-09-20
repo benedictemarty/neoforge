@@ -39,6 +39,7 @@ make run          # http://127.0.0.1:8098
 
 - **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
   dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
+- **■ Stop** : envoie Échap à l'émulateur (Break de NeoBASIC).
 - **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel ;
   **⬆ .bas** : importe un `.bas` (détokenisé dans l'éditeur).
 - **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.

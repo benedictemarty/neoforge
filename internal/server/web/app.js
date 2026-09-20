@@ -40,6 +40,13 @@ async function loadEmulator(cfg) {
   document.body.appendChild(s);
 }
 
+// sendKey : touche synthétique vers le canvas SDL (Échap = Break de NeoBASIC).
+function sendKey(key, code, keyCode) {
+  const c = Module.canvas;
+  c.focus();
+  for (const type of ["keydown", "keyup"]) c.dispatchEvent(new KeyboardEvent(type, { key, code, keyCode, which: keyCode, bubbles: true, cancelable: true }));
+}
+
 // runInEmulator : écrit le .bas dans /storage et le lance (load "…" + run).
 function runInEmulator(bas, name) {
   if (!emuReady) { status("Émulateur non prêt", true); return; }
@@ -172,6 +179,7 @@ async function main() {
 
     el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
+    el("btn-stop").addEventListener("click", () => { if (emuReady) { sendKey("Escape", "Escape", 27); status("Break envoyé"); } });
     el("btn-fullscreen").addEventListener("click", () => Module.canvas.requestFullscreen && Module.canvas.requestFullscreen());
   });
 }

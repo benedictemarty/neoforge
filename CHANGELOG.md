@@ -10,6 +10,9 @@ versionnage [SemVer](https://semver.org/lang/fr/).
   les renvoie sous `/emu/`.
 - Le programme par défaut contenait un « — » non ASCII, refusé par le tokeniseur.
 ### Ajouté
+- ■ Stop : envoie Échap (Break de NeoBASIC) au canvas de l'émulateur (S1-6, vérifié en navigateur :
+  « Break Pressed at line 120 »). Le Reset attend un export `web_reset` côté Phosphoneo (bloqué :
+  Phosphoneo ne compile plus contre Trinity, `interface/clock.h` manquant).
 - Aide des commandes NeoBASIC (S1-5) : `help.json` généré par `tools/gen_help.py` depuis la
   documentation officielle **neo6502-documents** (MIT © Paul Robson, `reference/basic.md`) + extensions
   Trinity (`vmode`) — 190 entrées ; panneau ❔ (F1) filtrable avec insertion au clic, descriptions au
