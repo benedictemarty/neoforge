@@ -26,6 +26,8 @@ test("errorLine", () => {
 test("storageName", () => {
   assert.equal(storageName("mon jeu.bsc"), "mon_jeu.bas");
   assert.equal(storageName(""), "prog.bas");
+  assert.equal(storageName("mon jeu.gfx", true), "mon_jeu.gfx");
+  assert.equal(storageName("", true), "data");
 });
 
 test("splitKinds", () => {

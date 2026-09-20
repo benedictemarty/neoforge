@@ -31,10 +31,12 @@ export function errorLine(msg) {
 }
 
 // storageName : nom de fichier sûr pour /storage de l'émulateur (comme la page
-// Phosphoneo) ; un nom vide devient prog.bas.
-export function storageName(name) {
-  const n = (name || "").replace(/[^A-Za-z0-9_.-]/g, "_").replace(/\.bsc$/i, "");
-  return (n || "prog") + ".bas";
+// Phosphoneo). Par défaut le nom d'un programme : « .bsc » → « .bas », vide → prog.bas ;
+// keep = true conserve l'extension (fichiers de données).
+export function storageName(name, keep = false) {
+  const safe = (name || "").replace(/[^A-Za-z0-9_.-]/g, "_");
+  if (keep) return safe || "data";
+  return (safe.replace(/\.bsc$/i, "") || "prog") + ".bas";
 }
 
 // splitKinds : répartit les mots-clés par genre pour la coloration Monaco.

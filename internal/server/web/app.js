@@ -189,6 +189,15 @@ async function main() {
     el("help-filter").addEventListener("input", renderHelp);
     editor.addCommand(monaco.KeyCode.F1, () => toggleHelp(true));
 
+    // Fichiers de données du programme (graphismes .gfx, niveaux, scores…) → /storage de l'émulateur.
+    el("storage-files").addEventListener("change", async (ev) => {
+      const files = Array.from(ev.target.files);
+      if (!files.length || !emuReady) { if (!emuReady) status("Émulateur non prêt", true); return; }
+      for (const f of files) Module.FS.writeFile("/storage/" + storageName(f.name, true), new Uint8Array(await f.arrayBuffer()));
+      status(files.length + " fichier(s) dans /storage : " + files.map((f) => storageName(f.name, true)).join(", "));
+      ev.target.value = "";
+    });
+
     el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
     // Stop : web_type("\\e") (frappe automatique de Phosphoneo) si l'export existe, sinon touche synthétique.

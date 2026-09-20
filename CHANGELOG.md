@@ -5,6 +5,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — fichiers de données (S1-7)
+- 📎 Fichiers : envoie des fichiers (.gfx, niveaux, scores…) dans `/storage` de l'émulateur ; vérifié en
+  navigateur avec la démo `crossdev` de Trinity (`examples/sprites.bsc` + `examples/graphics.gfx`,
+  MIT © Paul Robson) : sprites, tiles et images animés.
 ### Ajouté — Trinity dans la page (S1-6, S1-8)
 - Phosphoneo reconstruit contre `~/Neo6502Trinity` (voir son CHANGELOG du 2026-09-20 : gardes pour le
   code du fork, `TMRRead()` avance pendant l'attente active de `BOOTLoadChoice`, exports `web_type` et
