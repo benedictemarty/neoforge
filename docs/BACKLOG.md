@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) en cours : S4-1, S4-2 faits. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) en cours : S4-1, S4-2, S4-4 faits. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -69,7 +69,7 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S4-1 | E5    | `input`, `inkey$(`, comparaisons de chaînes, `left$( right$( mid$( instr( val( isval( upper$( lower$( spc(` — 9/9 différentiels (frappe automatique `.keys`) | P1   | FAIT |
 | S4-2 | E5    | Flottants : nombres à type dynamique, inférence des entiers (chemin natif), groupe 4 — 10/10 différentiels | P1   | FAIT |
 | S4-3 | E5    | Tableaux `dim`, `ref`, `case/when`, `goto`/`gosub` (listings d'époque)             | P2   | TODO |
-| S4-4 | E5    | Graphisme (5,x), sprites (6,x), tilemaps, son (8,x), `event(`, `vmode`             | P1   | TODO |
+| S4-4 | E5    | Graphisme chaîné, sprites, `gload`, `tilemap`, son, `vmode`, `ink`, `cursor`, `palette`, `event( joypad( hit(`… — différentiel texte **et image** 11/11 | P1   | FAIT |
 | S4-5 | E9    | Corpus différentiel étendu (exemples de Trinity compilables)                       | P2   | TODO |
 
 ## Idées non planifiées

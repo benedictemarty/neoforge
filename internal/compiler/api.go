@@ -15,9 +15,44 @@ const (
 
 // Groupes et fonctions utilisés par le runtime.
 const (
-	grpSystem  = 1
-	grpConsole = 2
-	grpMaths   = 4
+	grpSystem     = 1
+	grpConsole    = 2
+	grpMaths      = 4
+	grpGraphics   = 5
+	grpSprites    = 6
+	grpController = 7
+	grpSound      = 8
+
+	fnSysTimer     = 1 // 1,1 : horloge 100 Hz dans Param0-3
+	fnSysKeyStatus = 2 // 1,2 : état de la touche Param0
+
+	fnConsoleSetCursor = 7 // 2,7 : curseur en (Param0, Param1)
+
+	fnGfxSetDefaults     = 1  // 5,1 : and, xor, solide, taille, flip
+	fnGfxSetMode         = 9  // 5,9
+	fnGfxGetMode         = 10 // 5,10
+	fnGfxSetPalette      = 32 // 5,32
+	fnGfxReadPixel       = 33 // 5,33
+	fnGfxResetPalette    = 34 // 5,34
+	fnGfxSetTilemap      = 35 // 5,35
+	fnGfxReadSpritePixel = 36 // 5,36
+	fnGfxFrameCount      = 37 // 5,37
+
+	fnSpriteReset     = 1 // 6,1
+	fnSpriteSet       = 2 // 6,2 : bloc de 8 octets ($80 = inchangé)
+	fnSpriteHide      = 3 // 6,3
+	fnSpriteCollision = 4 // 6,4
+	fnSpritePosition  = 5 // 6,5
+
+	fnCtrlRead = 1 // 7,1 : manette par défaut (Y X B A bas haut droite gauche)
+
+	fnSoundReset        = 1 // 8,1
+	fnSoundResetChannel = 2 // 8,2
+	fnSoundPlay         = 5 // 8,5
+	fnSoundStatus       = 6 // 8,6
+	fnSoundQueueExt     = 7 // 8,7 : canal, f, d, glissement (16 bits), type, volume
+
+	kernelLoadExtended = 0xFFE8 // vecteur noyau LoadExtended : 3,2 puis autorun éventuel
 
 	fnConsoleWrite  = 6  // 2,6 : écrit le caractère Param0
 	fnConsoleClear  = 12 // 2,12 : efface l'écran

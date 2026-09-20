@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : matériel (S4-4)
+- Commandes graphiques chaînées (`move line rect ellipse plot text image tiledraw` + `from to by ink solid frame
+  dim`), `sprite` (héritage du bloc entre sprites d'une même commande, comme l'interpréteur), `gload`, `tilemap`,
+  `sound`/`noise`/`sfx`, `vmode`, `ink` (avec la particularité de `ink.asm`), `cursor`, `palette`, `alloc(`, et les
+  fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` — mêmes
+  appels API que l'interpréteur.
+- Harnais différentiel : comparaison des **captures d'écran** en plus du texte (curseur de l'invite exclu),
+  fichiers de données (`graphics.gfx`) fournis au stockage ; 11 programmes identiques texte et image.
 ### Ajouté — compilateur : flottants (S4-2)
 - Nombres à type dynamique (octet de type comme les registres de l'API), variables numériques sur 5 octets,
   inférence par point fixe des variables entières (chemin 65C02 natif conservé), opérations et fonctions

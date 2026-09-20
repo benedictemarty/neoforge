@@ -19,7 +19,7 @@ func TestParseErrors(t *testing.T) {
 		{"x = \"a\"", "nombre attendu"},
 		{"x$ = 1", "chaîne attendue"},
 		{"print 2 * ", "expression attendue"},
-		{"print key(1)", "fonction key("},
+		{"print pin(1)", "fonction pin("},
 		{"print abs(1", "« ) » attendu"},
 		{"print (1", "« ) » attendu"},
 		{"print min(1 2)", "« , » attendu"},

@@ -1,0 +1,42 @@
+gload "graphics.gfx"
+sprite clear
+line 160,120 ink 2 to 300,200
+rect 10,10 solid ink 4 to 60,40
+rect 70,10 frame ink 6 to 120,40
+ellipse 130,10 solid ink 3 to 180,40 frame
+plot ink 7 to 5,5 to 6,6 by 1,1
+move 200,100 line to 250,150 by 10,-10
+text "Hello" solid dim 2 ink 3 to 10,100
+text "gfx" to 10,140
+image 0 to 10,10
+image $80 dim 2 to 200,10
+image $C0,1 dim 1 to 240,10
+sprite 0 image $80 to 100,100
+sprite 1 image $C0 to 150,100 sprite 2 image $80 flip 2 by 10,10
+sprite 3 image $80 to 50,50 hide
+cursor 10,20
+ink 5: print "cinq"
+ink 3,1: print "papier"
+ink 7,0
+sound 0,440,20
+sound 1 clear
+noise 2,100,10,5
+sfx 3,1
+palette 1, 100, 100, 100
+palette clear
+t = 0
+n = 0
+repeat
+  if event(t, 2): n = n + 1: endif
+until n = 3
+print "events"; n; " spx="; spritex(0); " spy="; spritey(0); " hit="; hit(0,1,100); hit(0,2,200)
+print "vmode="; vmode(); " key="; key(4); " notes="; notes(0); " point="; point(35,25); " spoint="; spoint(100,100)
+print "tick="; time() > 0; vblanks() > 0
+b = joypad(dx, dy)
+print "joy="; b; dx; dy
+map = alloc(303)
+poke map,1: poke map+1,10: poke map+2,10
+for i = 0 to 99: poke map+3+i,$F3: next
+tilemap map,0,0
+tiledraw 0,0 to 100,100
+print "gfx ok"

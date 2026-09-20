@@ -1,6 +1,6 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants livrés).
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 entrées et chaînes, S4-2 flottants, S4-4 graphisme/sprites/son livrés).
 
 ## Utilisation
 
@@ -21,7 +21,8 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `goto`/`gosub`, `on error`, `case/when` |
 | `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers) | `ref`, tableaux (`dim`), récursion |
-| `abs( sgn( int( min( max( rand( true false` | graphisme, sprites, tilemaps, `event(`, assembleur `[ ]` |
+| `abs( sgn( int( min( max( rand( alloc( true false` | assembleur `[ ]`, `pin`/`i2c`/`serial`, `mouse`, turtle |
+| **graphisme chaîné** `move line rect ellipse plot text image tiledraw` (`from to by x,y ink solid frame dim`), **`sprite`** (`image to by flip anchor hide`, `sprite clear`), `gload`, `tilemap`, `sound`/`noise`/`sfx`, `vmode`, `ink`, `cursor`, `palette` ; fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` | `joypad(` à 3 arguments, `mouse(`, `frame`, fichiers |
 
 Les programmes suivent les conventions de l'interpréteur (vérifiées sur Phosphoneo, non inventées) :
 `proc` se définissent **après `end`** ; `exit` n'est valide **que dans `do … loop`** ; `for` exécute son corps
@@ -32,6 +33,16 @@ base 1 (`instr(a$,"")` = 1, `mid$(a$,20)` = ""), `right$(a$,50)` = la chaîne en
 Divergences assumées (l'interpréteur signale une erreur, le compilé continue) : `mid$(a$,0,…)` est traité
 comme `mid$(a$,1,…)`, un argument négatif de `left$`/`right$`/`mid$`/`spc` vaut 0, `val(` d'un texte non
 numérique vaut 0.
+
+## Matériel : mêmes appels API que l'interpréteur
+
+Chaque commande matérielle reproduit la séquence d'appels de `commands/hardware/*.asm` : état graphique
+(position, mode, encre, solide, taille, flip, texte, image) tenu dans `GSTATE` et envoyé par 5,1 ; `to`/`by`
+copient l'ancienne position en Param4-7, la nouvelle en Param0-3 puis appellent 5,mode ; bloc sprite de 8
+octets (`$80` = inchangé) envoyé par 6,2 — un `sprite n` suivant dans la même commande hérite des champs du
+précédent ; `event(` opère par référence sur la variable ; `joypad(dx,dy)` écrit -1/0/1 dans `dx`/`dy`.
+Particularité reproduite : `ink c,p` écrit l'octet du token virgule (`$CA`) avant le code papier, comme
+`ink.asm`. Le différentiel compare aussi les **captures d'écran** (PPM) des deux exécutions, curseur exclu.
 
 ## Nombres : entiers natifs, flottants par l'API
 

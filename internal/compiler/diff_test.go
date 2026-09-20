@@ -21,16 +21,29 @@ func emulator(t *testing.T) string {
 }
 
 // screen exécute Phosphoneo et renvoie l'écran texte normalisé (lignes sans blancs finaux,
-// lignes vides finales retirées).
+// lignes vides finales retirées) ; ppm (facultatif) reçoit la capture image.
 func screen(t *testing.T, emu string, args ...string) string {
+	s, _ := screenAndImage(t, emu, args...)
+	return s
+}
+
+func screenAndImage(t *testing.T, emu string, args ...string) (string, []byte) {
 	t.Helper()
 	dir := t.TempDir()
+	// Fichiers de données du corpus (graphics.gfx…) disponibles dans le stockage.
+	for _, f := range []string{"graphics.gfx"} {
+		if data, err := os.ReadFile(filepath.Join("testdata", f)); err == nil {
+			os.WriteFile(filepath.Join(dir, f), data, 0o644)
+		}
+	}
 	out := filepath.Join(dir, "out.txt")
-	cmd := exec.Command(emu, append([]string{"--headless", "--storage", dir}, append(args, "--screenshot-text", out)...)...)
+	ppm := filepath.Join(dir, "out.ppm")
+	cmd := exec.Command(emu, append([]string{"--headless", "--storage", dir}, append(args, "--screenshot-text", out, "--screenshot", ppm)...)...)
 	if msg, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("phosphoneo %v : %v\n%s", args, err, msg)
 	}
 	txt, _ := os.ReadFile(out)
+	img, _ := os.ReadFile(ppm)
 	var lines []string
 	for _, l := range strings.Split(string(txt), "\n") {
 		lines = append(lines, strings.TrimRight(l, " "))
@@ -38,7 +51,7 @@ func screen(t *testing.T, emu string, args ...string) string {
 	for len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n"), img
 }
 
 // TestDifferential : chaque programme du corpus, précédé de `cls`, doit produire le
@@ -74,12 +87,14 @@ func TestDifferential(t *testing.T) {
 			if keys, err := os.ReadFile(strings.TrimSuffix(f, ".bsc") + ".keys"); err == nil {
 				extra = []string{"--type-keys", "4000000:" + strings.TrimSpace(string(keys))}
 			}
-			want := screen(t, emu, append([]string{basic + "@800", basFile, "--cycles", "20000000"}, extra...)...)
-			got := screen(t, emu, append([]string{neoFile, "--cycles", "20000000"}, extra...)...)
+			want, wantImg := screenAndImage(t, emu, append([]string{basic + "@800", basFile, "--cycles", "20000000"}, extra...)...)
+			got, gotImg := screenAndImage(t, emu, append([]string{neoFile, "--cycles", "20000000"}, extra...)...)
 			if got != want {
 				t.Errorf("écrans différents\n--- interprété\n%q\n--- compilé\n%q", want, got)
+			} else if n := imageDiff(wantImg, gotImg); n != 0 {
+				t.Errorf("texte identique mais image différente (%d pixels hors curseur)", n)
 			} else {
-				t.Logf("identique (%d lignes)", strings.Count(want, "\n")+1)
+				t.Logf("identique (%d lignes, image %d octets)", strings.Count(want, "\n")+1, len(wantImg))
 			}
 		})
 	}
@@ -112,4 +127,36 @@ func TestCorpusAssembles(t *testing.T) {
 			t.Errorf("%s : octets différents de 64tass (%d vs %d)", f, len(code), len(ref))
 		}
 	}
+}
+
+// imageDiff compte les pixels différents entre deux captures PPM (P6 320×240), en
+// ignorant le curseur de l'invite NeoBASIC après la fin du programme interprété : des
+// écarts confinés à une cellule de 8×8 où le côté interprété est d'une couleur uniforme.
+func imageDiff(a, b []byte) int {
+	const hdr = 15 // "P6\n320 240\n255\n"
+	if len(a) != len(b) || len(a) < hdr {
+		return -1
+	}
+	n := 0
+	minX, minY, maxX, maxY := 320, 240, -1, -1
+	var colour []byte
+	uniform := true
+	for i := hdr; i+2 < len(a); i += 3 {
+		if a[i] == b[i] && a[i+1] == b[i+1] && a[i+2] == b[i+2] {
+			continue
+		}
+		n++
+		p := (i - hdr) / 3
+		x, y := p%320, p/320
+		minX, minY, maxX, maxY = min(minX, x), min(minY, y), max(maxX, x), max(maxY, y)
+		if colour == nil {
+			colour = a[i : i+3]
+		} else if a[i] != colour[0] || a[i+1] != colour[1] || a[i+2] != colour[2] {
+			uniform = false
+		}
+	}
+	if n > 0 && uniform && maxX-minX < 8 && maxY-minY < 8 {
+		return 0 // curseur
+	}
+	return n
 }

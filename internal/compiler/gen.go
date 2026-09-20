@@ -18,6 +18,7 @@ const (
 	zCNT  = 0x2E // compteur (décalages, copies)
 	zTYPE = 0x3C // type de ACC : 0 entier, $40 flottant (comme l'octet de type des registres de l'API)
 	zTMPT = 0x3D // type de TMP
+	zHEAP = 0x3E // pointeur du tas (alloc( : après les données du programme)
 	zREG  = 0x30 // registres maths de l'API, entrelacés au pas 2 : REG1 = $30 (type) $32 $34 $36 $38 ; REG2 = $31 $33 $35 $37 $39
 	zREG2 = 0x31
 )
@@ -75,9 +76,14 @@ func (g *gen) errorf(format string, args ...any) {
 
 func (g *gen) program() {
 	a := g.a
-	// Prologue : piles vides.
+	// Prologue : piles vides, état graphique initial.
 	a.Op("stz", asm.Zp, zSP)
 	a.Op("stz", asm.Zp, zLSP)
+	g.call("GFXRESET")
+	a.ImmLo("lda", "ENDPROG", 0)
+	a.Op("sta", asm.Zp, zHEAP)
+	a.ImmHi("lda", "ENDPROG", 0)
+	a.Op("sta", asm.Zp, zHEAP+1)
 	g.stmts(g.prog.Body)
 	g.stop()
 	// Procédures.
@@ -118,10 +124,15 @@ func (g *gen) program() {
 	g.fill(16)
 	a.Label("INBUF") // ligne saisie par input (80 caractères max, comme l'interpréteur)
 	g.fill(82)
+	a.Label("GSTATE") // état des commandes graphiques
+	g.fill(gState)
+	a.Label("SPRBLK") // bloc de mise à jour d'un sprite (6,2)
+	g.fill(spBlock)
 	a.Label("STK") // pile d'expressions : 51 entrées de 5 octets (type + valeur)
 	g.fill(256)
 	a.Label("LSTK") // pile des locales
 	g.fill(256)
+	a.Label("ENDPROG") // début du tas (alloc()
 }
 
 func (g *gen) fill(n int) {
@@ -270,8 +281,12 @@ func (g *gen) stmt(s Stmt) {
 		}
 	case *End:
 		g.stop()
-	case *Cls:
-		emitAPICall(a, grpConsole, fnConsoleClear)
+	case *Cls: // code console 12 puis remise à zéro de l'état graphique (Command_CLS)
+		a.Op("lda", asm.Imm, 12)
+		g.call("PRCHR")
+		g.call("GFXRESET")
+	default:
+		g.hwStmt(s)
 	}
 }
 
@@ -572,6 +587,9 @@ func (g *gen) mathCompare() {
 
 func (g *gen) intCall(x Call) {
 	a := g.a
+	if g.hwCall(x) {
+		return
+	}
 	switch x.Name {
 	case "abs":
 		g.intExpr(x.Args[0])
@@ -616,6 +634,26 @@ func (g *gen) intCall(x Call) {
 			a.Op("lda", asm.ZpIndY, zPTR)
 			a.Op("sta", asm.Zp, zACC+1)
 		}
+		a.Op("stz", asm.Zp, zACC+2)
+		a.Op("stz", asm.Zp, zACC+3)
+		a.Op("stz", asm.Zp, zTYPE)
+	case "alloc": // adresse courante du tas, puis tas += n
+		g.intExpr(x.Args[0])
+		a.Op("lda", asm.Zp, zHEAP)
+		a.Op("sta", asm.Zp, zTMP)
+		a.Op("lda", asm.Zp, zHEAP+1)
+		a.Op("sta", asm.Zp, zTMP+1)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("lda", asm.Zp, zHEAP)
+		a.Op("adc", asm.Zp, zACC)
+		a.Op("sta", asm.Zp, zHEAP)
+		a.Op("lda", asm.Zp, zHEAP+1)
+		a.Op("adc", asm.Zp, zACC+1)
+		a.Op("sta", asm.Zp, zHEAP+1)
+		a.Op("lda", asm.Zp, zTMP)
+		a.Op("sta", asm.Zp, zACC)
+		a.Op("lda", asm.Zp, zTMP+1)
+		a.Op("sta", asm.Zp, zACC+1)
 		a.Op("stz", asm.Zp, zACC+2)
 		a.Op("stz", asm.Zp, zACC+3)
 		a.Op("stz", asm.Zp, zTYPE)
@@ -1024,7 +1062,8 @@ func (g *gen) inferInt() {
 }
 
 // Fonctions dont le résultat est toujours entier.
-var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true}
+var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true,
+	"alloc": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
 
 // isInt : l'expression numérique est-elle prouvée entière ?
 func (g *gen) isInt(x Expr) bool {

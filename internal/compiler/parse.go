@@ -177,6 +177,9 @@ func (p *parser) statement() (Stmt, error) {
 	if it.Kind != neobasic.ItemKeyword {
 		return nil, p.errorf("instruction attendue, trouvé « %s »", p.peekName())
 	}
+	if s, ok, err := p.hwStatement(it.Tok.Name); ok {
+		return s, err
+	}
 	switch it.Tok.Name {
 	case "let":
 		p.next()
@@ -575,6 +578,8 @@ var builtins = map[string][]Type{
 	"val": {TStr}, "isval": {TStr}, "upper$": {TStr}, "lower$": {TStr}, "spc": {TInt}, "inkey$": {},
 	"sin": {TInt}, "cos": {TInt}, "tan": {TInt}, "atan": {TInt}, "log": {TInt}, "exp": {TInt}, "sqr": {TInt},
 	"pow": {TInt, TInt}, "atan2": {TInt, TInt}, "rnd": {TInt},
+	"alloc": {TInt}, "time": {}, "vblanks": {}, "key": {TInt}, "vmode": {}, "notes": {TInt}, "point": {TInt, TInt}, "spoint": {TInt, TInt},
+	"hit": {TInt, TInt, TInt}, "spritex": {TInt}, "spritey": {TInt}, "event": {TInt, TInt}, "joypad": {TInt, TInt},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {
