@@ -10,6 +10,9 @@ versionnage [SemVer](https://semver.org/lang/fr/).
   les renvoie sous `/emu/`.
 - Le programme par défaut contenait un « — » non ASCII, refusé par le tokeniseur.
 ### Ajouté
+- Détokeniseur `.bas` → source (`internal/neobasic.List`, reproduction de `listbasic.py`, 61 listings
+  du corpus identiques à la référence) ; `neobas -list [-n]`, `POST /api/detok`, bouton ⬆ .bas dans
+  l'éditeur (S1-4). Limite héritée de la référence : `print .5` est listé `print.5`.
 - `tools/browser_e2e.mjs` + `make e2e-browser` : Chrome headless piloté par CDP ouvre l'IDE, clique
   ▶ Exécuter et capture l'écran (programme vérifié en cours d'exécution dans Phosphoneo WASM).
 - Dépôt distant public https://github.com/benedictemarty/neoforge et CI GitHub Actions

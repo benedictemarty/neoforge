@@ -131,6 +131,18 @@ async function main() {
       status(name + " ouvert");
     });
 
+    // Importer un .bas : détokenisé côté serveur (/api/detok), ouvert dans l'éditeur.
+    el("import-bas").addEventListener("change", async (ev) => {
+      const f = ev.target.files[0];
+      if (!f) return;
+      const j = await fetch("/api/detok", { method: "POST", body: await f.arrayBuffer() }).then((r) => r.json());
+      if (j.error) { status(j.error, true); return; }
+      editor.setValue(j.source);
+      el("fname").value = f.name.replace(/\.bas$/i, ".bsc");
+      status(f.name + " détokenisé");
+      ev.target.value = "";
+    });
+
     el("btn-new").addEventListener("click", () => { editor.setValue(DEFAULT_SOURCE); el("fname").value = ""; diag(""); });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
     el("btn-fullscreen").addEventListener("click", () => Module.canvas.requestFullscreen && Module.canvas.requestFullscreen());

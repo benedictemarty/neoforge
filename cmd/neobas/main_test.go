@@ -27,6 +27,9 @@ func TestRun(t *testing.T) {
 		{[]string{filepath.Join(dir, "absent.bsc")}, 1},
 		{[]string{"-o", out, bad}, 1},
 		{[]string{"-o", filepath.Join(dir, "no", "dir", "x.bas"), src}, 1},
+		{[]string{"-list", "-n", out}, 0},
+		{[]string{"-list", filepath.Join(dir, "absent.bas")}, 1},
+		{[]string{"-list", src}, 1},
 	}
 	for _, c := range cases {
 		so.Reset()
@@ -38,6 +41,11 @@ func TestRun(t *testing.T) {
 	data, err := os.ReadFile(out)
 	if err != nil || len(data) < 256 || data[257] != 0 || data[258] != 0 {
 		t.Errorf("sortie library : %v, %d octets", err, len(data))
+	}
+	so.Reset()
+	run([]string{"-list", out}, &so, &se)
+	if so.String() != "0 print\"hi\"\n" {
+		t.Errorf("-list : %q", so.String())
 	}
 	run([]string{"-version"}, &so, &se)
 	if !strings.Contains(so.String(), "neobas") {

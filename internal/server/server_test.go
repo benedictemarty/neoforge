@@ -1,7 +1,10 @@
 package server
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -91,6 +94,33 @@ func TestBuild(t *testing.T) {
 		t.Errorf("GET /api/build : %d", code)
 	}
 }
+
+func TestDetok(t *testing.T) {
+	s, _ := newTest(t)
+	_, m, _ := do(t, s, "POST", "/api/build", `{"source":"print 1"}`)
+	bas, _ := base64.StdEncoding.DecodeString(m["bas"].(string))
+	r := httptest.NewRequest("POST", "/api/detok", bytes.NewReader(bas))
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, r)
+	var out map[string]string
+	json.Unmarshal(w.Body.Bytes(), &out)
+	if w.Code != 200 || out["source"] != "100 print 1\n" {
+		t.Errorf("detok : %d %v", w.Code, out)
+	}
+	if code, _, _ := do(t, s, "POST", "/api/detok", "xx"); code != 422 {
+		t.Errorf("detok invalide : %d", code)
+	}
+	r = httptest.NewRequest("POST", "/api/detok", errReader{})
+	w = httptest.NewRecorder()
+	s.ServeHTTP(w, r)
+	if w.Code != 400 {
+		t.Errorf("detok lecture : %d", w.Code)
+	}
+}
+
+type errReader struct{}
+
+func (errReader) Read([]byte) (int, error) { return 0, errors.New("boom") }
 
 func TestFiles(t *testing.T) {
 	s, cfg := newTest(t)

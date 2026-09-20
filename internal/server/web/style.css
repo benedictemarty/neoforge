@@ -7,7 +7,9 @@ body { display: flex; flex-direction: column; }
 .brand small { color: var(--dim); font-weight: 400; margin-left: 6px; }
 .group { display: flex; gap: 6px; align-items: center; }
 button, select, input { background: #222636; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font: inherit; }
-button { cursor: pointer; }
+button, label.btn { cursor: pointer; }
+label.btn { background: #222636; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
+label.btn:hover { border-color: var(--accent); }
 button:hover { border-color: var(--accent); }
 button.primary { background: #2c4a9a; border-color: #3b62c4; }
 .status { color: var(--dim); margin-left: auto; }

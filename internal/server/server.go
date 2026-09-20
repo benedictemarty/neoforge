@@ -7,6 +7,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -38,6 +39,7 @@ func New(cfg config.Config, version string) *Server {
 	s.mux.HandleFunc("GET /api/config", s.handleConfig)
 	s.mux.HandleFunc("GET /api/keywords", s.handleKeywords)
 	s.mux.HandleFunc("POST /api/build", s.handleBuild)
+	s.mux.HandleFunc("POST /api/detok", s.handleDetok)
 	s.mux.HandleFunc("GET /api/files", s.handleFiles)
 	s.mux.HandleFunc("GET /api/file", s.handleFileGet)
 	s.mux.HandleFunc("PUT /api/file", s.handleFilePut)
@@ -99,6 +101,21 @@ func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]any{"bas": p.Render(), "lines": p.Lines()})
+}
+
+// handleDetok détokenise un .bas (corps binaire) ; réponse : {"source": texte}.
+func (s *Server) handleDetok(w http.ResponseWriter, r *http.Request) {
+	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	if err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	text, err := neobasic.List(data, true)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"source": text})
 }
 
 // safeName valide un nom de fichier de projet (.bsc, sans répertoire).

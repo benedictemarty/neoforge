@@ -39,7 +39,8 @@ make run          # http://127.0.0.1:8098
 
 - **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
   dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
-- **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel.
+- **⬇ .bas** : télécharge le programme tokenisé, à copier sur la clé USB d'un Neo6502 réel ;
+  **⬆ .bas** : importe un `.bas` (détokenisé dans l'éditeur).
 - **Ouvrir / Enregistrer** (Ctrl+S) : programmes `.bsc` de `NEOFORGE_PROJECTS_DIR`.
 - **⌨ Clavier → Neo** : donne le clavier à l'émulateur (ou cliquer sur l'écran).
 
@@ -57,6 +58,7 @@ make run          # http://127.0.0.1:8098
 go build -o neobas ./cmd/neobas
 ./neobas -o hello.bas examples/hello.bsc     # équivalent de makebasic.py (identique octet pour octet)
 ./neobas -library -o lib.bas lib.bsc         # bibliothèque (numéros de ligne à 0)
+./neobas -list hello.bas                     # détokenise (= listbasic.py) ; -n sans numéros
 ```
 
 ## Développement
