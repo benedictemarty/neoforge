@@ -5,6 +5,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté
+- Dépôt distant public https://github.com/benedictemarty/neoforge et CI GitHub Actions
+  (gofmt, vet, couverture 100 %, tests JS, build) — S1-1.
 
 ## [0.1.0] - 2026-09-20
 ### Ajouté — sprint 0, socle du portage de la Forge Oric sur Neo6502
