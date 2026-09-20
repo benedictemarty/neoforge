@@ -12,11 +12,14 @@ var rtDeps = map[string][]string{
 	"ABS":    {"NEG"},
 	"BOOLEQ": {}, "BOOLNE": {}, "NOT": {}, "SHL": {"TMPTOACC"}, "SHR": {"TMPTOACC"}, "PUSH": {}, "POP": {}, "POPACC": {},
 	"LPUSH": {}, "LPOP": {}, "INC32": {}, "DEC32": {}, "TMPTOACC": {}, "PRCHR": {}, "STRCOPY": {}, "STRAPPEND": {},
+	"STRCMP": {}, "INSTR": {}, "STRSUB": {}, "RIGHTSTART": {}, "CLAMP255": {}, "UPPER": {}, "LOWER": {}, "SPACES": {},
+	"INPUTLINE": {"PRCHR"},
 }
 
 // Ordre d'émission stable.
 var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NEG", "NOT", "ABS", "SGN", "BOOLEQ", "BOOLNE",
-	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND"}
+	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
+	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -43,6 +46,9 @@ func (g *gen) emitRoutine(name string) {
 	a := g.a
 	rts := func() { a.Op("rts", asm.Imp, 0) }
 	switch name {
+	case "STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE":
+		g.emitStringRoutine(name)
+		return
 	case "PUSH": // empile ACC
 		a.Op("ldx", asm.Zp, zSP)
 		for i := 0; i < 4; i++ {
@@ -269,6 +275,232 @@ func (g *gen) emitRoutine(name string) {
 		a.Branch("bra", loop)
 		a.Label(done)
 		rts()
+	}
+}
+
+// emitStringRoutine : routines de chaînes et d'entrée.
+func (g *gen) emitStringRoutine(name string) {
+	a := g.a
+	rts := func() { a.Op("rts", asm.Imp, 0) }
+	switch name {
+	case "STRCMP": // compare (TMP) à (PTR) : A = $FF si <, 0 si =, 1 si > (lexicographique, puis longueur)
+		loop, less, leftdone, equal := a.Uniq("scmp"), a.Uniq("scmp"), a.Uniq("scmp"), a.Uniq("scmp")
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("sta", asm.Zp, zCNT) // longueur gauche
+		a.Op("lda", asm.ZpIndY, zPTR)
+		a.Op("sta", asm.Zp, zCNT+1) // longueur droite ($2F)
+		a.Label(loop)                 // y = caractères déjà égaux
+		a.Op("cpy", asm.Zp, zCNT)
+		a.Branch("beq", leftdone) // gauche épuisée
+		a.Op("cpy", asm.Zp, zCNT+1)
+		a.Branch("beq", equal+"_gt") // droite épuisée, gauche plus longue → >
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("cmp", asm.ZpIndY, zPTR)
+		a.Branch("beq", loop)
+		a.Branch("bcc", less)
+		a.Label(equal + "_gt")
+		a.Op("lda", asm.Imm, 1)
+		rts()
+		a.Label(leftdone) // gauche préfixe de droite : < si droite plus longue, sinon =
+		a.Op("cpy", asm.Zp, zCNT+1)
+		a.Branch("beq", equal)
+		a.Label(less)
+		a.Op("lda", asm.Imm, 0xFF)
+		rts()
+		a.Label(equal)
+		a.Op("lda", asm.Imm, 0)
+		rts()
+	case "INSTR": // ACC = position (base 1) de (PTR) dans (TMP), 0 si absent ; motif vide → 1
+		outer, inner, found, notfound, next := a.Uniq("ins"), a.Uniq("ins"), a.Uniq("ins"), a.Uniq("ins"), a.Uniq("ins")
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zPTR)
+		a.Op("sta", asm.Zp, zCNT+1) // longueur du motif
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("sta", asm.Zp, zCNT) // longueur de la chaîne
+		a.Op("ldx", asm.Imm, 0)   // position candidate (base 0)
+		a.Label(outer)
+		a.Op("txa", asm.Imp, 0)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("adc", asm.Zp, zCNT+1)
+		a.Op("cmp", asm.Zp, zCNT)
+		a.Branch("beq", inner)
+		a.Branch("bcs", notfound) // x + len(motif) > len(chaîne)
+		a.Label(inner)
+		a.Op("ldy", asm.Imm, 0)
+		a.Label(next)
+		a.Op("cpy", asm.Zp, zCNT+1)
+		a.Branch("beq", found)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zPTR) // motif[y]
+		a.Op("pha", asm.Imp, 0)
+		a.Op("tya", asm.Imp, 0)
+		a.Op("pha", asm.Imp, 0)
+		a.Op("sta", asm.Zp, zACC) // y sauvé
+		a.Op("txa", asm.Imp, 0)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("adc", asm.Zp, zACC)
+		a.Op("tay", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zTMP) // chaîne[x+y]
+		a.Op("sta", asm.Zp, zACC+1)
+		a.Op("pla", asm.Imp, 0)
+		a.Op("tay", asm.Imp, 0)
+		a.Op("pla", asm.Imp, 0)
+		a.Op("cmp", asm.Zp, zACC+1)
+		a.Branch("beq", next)
+		a.Op("inx", asm.Imp, 0)
+		a.Branch("bra", outer)
+		a.Label(found)
+		a.Op("inx", asm.Imp, 0)
+		a.Op("stx", asm.Zp, zACC)
+		a.Op("stz", asm.Zp, zACC+1)
+		a.Op("stz", asm.Zp, zACC+2)
+		a.Op("stz", asm.Zp, zACC+3)
+		rts()
+		a.Label(notfound)
+		for i := 0; i < 4; i++ {
+			a.Op("stz", asm.Zp, zACC+i)
+		}
+		rts()
+	case "STRSUB": // (PTR2) := (TMP)[X+1 …], Y caractères au plus (borné par la longueur de la source)
+		loop, copy, done := a.Uniq("sub"), a.Uniq("sub"), a.Uniq("sub")
+		a.Op("sty", asm.Zp, zCNT) // caractères restant à copier
+		a.Op("lda", asm.Imm, 0)
+		a.Op("tay", asm.Imp, 0)
+		a.Op("sta", asm.ZpIndY, zPTR2) // longueur du résultat = 0
+		a.Label(loop)
+		a.Op("lda", asm.Zp, zCNT)
+		a.Branch("beq", done)
+		a.Op("dec", asm.Zp, zCNT)
+		a.Op("inx", asm.Imp, 0) // x = indice source (base 1)
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("sta", asm.Zp, zACC+2)
+		a.Op("cpx", asm.Zp, zACC+2)
+		a.Branch("beq", copy)
+		a.Branch("bcs", done) // x > longueur
+		a.Label(copy)
+		a.Op("txa", asm.Imp, 0)
+		a.Op("tay", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("sta", asm.Zp, zACC+3) // caractère
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zPTR2)
+		a.Op("inc", asm.Imp, 0)
+		a.Op("sta", asm.ZpIndY, zPTR2)
+		a.Op("tay", asm.Imp, 0)
+		a.Op("lda", asm.Zp, zACC+3)
+		a.Op("sta", asm.ZpIndY, zPTR2)
+		a.Branch("bra", loop)
+		a.Label(done)
+		rts()
+	case "RIGHTSTART": // X = max(len(TMP) - n, 0), Y = n (n dans ACC, 0..255)
+		ok := a.Uniq("rs")
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zTMP)
+		a.Op("ldy", asm.Zp, zACC)
+		a.Op("sec", asm.Imp, 0)
+		a.Op("sbc", asm.Zp, zACC)
+		a.Branch("bcs", ok)
+		a.Op("lda", asm.Imm, 0)
+		a.Label(ok)
+		a.Op("tax", asm.Imp, 0)
+		rts()
+	case "CLAMP255": // ACC := 0 si négatif, 255 si > 255
+		neg, big, done := a.Uniq("cl"), a.Uniq("cl"), a.Uniq("cl")
+		a.Op("lda", asm.Zp, zACC+3)
+		a.Branch("bmi", neg)
+		a.Op("ora", asm.Zp, zACC+2)
+		a.Op("ora", asm.Zp, zACC+1)
+		a.Branch("bne", big)
+		rts()
+		a.Label(neg)
+		for i := 0; i < 4; i++ {
+			a.Op("stz", asm.Zp, zACC+i)
+		}
+		rts()
+		a.Label(big)
+		a.Op("lda", asm.Imm, 255)
+		a.Op("sta", asm.Zp, zACC)
+		a.Op("stz", asm.Zp, zACC+1)
+		a.Op("stz", asm.Zp, zACC+2)
+		a.Op("stz", asm.Zp, zACC+3)
+		a.Label(done)
+		rts()
+	case "UPPER", "LOWER": // (PTR) en place
+		loop, skip := a.Uniq("case"), a.Uniq("case")
+		lo, hi, delta := 'a', 'z', 0x20
+		if name == "LOWER" {
+			lo, hi = 'A', 'Z'
+		}
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.ZpIndY, zPTR)
+		a.Op("sta", asm.Zp, zCNT)
+		a.Label(loop)
+		a.Op("lda", asm.Zp, zCNT)
+		a.Branch("beq", skip+"_end")
+		a.Op("dec", asm.Zp, zCNT)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.ZpIndY, zPTR)
+		a.Op("cmp", asm.Imm, int(lo))
+		a.Branch("bcc", skip)
+		a.Op("cmp", asm.Imm, int(hi)+1)
+		a.Branch("bcs", skip)
+		if name == "UPPER" {
+			a.Op("sec", asm.Imp, 0)
+			a.Op("sbc", asm.Imm, delta)
+		} else {
+			a.Op("clc", asm.Imp, 0)
+			a.Op("adc", asm.Imm, delta)
+		}
+		a.Op("sta", asm.ZpIndY, zPTR)
+		a.Label(skip)
+		a.Branch("bra", loop)
+		a.Label(skip + "_end")
+		rts()
+	case "SPACES": // (PTR) := n espaces (n dans ACC, 0..255)
+		loop, done := a.Uniq("spc"), a.Uniq("spc")
+		a.Op("ldy", asm.Imm, 0)
+		a.Op("lda", asm.Zp, zACC)
+		a.Op("sta", asm.ZpIndY, zPTR)
+		a.Op("tax", asm.Imp, 0)
+		a.Label(loop)
+		a.Op("cpx", asm.Imm, 0)
+		a.Branch("beq", done)
+		a.Op("iny", asm.Imp, 0)
+		a.Op("lda", asm.Imm, ' ')
+		a.Op("sta", asm.ZpIndY, zPTR)
+		a.Op("dex", asm.Imp, 0)
+		a.Branch("bra", loop)
+		a.Label(done)
+		rts()
+	case "INPUTLINE": // saisie dans INBUF (écho, retour arrière, 80 caractères), comme InputLine de l'interpréteur
+		loop, del, exit := a.Uniq("inl"), a.Uniq("inl"), a.Uniq("inl")
+		a.OpL("stz", asm.Abs, "INBUF", 0)
+		a.Label(loop)
+		a.Op("jsr", asm.Abs, kernelReadChar)
+		a.Op("cmp", asm.Imm, 13)
+		a.Branch("beq", exit)
+		a.Op("cmp", asm.Imm, 8)
+		a.Branch("beq", del)
+		a.Op("cmp", asm.Imm, 32)
+		a.Branch("bcc", loop)
+		a.OpL("ldx", asm.Abs, "INBUF", 0)
+		a.Op("cpx", asm.Imm, 80)
+		a.Branch("beq", loop)
+		a.OpL("sta", asm.AbsX, "INBUF", 1)
+		a.OpL("inc", asm.Abs, "INBUF", 0)
+		a.OpL("jsr", asm.Abs, "RT_PRCHR", 0)
+		a.Branch("bra", loop)
+		a.Label(del)
+		a.OpL("ldx", asm.Abs, "INBUF", 0)
+		a.Branch("beq", loop)
+		a.OpL("dec", asm.Abs, "INBUF", 0)
+		a.OpL("jsr", asm.Abs, "RT_PRCHR", 0)
+		a.Branch("bra", loop)
+		a.Label(exit)
+		a.OpL("jmp", asm.Abs, "RT_PRCHR", 0)
 	}
 }
 

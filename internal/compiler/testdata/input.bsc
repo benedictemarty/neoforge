@@ -1,0 +1,5 @@
+input "Nom ? "; n$
+input "Age ? "; a
+print "Bonjour "; n$; ", "; a + 1; " ans l'an prochain"
+input x, y
+print x * y

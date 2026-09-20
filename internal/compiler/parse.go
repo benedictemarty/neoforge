@@ -183,6 +183,16 @@ func (p *parser) statement() (Stmt, error) {
 	case "print":
 		p.next()
 		return p.print()
+	case "input":
+		p.next()
+		if p.isKw("#") || p.isKw("line") {
+			return nil, p.errorf("input sur fichier non pris en charge")
+		}
+		pr, err := p.print() // les tableaux sont déjà refusés par l'analyse des expressions
+		if err != nil {
+			return nil, err
+		}
+		return &Input{Items: pr.(*Print).Items, NewLine: pr.(*Print).NewLine}, nil
 	case "if":
 		p.next()
 		return p.ifStmt()
@@ -483,9 +493,11 @@ func (p *parser) binary(minPrec int) (Expr, error) {
 	}
 }
 
+var compareOps = map[string]bool{"=": true, "<>": true, "<": true, ">": true, "<=": true, ">=": true}
+
 func checkBinary(op string, l, r Expr) error {
 	if l.Type() == TStr || r.Type() == TStr {
-		if op == "+" && l.Type() == TStr && r.Type() == TStr {
+		if (op == "+" || compareOps[op]) && l.Type() == TStr && r.Type() == TStr {
 			return nil
 		}
 		return fmt.Errorf("opérateur « %s » entre chaîne et nombre non pris en charge", op)
@@ -544,10 +556,12 @@ func (p *parser) unary() (Expr, error) {
 	return nil, fmt.Errorf("ligne %d : « %s » inattendu dans une expression", it.line, it.Tok.Name)
 }
 
-// Fonctions intégrées : nom → types des arguments.
+// Fonctions intégrées : nom → types des arguments (mid$ : 3e argument optionnel).
 var builtins = map[string][]Type{
 	"abs": {TInt}, "sgn": {TInt}, "int": {TInt}, "peek": {TInt}, "deek": {TInt}, "rand": {TInt},
 	"min": {TInt, TInt}, "max": {TInt, TInt}, "len": {TStr}, "asc": {TStr}, "chr$": {TInt}, "str$": {TInt},
+	"left$": {TStr, TInt}, "right$": {TStr, TInt}, "mid$": {TStr, TInt, TInt}, "instr": {TStr, TStr},
+	"val": {TStr}, "isval": {TStr}, "upper$": {TStr}, "lower$": {TStr}, "spc": {TInt}, "inkey$": {},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {
@@ -558,6 +572,9 @@ func (p *parser) call(name string, line int) (Expr, error) {
 	c := Call{Name: name}
 	for i, t := range sig {
 		if i > 0 {
+			if name == "mid$" && i == 2 && p.isKw(")") {
+				break // mid$(a$,f) : jusqu'à la fin
+			}
 			if err := p.expect(","); err != nil {
 				return nil, err
 			}

@@ -50,11 +50,11 @@ func (b Binary) Type() Type {
 	if b.Op == "+" && b.L.Type() == TStr {
 		return TStr
 	}
-	return TInt
+	return TInt // comparaisons de chaînes comprises
 }
 func (Unary) Type() Type { return TInt }
 func (c Call) Type() Type {
-	if len(c.Name) > 0 && c.Name[len(c.Name)-1] == '$' {
+	if (len(c.Name) > 0 && c.Name[len(c.Name)-1] == '$') || c.Name == "spc" {
 		return TStr
 	}
 	return TInt
@@ -147,6 +147,13 @@ type CallProc struct {
 type Local struct {
 	stmtMarker
 	Names []string
+}
+
+// Input : même forme que Print ; un item Var est lu au clavier (chaîne ou nombre).
+type Input struct {
+	stmtMarker
+	Items   []PrintItem
+	NewLine bool
 }
 
 // Poke/Doke : écriture mémoire 8/16 bits.

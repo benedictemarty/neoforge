@@ -5,6 +5,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : entrées et chaînes (S4-1)
+- `input` (boucle de saisie identique à l'interpréteur : 80 caractères, écho, retour arrière, « ?? » si le
+  nombre est invalide), `inkey$(`, comparaisons de chaînes, `left$( right$( mid$( instr( val( isval( upper$(
+  lower$( spc(` ; harnais différentiel avec frappe automatique (`testdata/<nom>.keys`) — 9 programmes identiques.
 
 ## [0.4.0] - 2026-09-21
 ### Ajouté — sprint 3, sprites, tuiles, tilemaps

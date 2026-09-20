@@ -1,6 +1,6 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 2 livré (v0.3.0)** — fondations.
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 4 en cours** (S4-1 livré : entrées et chaînes).
 
 ## Utilisation
 
@@ -17,8 +17,8 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | Pris en charge | Hors périmètre (sprints suivants) |
 |---|---|
 | entiers 32 bits signés (`+ - * \ % & \| ^ << >>`, comparaisons → -1/0, `not` logique, `-` unaire) | flottants (`/`, constantes décimales, `sin(`…) |
-| chaînes : constantes, variables (`x$`, 255 caractères), `+`, `len(`, `asc(`, `chr$(`, `str$(` | comparaison de chaînes, `mid$(`/`left$(`/`right$(`, `val(`, `instr(` |
-| `print` (`;` `,` taquets de 8, nombres via 4,34), `cls`, `poke`/`doke`, `peek(`/`deek(` | `input`, `inkey$(`, fichiers, son |
+| chaînes : constantes, variables (`x$`, 255 caractères), `+`, comparaisons (`= <> < > <= >=`, lexicographiques → -1/0), `len( asc( chr$( str$( left$( right$( mid$( instr( val( isval( upper$( lower$( spc( inkey$(` | `tab(`, `key(`, `event(` |
+| `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `goto`/`gosub`, `on error`, `case/when` |
 | `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers) | `ref`, tableaux (`dim`), récursion |
 | `abs( sgn( int( min( max( rand( true false` | graphisme, sprites, tilemaps, `event(`, assembleur `[ ]` |
@@ -26,7 +26,12 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 Les programmes suivent les conventions de l'interpréteur (vérifiées sur Phosphoneo, non inventées) :
 `proc` se définissent **après `end`** ; `exit` n'est valide **que dans `do … loop`** ; `for` exécute son corps
 **au moins une fois** ; les constantes sont tronquées à 32 bits (`2147483648` → `-2147483648`) ; `\` tronque
-vers zéro, `%` ignore les signes, les décalages sont logiques et `x << 33` = 0.
+vers zéro, `%` ignore les signes, les décalages sont logiques et `x << 33` = 0 ; `instr` et `mid$` sont en
+base 1 (`instr(a$,"")` = 1, `mid$(a$,20)` = ""), `right$(a$,50)` = la chaîne entière.
+
+Divergences assumées (l'interpréteur signale une erreur, le compilé continue) : `mid$(a$,0,…)` est traité
+comme `mid$(a$,1,…)`, un argument négatif de `left$`/`right$`/`mid$`/`spc` vaut 0, `val(` d'un texte non
+numérique vaut 0.
 
 ## Code généré
 

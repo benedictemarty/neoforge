@@ -53,6 +53,9 @@ func TestParseErrors(t *testing.T) {
 		{"call a(1)\nend\nproc a()\nendproc", "argument(s)"},
 		{"call a(1)\nend\nproc a(s$)\nendproc", "type incompatible"},
 		{"exit", "exit hors"},
+		{"input #1, a", "input sur fichier"},
+		{"input 2 *", "expression attendue"},
+		{"input a(1)", "tableaux"},
 		{"local s$", "local sur une chaîne"},
 		// propagation des erreurs dans chaque construction
 		{"while \"a\"\nwend", "nombre attendu"},
@@ -77,7 +80,7 @@ func TestParseErrors(t *testing.T) {
 		{"x = 1 + (", "expression attendue"},
 		{"x = -(", "expression attendue"},
 		{"print min(1,\"a\")", "nombre attendu"},
-		{"print \"a\" = \"b\"", "entre chaîne et nombre"},
+		{"print \"a\" * \"b\"", "entre chaîne et nombre"},
 		{"print \"a\" + 1", "entre chaîne et nombre"},
 	}
 	for _, c := range cases {
@@ -90,12 +93,12 @@ func TestParseErrors(t *testing.T) {
 
 func TestParseForms(t *testing.T) {
 	// Formes acceptées : numéros de ligne, commentaires, if then … endif, procs sans parenthèses, else/endif sur une ligne.
-	src := "10 ' commentaire\ncls\n20 print 1 // fin\nif 1 then print 2 endif\nif 0: print 3 else print 4 endif\nlet x = 5: x = x + 1\ncall hello\nend\nproc hello\nprint \"hi\"\nendproc\n"
+	src := "10 ' commentaire\ncls\ninput 1+1; a\n20 print 1 // fin\nif 1 then print 2 endif\nif 0: print 3 else print 4 endif\nlet x = 5: x = x + 1\ncall hello\nend\nproc hello\nprint \"hi\"\nendproc\n"
 	prog, err := Parse(src)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prog.Body) != 8 || len(prog.Procs) != 1 {
+	if len(prog.Body) != 9 || len(prog.Procs) != 1 {
 		t.Errorf("%d instructions, %d procédures", len(prog.Body), len(prog.Procs))
 	}
 	if _, err := Compile(src); err != nil {

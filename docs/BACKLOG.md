@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) à ouvrir. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 3 **livrés** (v0.4.0) ; sprint 4 (compilateur, suite) en cours : S4-1 fait. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -62,11 +62,11 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S3-3 | E7    | Import d'image → tuiles dédupliquées + tilemap (validé en navigateur)              | P2   | FAIT |
 | S3-4 | E6    | Snippets `vmode1` (attributs MDA) et `gload` (sprite + tilemap)                    | P3   | FAIT |
 
-## Sprint 4 — Compilateur, suite (v0.5.0) — À OUVRIR
+## Sprint 4 — Compilateur, suite (v0.5.0) — EN COURS
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
-| S4-1 | E5    | `input`, `inkey$(`, comparaison de chaînes, `mid$(`/`left$(`/`right$(`/`val(`/`instr(` | P1   | TODO |
+| S4-1 | E5    | `input`, `inkey$(`, comparaisons de chaînes, `left$( right$( mid$( instr( val( isval( upper$( lower$( spc(` — 9/9 différentiels (frappe automatique `.keys`) | P1   | FAIT |
 | S4-2 | E5    | Flottants via le groupe 4 (`/`, constantes décimales, `sin(`…) et type mixte       | P1   | TODO |
 | S4-3 | E5    | Tableaux `dim`, `ref`, `case/when`, `goto`/`gosub` (listings d'époque)             | P2   | TODO |
 | S4-4 | E5    | Graphisme (5,x), sprites (6,x), tilemaps, son (8,x), `event(`, `vmode`             | P1   | TODO |

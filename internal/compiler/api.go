@@ -22,6 +22,9 @@ const (
 	fnConsoleWrite  = 6  // 2,6 : écrit le caractère Param0
 	fnConsoleClear  = 12 // 2,12 : efface l'écran
 	fnConsoleCursor = 13 // 2,13 : position du curseur → Param0 = x, Param1 = y
+	fnConsoleRead   = 1  // 2,1 : Param0 = touche du tampon clavier (0 si aucune)
+
+	kernelReadChar = 0xFFEE // vecteur noyau ReadCharacter : attend une touche (curseur), A = caractère
 
 	fnMathMul      = 2  // 4,2 : REG1 := REG1 * REG2
 	fnMathIDiv     = 4  // 4,4 : division entière (tronquée vers zéro)
@@ -29,6 +32,7 @@ const (
 	fnMathCompare  = 6  // 4,6 : Param0 := $FF / 0 / 1 (REG1 <, =, > REG2)
 	fnMathRandInt  = 28 // 4,28 : REG1 := entier aléatoire dans [0, REG1)
 	fnMathNumToStr = 34 // 4,34 : REG1 → chaîne [len][chiffres] à l'adresse Param4-5
+	fnMathStrToNum = 33 // 4,33 : chaîne à l'adresse Param4-5 → REG1 ; $FF02 ≠ 0 si invalide
 
 	// Registres maths : Param0-1 = adresse de base, Param2 = pas (cf. reference/api.md).
 	mathRegBase = 0x30

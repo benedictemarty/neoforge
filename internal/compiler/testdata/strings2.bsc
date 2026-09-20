@@ -1,0 +1,16 @@
+a$ = "Hello World"
+print left$(a$,5);"|";right$(a$,5);"|";mid$(a$,7);"|";mid$(a$,7,3);"|";mid$(a$,20);"|";left$(a$,50);"|";right$(a$,0);"|"
+print right$(a$,50);"|";mid$(a$,7,0);"|";mid$(a$,12);"|";mid$(a$,11,5);"|"
+print instr(a$,"World");instr(a$,"xyz");instr(a$,"");instr("","a");instr(a$,"o");instr("aab","ab")
+print val("42");val("-7");val(" 12")
+print upper$(a$);lower$(a$)
+print "abc" = "abc";"abc" < "abd";"b" > "abc";"abc" <> "ABC";"" < "a";"abc" <= "abc";"abd" >= "abc";"ab" < "abc"
+print len(spc(3));"[";spc(2);"]"
+print isval("12");isval("x")
+print asc(inkey$());len(inkey$())
+n = 3
+b$ = ""
+while n > 0: b$ = b$ + mid$(a$,n,1): n = n - 1: wend
+print b$
+if a$ = "Hello World" then print "egal"
+if left$(a$,1) < "I" then print "avant I"

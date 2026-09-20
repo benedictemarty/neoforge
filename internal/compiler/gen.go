@@ -112,6 +112,8 @@ func (g *gen) program() {
 	}
 	a.Label("NBUF") // conversion nombre → chaîne (4,34)
 	g.fill(16)
+	a.Label("INBUF") // ligne saisie par input (80 caractères max, comme l'interpréteur)
+	g.fill(82)
 	a.Label("STK") // pile d'expressions : 64 entrées de 4 octets
 	g.fill(256)
 	a.Label("LSTK") // pile des locales
@@ -188,6 +190,8 @@ func (g *gen) stmt(s Stmt) {
 		}
 	case *Print:
 		g.print(s)
+	case *Input:
+		g.input(s)
 	case *If:
 		g.intExpr(s.Cond)
 		g.testACC()
@@ -374,6 +378,54 @@ func (g *gen) print(s *Print) {
 	}
 }
 
+// input : comme print, sauf qu'une variable est lue au clavier (INPUTLINE → INBUF) ;
+// un nombre invalide affiche « ?? » et relit (comme l'interpréteur).
+func (g *gen) input(s *Input) {
+	a := g.a
+	for _, it := range s.Items {
+		v, isVar := it.X.(Var)
+		switch {
+		case it.Sep == ",":
+			g.call("TAB")
+		case it.Sep == ";":
+		case isVar:
+			g.vars[v.Name] = true
+			if isStrName(v.Name) {
+				g.call("INPUTLINE")
+				g.setPTR("INBUF")
+				g.call("STRCOPY", varLabel(v.Name))
+			} else {
+				again := a.Uniq("input")
+				a.Label(again)
+				g.call("INPUTLINE")
+				g.setParamAddr(4, "INBUF")
+				emitMathCall(a, fnMathStrToNum)
+				ok := a.Uniq("input")
+				a.Op("lda", asm.Abs, apiError)
+				a.Branch("beq", ok)
+				a.Op("lda", asm.Imm, '?')
+				g.call("PRCHR")
+				a.Op("lda", asm.Imm, '?')
+				g.call("PRCHR")
+				a.Branch("bra", again)
+				a.Label(ok)
+				g.reg1ToACC()
+				g.storeACC(varLabel(v.Name))
+			}
+		case it.X.Type() == TStr:
+			g.strExpr(it.X)
+			g.call("PRSTR")
+		default:
+			g.intExpr(it.X)
+			g.call("PRINT")
+		}
+	}
+	if s.NewLine {
+		a.Op("lda", asm.Imm, 13)
+		g.call("PRCHR")
+	}
+}
+
 // ─── Expressions entières (résultat dans ACC) ───────────────────────────────
 
 func (g *gen) intExpr(x Expr) {
@@ -409,6 +461,19 @@ func (g *gen) intExpr(x Expr) {
 
 func (g *gen) binary(x Binary) {
 	a := g.a
+	if x.L.Type() == TStr { // comparaison de chaînes : STRCMP → A = $FF / 0 / 1 comme 4,6
+		g.strExpr(x.L)
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Zp, zACC)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Zp, zACC+1)
+		g.push()
+		g.strExpr(x.R)
+		g.pop() // TMP = pointeur gauche, PTR = droite
+		g.call("STRCMP")
+		g.compareResult(x.Op, false)
+		return
+	}
 	g.intExpr(x.L)
 	g.push()
 	g.intExpr(x.R)
@@ -448,14 +513,22 @@ func (g *gen) binary(x Binary) {
 		g.call("SHR")
 	default: // comparaisons : 4,6 → $FF / 0 / 1 dans Param0
 		g.mathCompare()
-		var want, invert = map[string]int{"<": 0xFF, "=": 0, ">": 1, "<=": 1, ">=": 0xFF, "<>": 0}[x.Op], x.Op == "<=" || x.Op == ">=" || x.Op == "<>"
+		g.compareResult(x.Op, true)
+	}
+}
+
+// compareResult : ACC = -1/0 selon l'opérateur et le code $FF/0/1 (dans Param0 si fromAPI, sinon dans A).
+func (g *gen) compareResult(op string, fromAPI bool) {
+	a := g.a
+	var want, invert = map[string]int{"<": 0xFF, "=": 0, ">": 1, "<=": 1, ">=": 0xFF, "<>": 0}[op], op == "<=" || op == ">=" || op == "<>"
+	if fromAPI {
 		a.Op("lda", asm.Abs, apiParam0)
-		a.Op("cmp", asm.Imm, want)
-		if invert {
-			g.call("BOOLNE") // ACC = -1 si Z=0
-		} else {
-			g.call("BOOLEQ") // ACC = -1 si Z=1
-		}
+	}
+	a.Op("cmp", asm.Imm, want)
+	if invert {
+		g.call("BOOLNE") // ACC = -1 si Z=0
+	} else {
+		g.call("BOOLEQ") // ACC = -1 si Z=1
 	}
 }
 
@@ -521,6 +594,37 @@ func (g *gen) intCall(x Call) {
 		a.Branch("bne", keep)
 		g.call("TMPTOACC")
 		a.Label(keep)
+	case "instr": // position (base 1) de la 2e chaîne dans la 1re, 0 si absente
+		g.strExpr(x.Args[0])
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Zp, zACC)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Zp, zACC+1)
+		g.push()
+		g.strExpr(x.Args[1])
+		g.pop() // TMP = chaîne, PTR = motif
+		g.call("INSTR")
+	case "val", "isval": // 4,33 ; val invalide → 0 (l'interpréteur signale une erreur), isval → -1/0
+		g.strExpr(x.Args[0])
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Abs, apiParam0+4)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Abs, apiParam0+5)
+		emitMathCall(a, fnMathStrToNum)
+		if x.Name == "isval" {
+			a.Op("lda", asm.Abs, apiError)
+			a.Op("cmp", asm.Imm, 0)
+			g.call("BOOLEQ")
+		} else {
+			ok := a.Uniq("val")
+			g.reg1ToACC()
+			a.Op("lda", asm.Abs, apiError)
+			a.Branch("beq", ok)
+			for i := 0; i < 4; i++ {
+				a.Op("stz", asm.Zp, zACC+i)
+			}
+			a.Label(ok)
+		}
 	case "len", "asc":
 		g.strExpr(x.Args[0])
 		a.Op("ldy", asm.Imm, 0)
@@ -562,6 +666,83 @@ func (g *gen) strExpr(x Expr) {
 		g.setPTR(buf)
 	case Call:
 		buf := g.newTemp()
+		switch x.Name {
+		case "left$", "right$", "mid$": // STRSUB : (PTR2) := (PTR)[X+1 …], Y caractères au plus
+			g.strExpr(x.Args[0])
+			a.Op("lda", asm.Zp, zPTR)
+			a.Op("sta", asm.Zp, zACC)
+			a.Op("lda", asm.Zp, zPTR+1)
+			a.Op("sta", asm.Zp, zACC+1)
+			g.push()
+			g.intExpr(x.Args[1]) // n ou début
+			if x.Name == "mid$" && len(x.Args) == 3 {
+				g.push()
+				g.intExpr(x.Args[2])
+				g.call("CLAMP255") // longueur → ACC (0..255)
+				a.Op("lda", asm.Zp, zACC)
+				a.Op("sta", asm.Zp, zCNT) // longueur demandée
+				g.popACC()
+			} else {
+				a.Op("lda", asm.Imm, 255)
+				a.Op("sta", asm.Zp, zCNT)
+			}
+			g.call("CLAMP255") // n ou début → 0..255
+			g.pop()            // TMP = pointeur source
+			g.setPTR2(buf)
+			switch x.Name {
+			case "left$":
+				a.Op("ldx", asm.Imm, 0)
+				a.Op("ldy", asm.Zp, zACC)
+			case "right$":
+				g.call("RIGHTSTART") // X = max(len-n, 0), Y = n
+			default: // mid$ : X = début-1 (début < 1 ramené à 1 ; l'interpréteur signale une erreur), Y = longueur
+				one := a.Uniq("mid")
+				a.Op("ldx", asm.Zp, zACC)
+				a.Branch("bne", one)
+				a.Op("inx", asm.Imp, 0)
+				a.Label(one)
+				a.Op("dex", asm.Imp, 0)
+				a.Op("ldy", asm.Zp, zCNT)
+			}
+			g.call("STRSUB")
+			g.setPTR(buf)
+		case "upper$", "lower$":
+			g.strExpr(x.Args[0])
+			g.setPTR2(buf)
+			g.call("STRCOPY")
+			g.setPTR(buf)
+			if x.Name == "upper$" {
+				g.call("UPPER")
+			} else {
+				g.call("LOWER")
+			}
+		case "spc":
+			g.intExpr(x.Args[0])
+			g.call("CLAMP255")
+			g.setPTR(buf)
+			g.call("SPACES")
+		case "inkey$": // 2,1 : touche ou 0
+			emitAPICall(a, grpConsole, fnConsoleRead)
+			empty := a.Uniq("inkey")
+			a.Op("lda", asm.Abs, apiParam0)
+			a.OpL("sta", asm.Abs, buf, 1)
+			a.Op("ldx", asm.Imm, 0)
+			a.Op("cmp", asm.Imm, 0)
+			a.Branch("beq", empty)
+			a.Op("inx", asm.Imp, 0)
+			a.Label(empty)
+			a.OpL("stx", asm.Abs, buf, 0)
+			g.setPTR(buf)
+		default:
+			g.strCallNum(x, buf)
+		}
+	}
+}
+
+// strCallNum : chr$ / str$ (argument entier).
+func (g *gen) strCallNum(x Call, buf string) {
+	a := g.a
+	{
 		g.intExpr(x.Args[0])
 		if x.Name == "chr$" {
 			a.Op("lda", asm.Imm, 1)
