@@ -59,9 +59,6 @@ func Parse(src string) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !p.atEnd() {
-		return nil, p.errorf("« %s » inattendu", p.peek().String())
-	}
 	return &Program{Body: body, Procs: p.procs}, nil
 }
 
@@ -288,10 +285,20 @@ func (p *parser) assign() (Stmt, error) {
 	return &Assign{Name: v.Text, X: x}, nil
 }
 
+// atBoundary : fin d'instruction (fin de ligne, « : », ou mot-clé d'instruction/structure).
+func (p *parser) atBoundary() bool {
+	it := p.peek()
+	if it.eol || it.Kind != neobasic.ItemKeyword {
+		return it.eol
+	}
+	k := it.Tok.Kind()
+	return it.Tok.Name == ":" || k == "statement" || k == "structure"
+}
+
 func (p *parser) print() (Stmt, error) {
 	pr := &Print{NewLine: true}
 	for {
-		if p.peek().eol || p.isKw(":") || p.isKw("else") {
+		if p.atBoundary() {
 			return pr, nil
 		}
 		if p.isKw(";") || p.isKw(",") {

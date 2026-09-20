@@ -38,33 +38,31 @@ type gen struct {
 
 // Compile compile un source NeoBASIC en binaire chargé en Org.
 func Compile(src string) ([]byte, error) {
-	prog, err := Parse(src)
-	if err != nil {
-		return nil, err
-	}
-	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
-	g.program()
-	if len(g.errs) > 0 {
-		return nil, fmt.Errorf("%s", strings.Join(g.errs, "\n"))
-	}
-	return g.a.Resolve()
+	_, code, err := compile(src)
+	return code, err
 }
 
-// Listing renvoie le listing 64tass du dernier programme compilé (diagnostic).
+// Listing renvoie le listing 64tass du programme compilé (diagnostic, oracle de test).
 func Listing(src string) (string, error) {
-	prog, err := Parse(src)
+	g, _, err := compile(src)
 	if err != nil {
-		return "", err
-	}
-	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
-	g.program()
-	if len(g.errs) > 0 {
-		return "", fmt.Errorf("%s", strings.Join(g.errs, "\n"))
-	}
-	if _, err := g.a.Resolve(); err != nil {
 		return "", err
 	}
 	return g.a.Listing(), nil
+}
+
+func compile(src string) (*gen, []byte, error) {
+	prog, err := Parse(src)
+	if err != nil {
+		return nil, nil, err
+	}
+	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}}
+	g.program()
+	if len(g.errs) > 0 {
+		return nil, nil, fmt.Errorf("%s", strings.Join(g.errs, "\n"))
+	}
+	code, err := g.a.Resolve() // ne peut échouer : toutes les étiquettes référencées sont émises
+	return g, code, err
 }
 
 func (g *gen) errorf(format string, args ...any) {
