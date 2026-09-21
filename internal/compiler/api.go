@@ -121,25 +121,17 @@ func emitAPIWait(a *asm.Asm) {
 	a.Branch("bne", l)
 }
 
-// emitAPICall émet un appel groupe/fonction : attend que l'API soit libre,
-// écrit la fonction puis le groupe, puis attend la fin (les paramètres ont été
-// écrits avant par l'appelant). Détruit A.
+// emitAPICall émet un appel groupe/fonction par la routine RT_API (A = fonction, X = groupe) :
+// attend que l'API soit libre, écrit la fonction puis le groupe, attend la fin (les paramètres ont
+// été écrits avant par l'appelant). Détruit A et X.
 func emitAPICall(a *asm.Asm, group, fn int) {
-	emitAPIWait(a)
 	a.Op("lda", asm.Imm, fn)
-	a.Op("sta", asm.Abs, apiFunction)
-	a.Op("lda", asm.Imm, group)
-	a.Op("sta", asm.Abs, apiGroup)
-	emitAPIWait(a)
+	a.Op("ldx", asm.Imm, group)
+	a.OpL("jsr", asm.Abs, "RT_API", 0)
 }
 
-// emitMathCall émet un appel du groupe maths avec les registres en page zéro.
+// emitMathCall émet un appel du groupe maths (RT_MATH : registres en page zéro puis RT_API).
 func emitMathCall(a *asm.Asm, fn int) {
-	emitAPIWait(a)
-	emitMathSetup(a)
 	a.Op("lda", asm.Imm, fn)
-	a.Op("sta", asm.Abs, apiFunction)
-	a.Op("lda", asm.Imm, grpMaths)
-	a.Op("sta", asm.Abs, apiGroup)
-	emitAPIWait(a)
+	a.OpL("jsr", asm.Abs, "RT_MATH", 0)
 }

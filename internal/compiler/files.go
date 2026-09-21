@@ -16,6 +16,7 @@ type Open struct {
 	Output  bool
 	Channel Expr
 	Name    Expr
+	Line    int
 }
 
 // Close : close [canal].
@@ -78,6 +79,7 @@ func (p *parser) fileStatement(kw string) (Stmt, bool, error) {
 		if o.Name, err = p.expr(TStr); err != nil {
 			return nil, true, err
 		}
+		o.Line = p.bas
 		return o, true, nil
 	case "close":
 		p.next()
@@ -158,6 +160,7 @@ func (g *gen) fileStmt(s Stmt) bool {
 		a.Op("lda", asm.Imm, mode)
 		a.Op("sta", asm.Abs, apiParam0+3)
 		emitAPICall(a, grpFile, fnFileOpen)
+		g.fileErrorCheck(s.Line)
 	case *Close:
 		if s.Channel == nil {
 			a.Op("lda", asm.Imm, 0xFF)

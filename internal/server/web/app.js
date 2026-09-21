@@ -196,7 +196,7 @@ async function main() {
         return;
       }
       monaco.editor.setModelMarkers(model, "neoforgec", []);
-      diag("compilé : " + j.bytes + " octets (.neo), " + (j.symbols || []).length + " variable(s)");
+      diag("compilé : " + j.bytes + " octets (.neo), fin $" + (j.end || 0).toString(16).toUpperCase() + (j.compact ? " (mode compact)" : "") + ", " + (j.symbols || []).length + " variable(s)");
       dbg.setSymbols(j.symbols, j.labels);
       if (!emuReady) { status("Émulateur non prêt", true); return; }
       const path = "/storage/" + storageName(el("fname").value).replace(/\.bas$/, ".neo");

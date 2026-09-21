@@ -1,8 +1,9 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 7** — **48 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) ; Breakout et Atic
-Atac (jeux officiels) tournent compilés. Restent : Sweet16 (`mixedassembler.bsc`) et `asteroids.bsc`
-(bibliothèque non incluse par le Makefile officiel).
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 9** — **48 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) et
+**36 donnent le même écran que l'interpréteur** (`tools/corpus_run.sh` ; les 12 autres affichent des
+chronométrages ou des adresses `alloc(`). Restent : Sweet16 (`mixedassembler.bsc`, absent de NeoBASIC)
+et `asteroids.bsc` (bibliothèque non incluse par le Makefile officiel). Performance : `tools/bench.sh`.
 
 ## Utilisation
 
@@ -69,7 +70,20 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
   utilisées (`RT_*`, fermeture des dépendances), constantes chaînes, variables (`VAR_x` : 4 octets ;
   `VARBUF_x$` : 256 octets), tampons de chaînes temporaires (un par nœud), `NBUF`, piles `STK`/`LSTK`.
 - Page zéro : `$20` ACC (32 bits), `$24` TMP, `$28`/`$2A` pointeurs de chaînes, `$2C`/`$2D` indices de
-  piles, `$2E` compteur, `$30-$39` registres maths de l'API (entrelacés au pas 2).
+  piles, `$2E` compteur, `$30-$39` registres maths de l'API (entrelacés au pas 2), `$3C`/`$3D` types,
+  `$3E` tas, `$40` pointeur data, `$42` pointeur des accès variables (mode compact).
+- **Deux modes de génération.** Rapide (par défaut) : accès aux variables en ligne (30 octets par
+  chargement). Si la fin du programme (`ENDPROG`, début du tas) dépasse `$E000`, le programme est
+  recompilé en mode **compact** : variables par routines `RT_LDV`/`RT_STV`/`RT_LDT` (`ldx/ldy` + `jsr`,
+  7 octets), constantes 0-255 par `RT_LDI8`/`RT_LTI8`, `+`/`-` et copies de registres par routines —
+  environ deux fois plus petit (Atic Atac : 61 → 31 Ko), au prix de quelques cycles par accès.
+  Au-delà de `$FE00` en compact : erreur « programme trop grand ». `neoforgec` et ⚙ Compiler
+  annoncent la fin du programme et le mode. Les appels API passent toujours par `RT_API` (A = fonction,
+  X = groupe) et `RT_MATH` (7 et 5 octets au lieu de 16 et 33).
+- **Erreurs d'exécution** reproduites avec le numéro de ligne de la numérotation automatique (100, pas
+  10, ou numéro explicite) : « File I/O Error at line N » (`load`, `gload`, `open`), « Division By Zero
+  Error » (`/ \ %`), « Out Of Range Error » (indice de tableau hors de 0…borne), « Out Of Data »
+  (`read` après le dernier `data`) — message, CR, arrêt, comme `ErrorHandler` de l'interpréteur.
 - Expressions : TMP ← gauche, ACC ← droite, opération TMP ∘ ACC. Une feuille (constante, variable) est
   chargée directement ; sinon ACC ← gauche, `PUSH`, ACC ← droite, `POP` → TMP. `* \ %` passent par
   l'API maths (4,2 4,4 4,5) — mesuré plus rapide que des routines 32 bits natives (S8-1). Les

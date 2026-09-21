@@ -13,6 +13,7 @@ import (
 
 func arrLabel(name string) string  { return "ARR_" + cleanName(name) }
 func colsLabel(name string) string { return "ARRC_" + cleanName(name) }
+func dimsLabel(name string) string { return "ARRD_" + cleanName(name) }
 
 // elemSize : taille d'un élément.
 func elemSize(name string) int {
@@ -30,10 +31,15 @@ func (g *gen) arrayStmt(s Stmt) bool {
 		for _, ar := range s.Arrays {
 			// total = (n+1) [* (m+1)] → ACC (16 bits)
 			g.intExpr(ar.Idx[0])
+			a.Op("lda", asm.Zp, zACC)
+			a.OpL("sta", asm.Abs, dimsLabel(ar.Name), 0) // bornes maximales (0-255 chacune)
+			a.OpL("stz", asm.Abs, dimsLabel(ar.Name), 1)
 			g.call("INC32")
 			if len(ar.Idx) == 2 {
 				g.push()
 				g.intExpr(ar.Idx[1])
+				a.Op("lda", asm.Zp, zACC)
+				a.OpL("sta", asm.Abs, dimsLabel(ar.Name), 1)
 				g.call("INC32")
 				a.Op("lda", asm.Zp, zACC)
 				a.OpL("sta", asm.Abs, colsLabel(ar.Name), 0)
@@ -158,9 +164,11 @@ func (g *gen) scaleACC(size int) {
 func (g *gen) elemAddr(x Index) {
 	a := g.a
 	g.intExpr(x.Idx[0])
+	g.rangeCheck(x, 0)
 	if len(x.Idx) == 2 {
 		g.push()
 		g.intExpr(x.Idx[1])
+		g.rangeCheck(x, 1)
 		g.push()
 		a.OpL("lda", asm.Abs, colsLabel(x.Name), 0)
 		a.Op("sta", asm.Zp, zACC)
@@ -193,6 +201,23 @@ func (g *gen) elemAddr(x Index) {
 	a.Op("lda", asm.Zp, zACC+1)
 	a.OpL("adc", asm.Abs, arrLabel(x.Name), 1)
 	a.Op("sta", asm.Zp, zPTR+1)
+}
+
+// rangeCheck : indice ACC hors de 0…borne (octet k de DIMS) → « Out Of Range Error at line N »
+// (l'interpréteur exige un indice 0-255 puis le compare à la dimension).
+func (g *gen) rangeCheck(x Index, k int) {
+	a := g.a
+	bad, ok := a.Uniq("rng"), a.Uniq("rng")
+	a.Op("lda", asm.Zp, zACC+1)
+	a.Op("ora", asm.Zp, zACC+2)
+	a.Op("ora", asm.Zp, zACC+3)
+	a.Branch("bne", bad)
+	a.OpL("lda", asm.Abs, dimsLabel(x.Name), k)
+	a.Op("cmp", asm.Zp, zACC)
+	a.Branch("bcs", ok)
+	a.Label(bad)
+	g.runtimeError("ERRRANGE", x.Line)
+	a.Label(ok)
 }
 
 // indexValue : ACC := élément numérique (type + valeur) ; pour une chaîne, PTR pointe l'élément.

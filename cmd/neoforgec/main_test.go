@@ -48,6 +48,12 @@ func TestRun(t *testing.T) {
 	if !strings.Contains(so.String(), "RT_PRSTR:") {
 		t.Error("listing incomplet")
 	}
+	big := filepath.Join(dir, "big.bsc") // programme volumineux : mode compact annoncé
+	os.WriteFile(big, []byte(strings.Repeat("a = a + b * 2 : print a; \"x\"\n", 650)), 0o644)
+	so.Reset()
+	if rc := run([]string{"-o", filepath.Join(dir, "big.neo"), big}, &so, &se); rc != 0 || !strings.Contains(so.String(), "mode compact") {
+		t.Errorf("compact : rc %d, %s%s", rc, so.String(), se.String())
+	}
 	rc := -1
 	exit = func(c int) { rc = c }
 	os.Args = []string{"neoforgec", "-version"}

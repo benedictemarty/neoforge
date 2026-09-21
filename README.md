@@ -12,7 +12,7 @@ page*, à droite, sur le vrai firmware Neo6502.
 
 > État : **sprint 8 livré (v0.9.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
 > détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** couvrant entiers, flottants, chaînes, tableaux,
-> graphisme, sprites, son, tortue, assembleur en ligne, fichiers, UART/I2C/SPI, récursion — code ×3,9 plus rapide que l'interpréteur (`docs/COMPILER.md` ; 48/50 exemples de Trinity,
+> graphisme, sprites, son, tortue, assembleur en ligne, fichiers, UART/I2C/SPI, récursion — code ×3,9 plus rapide que l'interpréteur (`docs/COMPILER.md` ; 48/50 exemples de Trinity compilent, 36 identiques à l'interpréteur à l'écran,
 > Breakout et Atic Atac compilés), **éditeur de sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`),
 > **débogueur** (`docs/DEBUGGER.md`), **envoi à la carte réelle** par le modem Pico W (`docs/CARD.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.

@@ -184,5 +184,31 @@ func TestCorpusCompiles(t *testing.T) {
 		if string(a) != string(b) {
 			t.Errorf("%s : compilation non déterministe", f)
 		}
+		prog, _ := Parse(string(src))                                            // mode compact : plus petit (validé en différentiel avec l'émulateur)
+		if _, c, err := generate(prog, true); err != nil || len(c) > len(a)+64 { // petits programmes : le poids des routines LDV/STV… peut dépasser le gain
+			t.Errorf("%s : compact %d octets, rapide %d (%v)", f, len(c), len(a), err)
+		}
+	}
+}
+
+// TestCompactAuto : un programme volumineux est recompilé en mode compact (fin sous memLimit) ;
+// au-delà, erreur « programme trop grand ».
+func TestCompactAuto(t *testing.T) {
+	stmt := "a = a + b * 2 : print a; \"x\"\n"
+	src := strings.Repeat(stmt, 650)
+	prog, _ := Parse(src)
+	fast, _, _ := generate(prog, false)
+	if fast.a.Symbols()["ENDPROG"] <= fastLimit {
+		t.Fatalf("le mode rapide devrait dépasser fastLimit : $%X", fast.a.Symbols()["ENDPROG"])
+	}
+	_, _, labels, err := Symbols(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if end := labels["ENDPROG"]; end > memLimit || end >= fast.a.Symbols()["ENDPROG"] {
+		t.Errorf("fin du programme compact : $%X", end)
+	}
+	if _, err := Compile(strings.Repeat(stmt, 2500)); err == nil || !strings.Contains(err.Error(), "trop grand") {
+		t.Errorf("programme énorme : %v", err)
 	}
 }

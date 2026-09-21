@@ -31,12 +31,14 @@ type Var struct{ Name string }
 type Index struct {
 	Name string
 	Idx  []Expr
+	Line int // ligne BASIC pour « Out Of Range Error at line N »
 }
 
 // Binary est une opération binaire (Op : nom du token, ex. "+", "<>", "\").
 type Binary struct {
 	Op   string
 	L, R Expr
+	Line int // ligne BASIC pour « Division By Zero Error at line N »
 }
 
 // Unary est `-x` (Op "-") ou `not x` (Op "not").
@@ -209,6 +211,7 @@ type Data struct {
 type Read struct {
 	stmtMarker
 	Targets []Expr // Var ou Index
+	Line    int
 }
 
 // Restore replace le pointeur de lecture au début du pool.
@@ -218,6 +221,7 @@ type Restore struct{ stmtMarker }
 type Load struct {
 	stmtMarker
 	Name, Addr Expr
+	Line       int // numéro de ligne BASIC pour « File I/O Error at line N »
 }
 
 // Sys : sys adresse — appelle du code machine avec A, X, Y = variables A, X, Y.

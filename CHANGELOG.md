@@ -5,6 +5,20 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : erreurs d'exécution et différentiel sur les exemples officiels (S9-1, S9-2)
+- `tools/corpus_run.sh` : chaque exemple de Trinity est exécuté interprété et compilé, écrans comparés —
+  36/48 identiques, 12 différences expliquées (chronométrages, adresses `alloc(`).
+- Erreurs d'exécution avec numéro de ligne comme l'interpréteur : « File I/O Error at line N » (`load`,
+  `gload`, `open` — les exemples sans `graphics.gfx` s'arrêtent désormais comme interprétés), « Division By
+  Zero Error », « Out Of Range Error » (indices de tableau, bornes mémorisées à `dim`), « Out Of Data ».
+  Différentiels `errdiv.bsc`, `errrange.bsc`, `errdata.bsc`, `files.bsc` (21 programmes).
+### Modifié — compilateur : taille du code, mode compact automatique (S9-3)
+- Appels API par `RT_API` (A = fonction, X = groupe) et `RT_MATH` ; copies de registres maths par
+  routines en mode compact. Au-delà de `$E000`, recompilation en **mode compact** (variables par
+  `RT_LDV`/`RT_STV`/`RT_LDT`, constantes `RT_LDI8`, `+`/`-` par routines) : Atic Atac 61 753 → 31 335
+  octets — il écrasait la page zéro avec son tas (retour à NeoDOS). Erreur « programme trop grand »
+  au-delà de `$FE00`. `neoforgec` et ⚙ Compiler affichent la fin du programme et le mode ; le
+  différentiel tourne dans les deux modes. Bench : 205 → 214 (routines d'appel API, contrôles de division).
 
 ## [0.9.0] - 2026-09-21 — sprint 8 : performance, tortue, paquet de release
 ### Ajouté — `make dist` (S8-4)

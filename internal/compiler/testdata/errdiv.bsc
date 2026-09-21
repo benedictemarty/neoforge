@@ -1,0 +1,5 @@
+print "avant"
+x = 0
+print 10 \ 5
+print 7 \ x
+print "jamais"

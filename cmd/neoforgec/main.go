@@ -55,17 +55,21 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, lst)
 		return 0
 	}
-	var data []byte
-	ext := ".neo"
-	if *bin {
-		data, err = compiler.Compile(string(src))
-		ext = ".bin"
-	} else {
+	data, _, labels, err := compiler.Symbols(string(src))
+	if err == nil && !*bin {
 		data, err = compiler.CompileNeo(string(src))
 	}
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
+	}
+	ext := ".neo"
+	if *bin {
+		ext = ".bin"
+	}
+	mode := "rapide"
+	if _, ok := labels["COMPACT"]; ok {
+		mode = "compact"
 	}
 	name := *out
 	if name == "" {
@@ -79,6 +83,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	fmt.Fprintf(stdout, "%s : %d octets\n", name, len(data))
+	fmt.Fprintf(stdout, "%s : %d octets, fin du programme $%X (mode %s)\n", name, len(data), labels["ENDPROG"], mode)
 	return 0
 }

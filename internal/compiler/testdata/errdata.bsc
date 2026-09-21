@@ -1,0 +1,8 @@
+data 1, "deux", 3
+read a, b$, c
+print a; b$; c
+restore
+read a
+print a
+read b$, c, d
+print "jamais"

@@ -23,7 +23,7 @@ func helloProgram(msg string) ([]byte, int) {
 	a.Branch("beq", "done")
 	a.Op("sta", asm.Abs, apiParam0)
 	a.Op("phx", asm.Imp, 0)
-	emitAPICall(a, grpConsole, fnConsoleWrite)
+	emitAPICall(a, grpConsole, fnConsoleWrite) // détruit X
 	a.Op("plx", asm.Imp, 0)
 	a.Op("inx", asm.Imp, 0)
 	a.Branch("bra", "next")
@@ -32,6 +32,8 @@ func helloProgram(msg string) ([]byte, int) {
 	a.Label("msg")
 	a.Text(msg)
 	a.Bytes(0)
+	a.Label("RT_API")
+	(&gen{a: a}).emitRoutine("API") // emitAPICall passe par RT_API
 	code, _ := a.Resolve()
 	return code, 0x800
 }

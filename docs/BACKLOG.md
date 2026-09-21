@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 8 **livrés** (v0.9.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 8 **livrés** (v0.9.0), sprint 9 **en cours** ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -110,6 +110,17 @@ Objectif : ce qui est faisable sans matériel. Mesure `tools/bench.sh` (Phosphon
 | S8-2 | E5    | Sweet16 : **absent de NeoBASIC actuel** (aucun token, aucune source ; `mixedassembler.bsc` donne « Syntax Error at line 200 » dans l'interpréteur lui-même) — exemple obsolète, rien à compiler | P3   | FAIT (constat) |
 | S8-3 | E5    | `input line #`/`print line #`, tortue (groupe 9), `cat` — différentiels `turtle.bsc` (texte + image) et `files.bsc` étendus | P3   | FAIT |
 | S8-4 | E1    | `make dist` : paquet autonome (binaires, `emu/`, `boot/neobasic.bin`, docs, exemples) ; la config privilégie `emu/`/`boot/` à côté de l'exécutable | P3   | FAIT |
+
+## Sprint 9 — Fidélité et robustesse du code généré — EN COURS
+
+Objectif : faire tourner les 48 exemples officiels compilés comme interprétés (`tools/corpus_run.sh`).
+
+| ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
+|------|-------|------------------------------------------------------------------------------------|------|------|
+| S9-1 | E5    | `tools/corpus_run.sh` : différentiel interprété/compilé sur les exemples officiels — **36/48 identiques**, les 12 autres expliqués (chronométrages `bm*`/`test`/`testfile`, adresses `alloc(` dans `inline`/`checkasm`) | P2   | FAIT |
+| S9-2 | E5    | Erreurs d'exécution comme l'interpréteur avec numéro de ligne : File I/O, Division By Zero, Out Of Range (indices), Out Of Data — différentiels `errdiv`/`errrange`/`errdata`, `files.bsc` | P2   | FAIT |
+| S9-3 | E5    | Programmes volumineux : Atic Atac compilé (61 Ko) écrasait la page zéro par son tas → appels API par routines (`RT_API`/`RT_MATH`), **mode compact automatique** au-delà de `$E000` (accès variables par routines, ×2 plus petit), erreur au-delà de `$FE00` ; différentiels exécutés dans les deux modes (21 programmes × 2) | P1   | FAIT |
+| S9-4 | E5    | Autres erreurs d'exécution (String Too Long, Bad Argument, Out Of Memory pour `dim`/`alloc(`) | P3   | TODO |
 
 ## Idées non planifiées
 

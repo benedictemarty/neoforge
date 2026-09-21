@@ -14,6 +14,7 @@ type item struct {
 	line   int
 	eol    bool
 	lineNo int // > 0 : marqueur de début de ligne numérotée
+	bas    int // numéro de ligne BASIC (numérotation automatique de neobasic.Program : 100, pas 10)
 }
 
 // parser consomme le flux d'éléments produit par neobasic.Lex.
@@ -21,6 +22,7 @@ type parser struct {
 	items []item
 	pos   int
 	procs map[string]*Proc
+	bas   int // ligne BASIC de l'instruction en cours d'analyse
 }
 
 // Program est le résultat du parseur.
@@ -34,10 +36,14 @@ type Program struct {
 func Parse(src string) (*Program, error) {
 	ts := neobasic.NewTokenSet()
 	p := &parser{procs: map[string]*Proc{}}
+	bas := 100 // même numérotation que neobasic.Program (messages d'erreur « at line N »)
 	for n, line := range strings.Split(src, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
 			return nil, fmt.Errorf("ligne %d : directive « %s » non prise en charge par le compilateur", n+1, line)
+		}
+		if line == "" {
+			continue
 		}
 		lineNo := 0
 		if line != "" && line[0] >= '0' && line[0] <= '9' { // numéro de ligne : cible possible de goto/gosub
@@ -53,13 +59,15 @@ func Parse(src string) (*Program, error) {
 			return nil, fmt.Errorf("ligne %d : %v", n+1, err)
 		}
 		if lineNo > 0 {
-			p.items = append(p.items, item{line: n + 1, lineNo: lineNo})
+			bas = lineNo
+			p.items = append(p.items, item{line: n + 1, lineNo: lineNo, bas: bas})
 		}
 		for _, it := range its {
 			if it.Kind != neobasic.ItemComment {
-				p.items = append(p.items, item{Item: it, line: n + 1})
+				p.items = append(p.items, item{Item: it, line: n + 1, bas: bas})
 			}
 		}
+		bas += 10
 		p.items = append(p.items, item{line: n + 1, eol: true})
 	}
 	body, err := p.block(nil)
@@ -177,6 +185,7 @@ func (p *parser) lineStmts(stopAtElse bool) ([]Stmt, error) {
 
 func (p *parser) statement() (Stmt, error) {
 	it := p.peek()
+	p.bas = it.bas
 	if it.lineNo > 0 {
 		p.next()
 		return &LineLabel{Line: it.lineNo}, nil
@@ -352,7 +361,7 @@ func (p *parser) statement() (Stmt, error) {
 		}
 	case "read":
 		p.next()
-		r := &Read{}
+		r := &Read{Line: p.bas}
 		for {
 			x, err := p.unary()
 			if err != nil {
@@ -407,7 +416,7 @@ func (p *parser) statement() (Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Load{Name: name, Addr: addr}, nil
+		return &Load{Name: name, Addr: addr, Line: p.bas}, nil
 	case "sys":
 		p.next()
 		x, err := p.expr(TInt)
@@ -450,7 +459,7 @@ func (p *parser) assign() (Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		target := Index{Name: strings.TrimSuffix(v.Text, "("), Idx: idx}
+		target := Index{Name: strings.TrimSuffix(v.Text, "("), Idx: idx, Line: p.bas}
 		if err := p.expect("="); err != nil {
 			return nil, err
 		}
@@ -680,7 +689,7 @@ func (p *parser) binary(minPrec int) (Expr, error) {
 		if err := checkBinary(it.Tok.Name, l, r); err != nil {
 			return nil, fmt.Errorf("ligne %d : %v", it.line, err)
 		}
-		l = Binary{Op: it.Tok.Name, L: l, R: r}
+		l = Binary{Op: it.Tok.Name, L: l, R: r, Line: p.bas}
 	}
 }
 
@@ -727,7 +736,7 @@ func (p *parser) unary() (Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			return Index{Name: strings.TrimSuffix(it.Text, "("), Idx: idx}, nil
+			return Index{Name: strings.TrimSuffix(it.Text, "("), Idx: idx, Line: p.bas}, nil
 		}
 		if !isStrName(it.Text) && p.accept("[") { // mem[i]
 			idx, err := p.expr(TInt)

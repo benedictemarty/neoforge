@@ -139,7 +139,8 @@ func (s *Server) handleCompile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bin, _ := neo.Pack([]neo.Block{{Addr: compiler.Org, Data: code}}, compiler.Org)
-	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin), "symbols": syms, "labels": labels})
+	_, compact := labels["COMPACT"]
+	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin), "symbols": syms, "labels": labels, "end": labels["ENDPROG"], "compact": compact})
 }
 
 // handleDetok détokenise un .bas (corps binaire) ; réponse : {"source": texte}.

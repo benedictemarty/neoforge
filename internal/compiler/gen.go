@@ -20,12 +20,21 @@ const (
 	zTMPT = 0x3D // type de TMP
 	zHEAP = 0x3E // pointeur du tas (alloc( : après les données du programme)
 	zDATA = 0x40 // pointeur de lecture du pool data (2 octets)
+	zVP   = 0x42 // pointeur des accès variables en mode compact (LDV/STV/LDT)
 	zREG  = 0x30 // registres maths de l'API, entrelacés au pas 2 : REG1 = $30 (type) $32 $34 $36 $38 ; REG2 = $31 $33 $35 $37 $39
 	zREG2 = 0x31
 )
 
 // Org est l'adresse de chargement des programmes compilés (comme un .bin du menu boot/).
 const Org = 0x800
+
+// Limites mémoire : au-delà de fastLimit (fin du programme, avant le tas), le programme est
+// recompilé en mode compact (accès aux variables par routines : 7 octets au lieu de 30) ; au-delà
+// de memLimit il ne tient pas devant l'API ($FF00) et le tas.
+const (
+	fastLimit = 0xE000
+	memLimit  = 0xFE00
+)
 
 // gen émet le code d'un programme.
 type gen struct {
@@ -44,6 +53,7 @@ type gen struct {
 	gotos    []int             // cibles de goto/gosub à vérifier
 	data     []Expr            // pool data (ordre du programme)
 	errs     []string
+	compact  bool // accès aux variables par routines (programme volumineux)
 }
 
 // Compile compile un source NeoBASIC en binaire chargé en Org.
@@ -61,12 +71,25 @@ func Listing(src string) (string, error) {
 	return g.a.Listing(), nil
 }
 
+// compile : mode rapide, puis compact si le programme dépasse fastLimit ; erreur au-delà de memLimit.
 func compile(src string) (*gen, []byte, error) {
 	prog, err := Parse(src)
 	if err != nil {
 		return nil, nil, err
 	}
-	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}, arrays: map[string]int{}, lines: map[int]bool{}, localBuf: map[string]string{}}
+	g, code, err := generate(prog, false)
+	if err != nil || g.a.Symbols()["ENDPROG"] <= fastLimit {
+		return g, code, err
+	}
+	g, code, err = generate(prog, true)
+	if err == nil && g.a.Symbols()["ENDPROG"] > memLimit {
+		return nil, nil, fmt.Errorf("programme trop grand : fin en $%X, limite $%X", g.a.Symbols()["ENDPROG"], memLimit)
+	}
+	return g, code, err
+}
+
+func generate(prog *Program, compact bool) (*gen, []byte, error) {
+	g := &gen{a: asm.New(Org), prog: prog, vars: map[string]bool{}, used: map[string]bool{}, arrays: map[string]int{}, lines: map[int]bool{}, localBuf: map[string]string{}, compact: compact}
 	g.inferInt()
 	g.program()
 	for _, l := range g.gotos {
@@ -91,6 +114,7 @@ func (g *gen) program() {
 	for _, name := range sortedProcs(g.prog.Procs) {
 		g.collectData(g.prog.Procs[name].Body)
 	}
+	g.used["API"], g.used["MATH"] = true, true // appels API par routines (taille du code)
 	// Prologue : piles vides, état graphique initial.
 	a.Op("stz", asm.Zp, zSP)
 	a.Op("stz", asm.Zp, zLSP)
@@ -173,8 +197,13 @@ func (g *gen) program() {
 		a.Bytes(0, 0)
 		a.Label(colsLabel(name))
 		a.Bytes(0, 0)
+		a.Label(dimsLabel(name))
+		a.Bytes(0, 0)
 	}
 	a.Label("ENDPROG") // début du tas (alloc(, dim)
+	if g.compact {
+		a.Label("COMPACT") // présence = mode compact (diagnostic : neoforgec, /api/compile)
+	}
 }
 
 func mapKeys(m map[string]int) map[string]bool {
@@ -197,6 +226,43 @@ func (g *gen) fill(n int) {
 }
 
 // stop : fin du programme — boucle sur place (le firmware garde l'écran).
+// fileErrorCheck : après un appel fichier, erreur API ≠ 0 → « File I/O Error at line N ».
+func (g *gen) fileErrorCheck(line int) {
+	ok := g.a.Uniq("fok")
+	g.a.Op("lda", asm.Abs, apiError)
+	g.a.Branch("beq", ok)
+	g.runtimeError("ERRFILE", line)
+	g.a.Label(ok)
+}
+
+// runtimeError : ACC = numéro de ligne puis saut à la routine d'erreur (message, « at line N », CR,
+// arrêt — comme ErrorHandler de l'interpréteur ; le numéro suit la numérotation automatique).
+func (g *gen) runtimeError(routine string, line int) {
+	g.loadConst(uint32(line))
+	g.a.Op("stz", asm.Zp, zTYPE)
+	g.used[routine] = true
+	g.a.OpL("jmp", asm.Abs, "RT_"+routine, 0)
+}
+
+// errorRoutines : message de chaque routine d'erreur d'exécution.
+var errorRoutines = map[string]string{
+	"ERRFILE": "File I/O Error", "ERRRANGE": "Out Of Range Error", "ERRDIV": "Division By Zero Error", "ERRDATA": "Out Of Data",
+}
+
+// emitErrorRoutine : message, « at line », ACC en décimal, CR, arrêt.
+func (g *gen) emitErrorRoutine(name string) {
+	g.push()
+	idx := len(g.strLits)
+	g.strLits = append(g.strLits, errorRoutines[name]+" at line ")
+	g.setPTR(fmt.Sprintf("STR_%d", idx))
+	g.call("PRSTR")
+	g.popACC()
+	g.call("PRINT")
+	g.a.Op("lda", asm.Imm, 13)
+	g.call("PRCHR")
+	g.stop()
+}
+
 func (g *gen) stop() {
 	l := g.a.Uniq("halt")
 	g.a.Label(l)
@@ -617,6 +683,11 @@ func (g *gen) intExpr(x Expr) {
 	a := g.a
 	switch x := x.(type) {
 	case IntLit:
+		if g.compact && x.V >= 0 && x.V < 256 {
+			a.Op("lda", asm.Imm, int(x.V))
+			g.call("LDI8")
+			return
+		}
 		g.loadConst(uint32(int32(x.V)))
 		a.Op("stz", asm.Zp, zTYPE)
 	case FloatLit:
@@ -657,6 +728,9 @@ func (g *gen) binary(x Binary) {
 	if !g.isInt(x.L) || !g.isInt(x.R) || x.Op == "/" { // opérandes flottants ou incertains : API (types dynamiques)
 		if fn, ok := map[string]int{"+": fnMathAdd, "-": fnMathSub, "*": fnMathMul, "/": fnMathFDiv, "\\": fnMathIDiv, "%": fnMathMod}[x.Op]; ok {
 			g.mathBinary(fn)
+			if fn == fnMathFDiv || fn == fnMathIDiv || fn == fnMathMod {
+				g.divCheck(x.Line)
+			}
 			return
 		}
 		// & | ^ << >> : opérations sur la valeur 32 bits telle quelle (l'interpréteur signale
@@ -664,6 +738,10 @@ func (g *gen) binary(x Binary) {
 	}
 	switch x.Op {
 	case "+", "-":
+		if g.compact {
+			g.call(map[string]string{"+": "ADD32", "-": "SUB32"}[x.Op])
+			return
+		}
 		if x.Op == "+" {
 			a.Op("clc", asm.Imp, 0)
 		} else {
@@ -691,13 +769,24 @@ func (g *gen) binary(x Binary) {
 		g.mathBinary(fnMathMul)
 	case "\\":
 		g.mathBinary(fnMathIDiv)
+		g.divCheck(x.Line)
 	case "%":
 		g.mathBinary(fnMathMod)
+		g.divCheck(x.Line)
 	case "<<":
 		g.call("SHL")
 	case ">>":
 		g.call("SHR")
 	}
+}
+
+// divCheck : erreur API après 4,3/4,4/4,5 → « Division By Zero Error at line N ».
+func (g *gen) divCheck(line int) {
+	ok := g.a.Uniq("dok")
+	g.a.Op("lda", asm.Abs, apiError)
+	g.a.Branch("beq", ok)
+	g.runtimeError("ERRDIV", line)
+	g.a.Label(ok)
 }
 
 // operands : TMP = gauche, ACC = droite (chargements directs quand les feuilles le permettent).
@@ -782,6 +871,11 @@ func (g *gen) isLeaf(x Expr) bool {
 func (g *gen) leafToTMP(x Expr) bool {
 	switch x := x.(type) {
 	case IntLit:
+		if g.compact && x.V >= 0 && x.V < 256 {
+			g.a.Op("lda", asm.Imm, int(x.V))
+			g.call("LTI8")
+			return true
+		}
 		g.a.Op("stz", asm.Zp, zTMPT)
 		for i := 0; i < 4; i++ {
 			g.a.Op("lda", asm.Imm, int(byte(uint32(int32(x.V))>>(8*i))))
@@ -1149,6 +1243,10 @@ func (g *gen) loadConst(v uint32) {
 
 // Variables numériques : [type][4 octets] ; ACC = zTYPE + zACC.
 func (g *gen) loadACC(label string) {
+	if g.compact {
+		g.varCall("LDV", label)
+		return
+	}
 	g.a.OpL("lda", asm.Abs, label, 0)
 	g.a.Op("sta", asm.Zp, zTYPE)
 	for i := 0; i < 4; i++ {
@@ -1158,6 +1256,10 @@ func (g *gen) loadACC(label string) {
 }
 
 func (g *gen) storeACC(label string) {
+	if g.compact {
+		g.varCall("STV", label)
+		return
+	}
 	g.a.Op("lda", asm.Zp, zTYPE)
 	g.a.OpL("sta", asm.Abs, label, 0)
 	for i := 0; i < 4; i++ {
@@ -1166,7 +1268,18 @@ func (g *gen) storeACC(label string) {
 	}
 }
 
+// varCall : X/Y = adresse de la variable, appel de la routine d'accès (mode compact).
+func (g *gen) varCall(routine, label string) {
+	g.a.ImmLo("ldx", label, 0)
+	g.a.ImmHi("ldy", label, 0)
+	g.call(routine)
+}
+
 func (g *gen) loadTMP(label string) {
+	if g.compact {
+		g.varCall("LDT", label)
+		return
+	}
 	g.a.OpL("lda", asm.Abs, label, 0)
 	g.a.Op("sta", asm.Zp, zTMPT)
 	for i := 0; i < 4; i++ {
@@ -1187,11 +1300,34 @@ func (g *gen) push()   { g.call("PUSH") }
 func (g *gen) pop()    { g.call("POP") }    // → TMP
 func (g *gen) popACC() { g.call("POPACC") } // → ACC
 
-// accToReg1 / tmpToReg1 / accToReg2 / reg1ToACC : registres maths (type entier).
-func (g *gen) accToReg1() { g.regCopy(zACC, zREG) }
-func (g *gen) tmpToReg1() { g.regCopy(zTMP, zREG) }
-func (g *gen) accToReg2() { g.regCopy(zACC, zREG2) }
+// accToReg1 / tmpToReg1 / accToReg2 / reg1ToACC : registres maths (type entier) ; en mode compact
+// par routines (30 octets en ligne sinon).
+func (g *gen) accToReg1() { g.regRoutine("ACC2R1", zACC, zREG) }
+func (g *gen) tmpToReg1() { g.regRoutine("TMP2R1", zTMP, zREG) }
+func (g *gen) accToReg2() { g.regRoutine("ACC2R2", zACC, zREG2) }
+func (g *gen) reg1ToACC() {
+	if g.compact {
+		g.call("R12ACC")
+		return
+	}
+	g.a.Op("lda", asm.Zp, zREG)
+	g.a.Op("sta", asm.Zp, zTYPE)
+	for i := 0; i < 4; i++ {
+		g.a.Op("lda", asm.Zp, zREG+2*(i+1))
+		g.a.Op("sta", asm.Zp, zACC+i)
+	}
+}
 
+// regRoutine : copie en ligne (mode rapide) ou par routine (mode compact).
+func (g *gen) regRoutine(name string, from, reg int) {
+	if g.compact {
+		g.call(name)
+		return
+	}
+	g.regCopy(from, reg)
+}
+
+// regCopy : [type][4 octets] de from (ACC ou TMP) vers le registre maths reg (entrelacé au pas 2).
 func (g *gen) regCopy(from, reg int) {
 	typ := zTYPE
 	if from == zTMP {
@@ -1202,15 +1338,6 @@ func (g *gen) regCopy(from, reg int) {
 	for i := 0; i < 4; i++ {
 		g.a.Op("lda", asm.Zp, from+i)
 		g.a.Op("sta", asm.Zp, reg+2*(i+1))
-	}
-}
-
-func (g *gen) reg1ToACC() {
-	g.a.Op("lda", asm.Zp, zREG)
-	g.a.Op("sta", asm.Zp, zTYPE)
-	for i := 0; i < 4; i++ {
-		g.a.Op("lda", asm.Zp, zREG+2*(i+1))
-		g.a.Op("sta", asm.Zp, zACC+i)
 	}
 }
 
@@ -1431,6 +1558,15 @@ func (g *gen) dataStmt(s Stmt) bool {
 				a.Op("sta", asm.Zp, zACC+1)
 				g.push()
 			}
+			ok := a.Uniq("rdok") // fin du pool → « Out Of Data at line N »
+			a.Op("lda", asm.Zp, zDATA)
+			a.ImmLo("cmp", "DATAEND", 0)
+			a.Branch("bne", ok)
+			a.Op("lda", asm.Zp, zDATA+1)
+			a.ImmHi("cmp", "DATAEND", 0)
+			a.Branch("bne", ok)
+			g.runtimeError("ERRDATA", s.Line)
+			a.Label(ok)
 			g.call("READDATA") // nombre → ACC ; chaîne → PTR (l'item est consommé)
 			switch t := t.(type) {
 			case Var:
@@ -1489,6 +1625,7 @@ func (g *gen) dataStmt(s Stmt) bool {
 		a.Op("lda", asm.Zp, zACC+1)
 		a.Op("sta", asm.Abs, apiParam0+3)
 		a.Op("jsr", asm.Abs, kernelLoadExtended)
+		g.fileErrorCheck(s.Line)
 	case *StrayEnd:
 		idx := len(g.strLits)
 		g.strLits = append(g.strLits, "Structure Imbalance")

@@ -43,6 +43,7 @@ type SpriteCmd struct {
 type Gload struct {
 	stmtMarker
 	Name Expr
+	Line int
 }
 
 // TilemapCmd : tilemap adresse, x, y.
@@ -131,7 +132,7 @@ func (p *parser) hwStatement(kw string) (Stmt, bool, error) {
 	case "gload":
 		p.next()
 		x, err := p.expr(TStr)
-		return &Gload{Name: x}, true, err
+		return &Gload{Name: x, Line: p.bas}, true, err
 	case "tilemap":
 		p.next()
 		xs, err := p.exprList(3)
@@ -465,6 +466,7 @@ func (g *gen) hwStmt(s Stmt) {
 		a.Op("sta", asm.Abs, apiParam0+2)
 		a.Op("sta", asm.Abs, apiParam0+3)
 		a.Op("jsr", asm.Abs, kernelLoadExtended)
+		g.fileErrorCheck(s.Line)
 	case *TilemapCmd: // 5,35 : adresse, x, y (16 bits), taille de tuile 16
 		g.params16(s.Addr, s.X, s.Y)
 		a.Op("lda", asm.Imm, 16)

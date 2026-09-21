@@ -20,34 +20,46 @@ var rtDeps = map[string][]string{
 	"FWRITEBYTE": {}, "FREADBYTE": {}, "FWRITENUM": {"FWRITEBYTE"}, "FWRITESTR": {"FWRITEBYTE"}, "FREADNUM": {"FREADBYTE"}, "FREADSTR": {"FREADBYTE"},
 	"TXBYTE": {}, "TXSTR": {"TXBYTE"}, "CMP32": {},
 	"TURTLEINIT": {}, "TURTLEDELAY": {}, "FWRITELINE": {"FWRITEBYTE"}, "FREADLINE": {"FREADBYTE"},
+	"ERRFILE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRRANGE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
+	"ERRDIV": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRDATA": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
+	"API": {}, "MATH": {"API"}, "ACC2R1": {}, "TMP2R1": {}, "ACC2R2": {}, "R12ACC": {}, "LDV": {}, "STV": {}, "LDT": {}, "LDI8": {}, "LTI8": {}, "ADD32": {}, "SUB32": {},
 }
 
 // Ordre d'émission stable.
-var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NEG", "NOT", "ABS", "SGN", "BOOLEQ", "BOOLNE",
+var rtOrder = []string{"API", "MATH", "ACC2R1", "TMP2R1", "ACC2R2", "R12ACC", "PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NEG", "NOT", "ABS", "SGN", "BOOLEQ", "BOOLNE",
 	"SHL", "SHR", "INC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
 	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32",
-	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE"}
+	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE", "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "LDV", "STV", "LDT", "LDI8", "LTI8", "ADD32", "SUB32"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
-	for changed := true; changed; {
-		changed = false
-		for name := range g.used {
-			for _, d := range rtDeps[name] {
-				if !g.used[d] {
-					g.used[d] = true
-					changed = true
+	emitted := map[string]bool{}
+	for { // une routine émise peut en appeler d'autres (g.call) : passes jusqu'au point fixe
+		for changed := true; changed; {
+			changed = false
+			for name := range g.used {
+				for _, d := range rtDeps[name] {
+					if !g.used[d] {
+						g.used[d] = true
+						changed = true
+					}
 				}
 			}
 		}
-	}
-	for _, name := range rtOrder {
-		if g.used[name] {
-			g.a.Label("RT_" + name)
-			g.emitRoutine(name)
+		n := 0
+		for _, name := range rtOrder {
+			if g.used[name] && !emitted[name] {
+				emitted[name] = true
+				n++
+				g.a.Label("RT_" + name)
+				g.emitRoutine(name)
+			}
+		}
+		if n == 0 {
+			return
 		}
 	}
 }
@@ -76,6 +88,9 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE":
 		g.emitTurtleRoutine(name)
+		return
+	case "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA":
+		g.emitErrorRoutine(name)
 		return
 	case "PRHEX":
 		g.emitPrHex()
@@ -172,6 +187,86 @@ func (g *gen) emitRoutine(name string) {
 		rts()
 		a.Label(less)
 		a.Op("lda", asm.Imm, 0xFF)
+		rts()
+	case "LDV", "STV", "LDT": // mode compact : variable (X/Y) ↔ ACC ou TMP, type compris
+		a.Op("stx", asm.Zp, zVP)
+		a.Op("sty", asm.Zp, zVP+1)
+		typ, val := zTYPE, zACC
+		if name == "LDT" {
+			typ, val = zTMPT, zTMP
+		}
+		for i := 0; i < 5; i++ {
+			reg := val + i - 1
+			if i == 0 {
+				reg = typ
+			}
+			if i == 0 {
+				a.Op("ldy", asm.Imm, 0)
+			} else {
+				a.Op("iny", asm.Imp, 0)
+			}
+			if name == "STV" {
+				a.Op("lda", asm.Zp, reg)
+				a.Op("sta", asm.ZpIndY, zVP)
+			} else {
+				a.Op("lda", asm.ZpIndY, zVP)
+				a.Op("sta", asm.Zp, reg)
+			}
+		}
+		rts()
+	case "LDI8", "LTI8": // mode compact : A → ACC ou TMP (entier 0-255)
+		val, typ := zACC, zTYPE
+		if name == "LTI8" {
+			val, typ = zTMP, zTMPT
+		}
+		a.Op("sta", asm.Zp, val)
+		for i := 1; i < 4; i++ {
+			a.Op("stz", asm.Zp, val+i)
+		}
+		a.Op("stz", asm.Zp, typ)
+		rts()
+	case "ADD32", "SUB32": // mode compact : ACC = TMP ± ACC (entiers)
+		op := "adc"
+		if name == "ADD32" {
+			a.Op("clc", asm.Imp, 0)
+		} else {
+			a.Op("sec", asm.Imp, 0)
+			op = "sbc"
+		}
+		for i := 0; i < 4; i++ {
+			a.Op("lda", asm.Zp, zTMP+i)
+			a.Op(op, asm.Zp, zACC+i)
+			a.Op("sta", asm.Zp, zACC+i)
+		}
+		a.Op("stz", asm.Zp, zTYPE)
+		rts()
+	case "API": // A = fonction, X = groupe : attente, appel, attente
+		a.Op("pha", asm.Imp, 0)
+		emitAPIWait(a)
+		a.Op("pla", asm.Imp, 0)
+		a.Op("sta", asm.Abs, apiFunction)
+		a.Op("stx", asm.Abs, apiGroup)
+		emitAPIWait(a)
+		rts()
+	case "MATH": // A = fonction du groupe 4 ; registres REG1/REG2 en page zéro
+		a.Op("pha", asm.Imp, 0)
+		emitMathSetup(a)
+		a.Op("pla", asm.Imp, 0)
+		a.Op("ldx", asm.Imm, grpMaths)
+		a.OpL("jmp", asm.Abs, "RT_API", 0)
+	case "ACC2R1":
+		g.regCopy(zACC, zREG)
+		rts()
+	case "TMP2R1":
+		g.regCopy(zTMP, zREG)
+		rts()
+	case "ACC2R2":
+		g.regCopy(zACC, zREG2)
+		rts()
+	case "R12ACC":
+		g.compact = false // copie en ligne dans la routine elle-même
+		g.reg1ToACC()
+		g.compact = true
 		rts()
 	case "TMPTOACC":
 		a.Op("lda", asm.Zp, zTMPT)

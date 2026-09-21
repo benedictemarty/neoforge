@@ -22,3 +22,5 @@ input line #2, a$, l$(1)
 input line #2, b$
 print a$; "/"; l$(1); "/"; b$; "/"; eof(2)
 close
+1000 open input 3, "absent.dat"
+print "jamais"

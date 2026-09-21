@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bmarty/neoforge/internal/neo"
 	"github.com/bmarty/neoforge/internal/neobasic"
 )
 
@@ -67,36 +68,54 @@ func TestDifferential(t *testing.T) {
 		t.Fatal("corpus vide")
 	}
 	for _, f := range files {
-		t.Run(filepath.Base(f), func(t *testing.T) {
-			src, _ := os.ReadFile(f)
-			full := "cls\n" + string(src)
-			bas, err := neobasic.Build(full)
-			if err != nil {
-				t.Fatal(err)
+		for _, compact := range []bool{false, true} { // les deux modes de génération
+			name := filepath.Base(f)
+			if compact {
+				name += "/compact"
 			}
-			bin, err := CompileNeo(full)
-			if err != nil {
-				t.Fatal(err)
-			}
-			dir := t.TempDir()
-			basFile, neoFile := filepath.Join(dir, "p.bas"), filepath.Join(dir, "p.neo")
-			os.WriteFile(basFile, bas, 0o644)
-			os.WriteFile(neoFile, bin, 0o644)
-			// <nom>.keys : frappe automatique (syntaxe --type-keys) pour les programmes à input.
-			var extra []string
-			if keys, err := os.ReadFile(strings.TrimSuffix(f, ".bsc") + ".keys"); err == nil {
-				extra = []string{"--type-keys", "12000000:" + strings.TrimSpace(string(keys))}
-			}
-			want, wantImg := screenAndImage(t, emu, append([]string{basic + "@800", basFile, "--cycles", "30000000"}, extra...)...)
-			got, gotImg := screenAndImage(t, emu, append([]string{neoFile, "--cycles", "30000000"}, extra...)...)
-			if got != want {
-				t.Errorf("écrans différents\n--- interprété\n%q\n--- compilé\n%q", want, got)
-			} else if n := imageDiff(wantImg, gotImg); n != 0 {
-				t.Errorf("texte identique mais image différente (%d pixels hors curseur)", n)
-			} else {
-				t.Logf("identique (%d lignes, image %d octets)", strings.Count(want, "\n")+1, len(wantImg))
-			}
-		})
+			t.Run(name, func(t *testing.T) {
+				runDifferential(t, emu, basic, f, compact)
+			})
+		}
+	}
+}
+
+func runDifferential(t *testing.T, emu, basic, f string, compact bool) {
+	src, _ := os.ReadFile(f)
+	full := "cls\n" + string(src)
+	bas, err := neobasic.Build(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prog, err := Parse(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, code, err := generate(prog, compact)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bin, err := neo.Pack([]neo.Block{{Addr: Org, Data: code}}, Org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	basFile, neoFile := filepath.Join(dir, "p.bas"), filepath.Join(dir, "p.neo")
+	os.WriteFile(basFile, bas, 0o644)
+	os.WriteFile(neoFile, bin, 0o644)
+	// <nom>.keys : frappe automatique (syntaxe --type-keys) pour les programmes à input.
+	var extra []string
+	if keys, err := os.ReadFile(strings.TrimSuffix(f, ".bsc") + ".keys"); err == nil {
+		extra = []string{"--type-keys", "12000000:" + strings.TrimSpace(string(keys))}
+	}
+	want, wantImg := screenAndImage(t, emu, append([]string{basic + "@800", basFile, "--cycles", "30000000"}, extra...)...)
+	got, gotImg := screenAndImage(t, emu, append([]string{neoFile, "--cycles", "30000000"}, extra...)...)
+	if got != want {
+		t.Errorf("écrans différents\n--- interprété\n%q\n--- compilé\n%q", want, got)
+	} else if n := imageDiff(wantImg, gotImg); n != 0 {
+		t.Errorf("texte identique mais image différente (%d pixels hors curseur)", n)
+	} else {
+		t.Logf("identique (%d lignes, image %d octets)", strings.Count(want, "\n")+1, len(wantImg))
 	}
 }
 
