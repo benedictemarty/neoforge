@@ -1169,7 +1169,7 @@ func (g *gen) inferInt() {
 
 // Fonctions dont le résultat est toujours entier.
 var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true,
-	"alloc": true, "eof": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
+	"alloc": true, "eof": true, "pin": true, "analog": true, "havemouse": true, "iread": true, "mouse": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
 
 // isInt : l'expression numérique est-elle prouvée entière ?
 func (g *gen) isInt(x Expr) bool {

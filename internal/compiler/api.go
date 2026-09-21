@@ -53,6 +53,21 @@ const (
 	fnSoundStatus       = 6 // 8,6
 	fnSoundQueueExt     = 7 // 8,7 : canal, f, d, glissement (16 bits), type, volume
 
+	grpGPIO         = 10
+	fnGPIOWrite     = 2 // 10,2 : broche, valeur
+	fnGPIORead      = 3 // 10,3 : broche → Param0
+	fnGPIODirection = 4 // 10,4 : broche, 1 entrée / 2 sortie / 3 analogique
+	fnI2CWrite      = 5 // 10,5 : périphérique, registre, valeur
+	fnI2CRead       = 6 // 10,6 : périphérique, registre → Param0
+	fnGPIOAnalog    = 7 // 10,7 : broche → Param0-1
+
+	grpMouse      = 11
+	fnMouseMove   = 1 // 11,1 : x, y
+	fnMouseShow   = 2 // 11,2 : 0 cache / ≠ 0 montre
+	fnMouseRead   = 3 // 11,3 : x (P0-1), y (P2-3), boutons (P4), molette (P5)
+	fnMouseHave   = 4 // 11,4 → Param0
+	fnMouseCursor = 5 // 11,5 : curseur
+
 	kernelLoadExtended = 0xFFE8 // vecteur noyau LoadExtended : 3,2 puis autorun éventuel
 
 	fnConsoleWrite  = 6  // 2,6 : écrit le caractère Param0

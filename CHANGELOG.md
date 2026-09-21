@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : souris, GPIO, I2C (S6-1)
+- `mouse to/show/hide/cursor` (11,1/11,2/11,5), `mouse(x,y[,w])` (11,3, par référence, 16 bits comme
+  l'interpréteur), `havemouse(` (11,4), `pin n,input|output|analog|valeur` (10,4/10,2), `pin(` (10,3), `analog(`
+  (10,7), `iwrite` (10,5), `iread(` (10,6) ; 44/50 exemples de Trinity compilent. Divergence : sur GPIO
+  absent l'interpréteur signale « Out Of Range », le compilé continue.
 
 ## [0.6.0] - 2026-09-21 — sprint 5 : assembleur en ligne, fichiers, ref, débogueur
 ### Ajouté — débogueur (S5-4)

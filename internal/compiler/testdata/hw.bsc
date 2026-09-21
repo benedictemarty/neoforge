@@ -40,3 +40,6 @@ for i = 0 to 99: poke map+3+i,$F3: next
 tilemap map,0,0
 tiledraw 0,0 to 100,100
 print "gfx ok"
+mouse show: mouse to 50,60: mouse cursor 0: mouse hide
+b = mouse(mx, my, mw)
+print "mouse="; havemouse(); b; mx; my; mw

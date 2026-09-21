@@ -17,7 +17,7 @@ func TestParseErrors(t *testing.T) {
 		{"x = \"a\"", "nombre attendu"},
 		{"x$ = 1", "chaîne attendue"},
 		{"print 2 * ", "expression attendue"},
-		{"print pin(1)", "fonction pin("},
+		{"print idevice(1)", "fonction idevice("},
 		{"print abs(1", "« ) » attendu"},
 		{"print (1", "« ) » attendu"},
 		{"print min(1 2)", "« , » attendu"},

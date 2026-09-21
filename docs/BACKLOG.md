@@ -82,6 +82,14 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S5-4 | E8    | Débogueur 🐞 : pause/pas/reprise (exports Phosphoneo), registres, variables du programme compilé (symboles), mémoire | P2   | FAIT |
 | S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO (sprint 6) |
 
+## Sprint 6 — Périphériques, carte réelle (v0.7.0) — EN COURS
+
+| ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
+|------|-------|------------------------------------------------------------------------------------|------|------|
+| S6-1 | E5    | `mouse` (commande et fonction), `havemouse(`, `pin`/`pin(`/`analog(`, `iwrite`/`iread(` — 44/50 exemples | P2   | FAIT |
+| S6-2 | E5    | `library` (bibliothèques `.bas`), récursion des procédures, blocs `usend`/`isend`/`ssend`/`uconfig` | P3   | TODO |
+| S6-3 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W (S5-5)                   | P3   | TODO |
+
 ## Idées non planifiées
 
 - Débogueur (E8) : Phosphoneo expose `--gdb`, `--tui`, `--break-api` en natif ; en WASM il faudra

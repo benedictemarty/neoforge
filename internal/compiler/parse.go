@@ -766,7 +766,7 @@ var builtins = map[string][]Type{
 	"pow": {TInt, TInt}, "atan2": {TInt, TInt}, "rnd": {TInt},
 	"alloc": {TInt}, "time": {}, "vblanks": {}, "key": {TInt}, "vmode": {}, "notes": {TInt}, "point": {TInt, TInt}, "spoint": {TInt, TInt},
 	"hit": {TInt, TInt, TInt}, "spritex": {TInt}, "spritey": {TInt}, "event": {TInt, TInt}, "joypad": {TInt, TInt},
-	"eof": {TInt},
+	"eof": {TInt}, "pin": {TInt}, "analog": {TInt}, "havemouse": {}, "iread": {TInt, TInt}, "mouse": {TInt, TInt},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {
@@ -775,10 +775,13 @@ func (p *parser) call(name string, line int) (Expr, error) {
 		return nil, fmt.Errorf("ligne %d : fonction %s( non prise en charge par le compilateur", line, name)
 	}
 	c := Call{Name: name}
+	if name == "mouse" && !p.isKw(")") { // mouse(x, y[, w]) : 3e argument optionnel
+		sig = []Type{TInt, TInt, TInt}
+	}
 	for i, t := range sig {
 		if i > 0 {
-			if name == "mid$" && i == 2 && p.isKw(")") {
-				break // mid$(a$,f) : jusqu'à la fin
+			if (name == "mid$" || name == "mouse") && i == 2 && p.isKw(")") {
+				break // mid$(a$,f) : jusqu'à la fin ; mouse(x,y) sans molette
 			}
 			if err := p.expect(","); err != nil {
 				return nil, err

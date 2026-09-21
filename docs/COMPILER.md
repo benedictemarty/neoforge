@@ -1,8 +1,8 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 5 en cours** — S5-1 assembleur en ligne, S5-2 fichiers, S5-3 `ref` livrés. **40 des 50 exemples
-`.bsc` de Trinity compilent** (`tools/corpus.sh`) ; Breakout et Atic Atac (jeux officiels) tournent compilés.
-Restent : `mouse`, `pin`/`i2c`/`uconfig`, `library`, Sweet16.
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 6 en cours** — S6-1 E/S matérielles livré. **44 des 50 exemples `.bsc` de Trinity compilent**
+(`tools/corpus.sh`) ; Breakout et Atic Atac (jeux officiels) tournent compilés. Restent : `uconfig`/`usend`/
+`itransmit`… (blocs UART/I2C/SPI), `library`, Sweet16 (et un exemple bogué).
 
 ## Utilisation
 
@@ -23,7 +23,7 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` ; **fichiers** `open input/output`, `close`, `print #` / `input #` (enregistrements de l'interpréteur : nombre = `$FF` + type + 4 octets, chaîne = longueur + caractères), `eof(`, `save "f",adr,taille` | `input line #`, `cat`, `exists(` |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `on error` |
 | `proc`/`endproc` (paramètres par valeur ou `ref` : recopie dans la variable de l'appelant au retour), `call`, `local` (entiers et chaînes), `data`/`read`/`restore`, `assert`, `defchr`, `load "f",adr`, `sys` (A, X, Y) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
-| `abs( sgn( int( min( max( rand( alloc( true false` ; opérateur `mem[i]` (mot 16 bits) | `pin`/`i2c`/`serial`, `mouse`, turtle |
+| `abs( sgn( int( min( max( rand( alloc( true false` ; opérateur `mem[i]` (mot 16 bits) ; **souris** `mouse to/show/hide/cursor`, `mouse(x,y[,w])`, `havemouse(` ; **GPIO/I2C** `pin n,input|output|analog|valeur`, `pin(`, `analog(`, `iwrite`, `iread(` | blocs `usend`/`isend`/`ssend`/`uconfig`, turtle |
 | **assembleur en ligne** : mnémoniques 65C02 assemblés à l'exécution dans `P` (options `O`), étiquettes `.nom`, tous les modes (immédiat, page zéro/absolu choisi sur la valeur, `,x`/`,y`, indirects), branches relatives, listing hexadécimal (`O` bit 1) — code identique à celui de l'interpréteur | Sweet16 |
 | **graphisme chaîné** `move line rect ellipse plot text image tiledraw` (`from to by x,y ink solid frame dim`), **`sprite`** (`image to by flip anchor hide`, `sprite clear`), `gload`, `tilemap`, `sound`/`noise`/`sfx`, `vmode`, `wait`, `ink`, `cursor`, `palette` ; fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` | `joypad(` à 3 arguments, `mouse(`, `frame`, fichiers |
 

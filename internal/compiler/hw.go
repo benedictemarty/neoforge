@@ -72,6 +72,28 @@ type Wait struct {
 	N Expr
 }
 
+// MouseCmd : mouse to x,y | mouse show | mouse hide | mouse cursor n (groupe 11).
+type MouseCmd struct {
+	stmtMarker
+	Kind   string // to | show | hide | cursor
+	X, Y   Expr
+	Cursor Expr
+}
+
+// Pin : pin n, input|output|analog|valeur (10,4 direction / 10,2 valeur).
+type Pin struct {
+	stmtMarker
+	N     Expr
+	Dir   int // 1 input, 2 output, 3 analog, 0 = valeur
+	Value Expr
+}
+
+// Iwrite : iwrite périphérique, registre, valeur (10,5).
+type Iwrite struct {
+	stmtMarker
+	Dev, Reg, Val Expr
+}
+
 // Vmode : vmode n.
 type Vmode struct {
 	stmtMarker
@@ -135,6 +157,59 @@ func (p *parser) hwStatement(kw string) (Stmt, bool, error) {
 		p.next()
 		x, err := p.expr(TInt)
 		return &Wait{N: x}, true, err
+	case "mouse":
+		p.next()
+		m := &MouseCmd{}
+		var err error
+		switch {
+		case p.accept("to"):
+			m.Kind = "to"
+			xs, e := p.exprList(2)
+			if e != nil {
+				return nil, true, e
+			}
+			m.X, m.Y = xs[0], xs[1]
+		case p.accept("show"):
+			m.Kind = "show"
+		case p.accept("hide"):
+			m.Kind = "hide"
+		case p.accept("cursor"):
+			m.Kind = "cursor"
+			m.Cursor, err = p.expr(TInt)
+		default:
+			return nil, true, p.errorf("mouse : « to », « show », « hide » ou « cursor » attendu")
+		}
+		return m, true, err
+	case "pin":
+		p.next()
+		n, err := p.expr(TInt)
+		if err != nil {
+			return nil, true, err
+		}
+		if err := p.expect(","); err != nil {
+			return nil, true, err
+		}
+		pn := &Pin{N: n}
+		switch {
+		case p.accept("input"):
+			pn.Dir = 1
+		case p.accept("output"):
+			pn.Dir = 2
+		case p.accept("analog"):
+			pn.Dir = 3
+		default:
+			if pn.Value, err = p.expr(TInt); err != nil {
+				return nil, true, err
+			}
+		}
+		return pn, true, nil
+	case "iwrite":
+		p.next()
+		xs, err := p.exprList(3)
+		if err != nil {
+			return nil, true, err
+		}
+		return &Iwrite{Dev: xs[0], Reg: xs[1], Val: xs[2]}, true, nil
 	case "ink":
 		p.next()
 		x, err := p.expr(TInt)
@@ -408,6 +483,43 @@ func (g *gen) hwStmt(s Stmt) {
 	case *Vmode:
 		g.param8(s.Mode, 0)
 		emitAPICall(a, grpGraphics, fnGfxSetMode)
+	case *MouseCmd:
+		switch s.Kind {
+		case "to":
+			g.params16(s.X, s.Y)
+			emitAPICall(a, grpMouse, fnMouseMove)
+		case "show", "hide":
+			v := 0
+			if s.Kind == "show" {
+				v = 1
+			}
+			a.Op("lda", asm.Imm, v)
+			a.Op("sta", asm.Abs, apiParam0)
+			emitAPICall(a, grpMouse, fnMouseShow)
+		default:
+			g.param8(s.Cursor, 0)
+			emitAPICall(a, grpMouse, fnMouseCursor)
+		}
+	case *Pin:
+		if s.Dir != 0 {
+			g.param8(s.N, 0)
+			a.Op("lda", asm.Imm, s.Dir)
+			a.Op("sta", asm.Abs, apiParam0+1)
+			emitAPICall(a, grpGPIO, fnGPIODirection)
+		} else { // valeur : octet non nul si l'expression est non nulle (comme gpio.asm)
+			g.intExpr(s.N)
+			g.push()
+			g.intExpr(s.Value)
+			g.testACC()
+			a.Op("sta", asm.Abs, apiParam0+1)
+			g.popACC()
+			a.Op("lda", asm.Zp, zACC)
+			a.Op("sta", asm.Abs, apiParam0)
+			emitAPICall(a, grpGPIO, fnGPIOWrite)
+		}
+	case *Iwrite:
+		g.paramBytes(s.Dev, s.Reg, s.Val)
+		emitAPICall(a, grpGPIO, fnI2CWrite)
 	case *Wait: // fin = horloge + n ; boucle tant que horloge - fin < 0 (comparaison 16 bits signée)
 		g.intExpr(s.N)
 		emitAPICall(a, grpSystem, fnSysTimer)
@@ -705,6 +817,64 @@ func (g *gen) hwCall(x Call) bool {
 			a.Op("sta", asm.Zp, zACC+i)
 		}
 		a.Op("stz", asm.Zp, zTYPE)
+	case "pin", "analog", "havemouse", "iread": // 10,3 (0/1) ; 10,7 (16 bits) ; 11,4 ; 10,6
+		switch x.Name {
+		case "pin":
+			g.param8(x.Args[0], 0)
+			emitAPICall(a, grpGPIO, fnGPIORead)
+			one := a.Uniq("pin")
+			a.Op("lda", asm.Abs, apiParam0)
+			a.Branch("beq", one)
+			a.Op("lda", asm.Imm, 1)
+			a.Op("sta", asm.Abs, apiParam0)
+			a.Label(one)
+			g.byteResult()
+		case "analog":
+			g.param8(x.Args[0], 0)
+			emitAPICall(a, grpGPIO, fnGPIOAnalog)
+			a.Op("lda", asm.Abs, apiParam0)
+			a.Op("sta", asm.Zp, zACC)
+			a.Op("lda", asm.Abs, apiParam0+1)
+			a.Op("sta", asm.Zp, zACC+1)
+			a.Op("stz", asm.Zp, zACC+2)
+			a.Op("stz", asm.Zp, zACC+3)
+			a.Op("stz", asm.Zp, zTYPE)
+		case "havemouse":
+			emitAPICall(a, grpMouse, fnMouseHave)
+			g.byteResult()
+		default:
+			g.paramBytes(x.Args[0], x.Args[1])
+			emitAPICall(a, grpGPIO, fnI2CRead)
+			g.byteResult()
+		}
+	case "mouse": // mouse(x, y[, w]) : x, y (et molette) par référence, 16 bits ; résultat = boutons
+		for _, arg := range x.Args {
+			if v, ok := arg.(Var); !ok || isStrName(v.Name) {
+				g.errorf("mouse( : arguments par référence (variables numériques) attendus")
+				return true
+			}
+		}
+		emitAPICall(a, grpMouse, fnMouseRead)
+		for i, arg := range x.Args {
+			v := arg.(Var)
+			g.vars[v.Name] = true
+			off := []int{0, 2, 5}[i]
+			a.Op("lda", asm.Abs, apiParam0+off)
+			a.Op("sta", asm.Zp, zACC)
+			if i == 2 {
+				a.Op("stz", asm.Zp, zACC+1)
+			} else {
+				a.Op("lda", asm.Abs, apiParam0+off+1)
+				a.Op("sta", asm.Zp, zACC+1)
+			}
+			a.Op("stz", asm.Zp, zACC+2)
+			a.Op("stz", asm.Zp, zACC+3)
+			a.Op("stz", asm.Zp, zTYPE)
+			g.storeACC(varLabel(v.Name))
+		}
+		a.Op("lda", asm.Abs, apiParam0+4)
+		a.Op("sta", asm.Abs, apiParam0)
+		g.byteResult()
 	case "eof": // 3,22 → Param0
 		g.param8(x.Args[0], 0)
 		emitAPICall(a, grpFile, fnFileEOF)
