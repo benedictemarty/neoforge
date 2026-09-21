@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 8 **livrés** (v0.9.0), sprint 9 **en cours** ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 9 **livrés** (v0.10.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -111,7 +111,7 @@ Objectif : ce qui est faisable sans matériel. Mesure `tools/bench.sh` (Phosphon
 | S8-3 | E5    | `input line #`/`print line #`, tortue (groupe 9), `cat` — différentiels `turtle.bsc` (texte + image) et `files.bsc` étendus | P3   | FAIT |
 | S8-4 | E1    | `make dist` : paquet autonome (binaires, `emu/`, `boot/neobasic.bin`, docs, exemples) ; la config privilégie `emu/`/`boot/` à côté de l'exécutable | P3   | FAIT |
 
-## Sprint 9 — Fidélité et robustesse du code généré — EN COURS
+## Sprint 9 — Fidélité et robustesse du code généré (v0.10.0) — FAIT
 
 Objectif : faire tourner les 48 exemples officiels compilés comme interprétés (`tools/corpus_run.sh`).
 

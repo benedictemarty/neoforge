@@ -5,6 +5,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.10.0] - 2026-09-21 — sprint 9 : fidélité et robustesse du code généré
 ### Ajouté — compilateur : erreurs d'exécution et différentiel sur les exemples officiels (S9-1, S9-2)
 - `tools/corpus_run.sh` : chaque exemple de Trinity est exécuté interprété et compilé, écrans comparés —
   36/48 identiques, 12 différences expliquées (chronométrages, adresses `alloc(`).
