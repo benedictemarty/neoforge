@@ -12,6 +12,12 @@ versionnage [SemVer](https://semver.org/lang/fr/).
   `gload`, `open` — les exemples sans `graphics.gfx` s'arrêtent désormais comme interprétés), « Division By
   Zero Error », « Out Of Range Error » (indices de tableau, bornes mémorisées à `dim`), « Out Of Data ».
   Différentiels `errdiv.bsc`, `errrange.bsc`, `errdata.bsc`, `files.bsc` (21 programmes).
+### Ajouté — compilateur : String Too Long, Out Of Range, Out Of Memory (S9-4)
+- « String Too Long » (résultat de concaténation > 251), « Out Of Range Error » pour `chr$(` hors 0-255,
+  fonctions maths en erreur API (`sqr(-1)`…), `dim` (dimension 255, éléments × 5 ≥ 13056), « Out Of
+  Memory » (tas au-delà de `$FE00`). Différentiels `errstr`, `errdim`, `errmath`, `errchr` — 25 programmes,
+  chacun dans les deux modes. Bug de NeoBASIC relevé (chaîne constante corrompue par les temporaires),
+  non reproduit.
 ### Modifié — compilateur : taille du code, mode compact automatique (S9-3)
 - Appels API par `RT_API` (A = fonction, X = groupe) et `RT_MATH` ; copies de registres maths par
   routines en mode compact. Au-delà de `$E000`, recompilation en **mode compact** (variables par

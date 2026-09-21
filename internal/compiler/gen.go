@@ -227,11 +227,38 @@ func (g *gen) fill(n int) {
 
 // stop : fin du programme — boucle sur place (le firmware garde l'écran).
 // fileErrorCheck : après un appel fichier, erreur API ≠ 0 → « File I/O Error at line N ».
-func (g *gen) fileErrorCheck(line int) {
-	ok := g.a.Uniq("fok")
+func (g *gen) fileErrorCheck(line int) { g.apiErrorCheck("ERRFILE", line) }
+
+// apiErrorCheck : erreur API ≠ 0 → routine d'erreur avec le numéro de ligne.
+func (g *gen) apiErrorCheck(routine string, line int) {
+	ok := g.a.Uniq("eok")
 	g.a.Op("lda", asm.Abs, apiError)
 	g.a.Branch("beq", ok)
-	g.runtimeError("ERRFILE", line)
+	g.runtimeError(routine, line)
+	g.a.Label(ok)
+}
+
+// heapCheck : après une réservation (alloc(, dim), tas au-delà de memLimit ou débordé (C = 1)
+// → « Out Of Memory at line N ».
+func (g *gen) heapCheck(line int) {
+	bad, ok := g.a.Uniq("hp"), g.a.Uniq("hp")
+	g.a.Branch("bcs", bad)
+	g.a.Op("lda", asm.Zp, zHEAP+1)
+	g.a.Op("cmp", asm.Imm, memLimit>>8)
+	g.a.Branch("bcc", ok)
+	g.a.Label(bad)
+	g.runtimeError("ERRMEM", line)
+	g.a.Label(ok)
+}
+
+// byteCheck : ACC hors de 0…255 → « Out Of Range Error at line N » (EXPEvalInteger8).
+func (g *gen) byteCheck(line int) {
+	ok := g.a.Uniq("b8")
+	g.a.Op("lda", asm.Zp, zACC+1)
+	g.a.Op("ora", asm.Zp, zACC+2)
+	g.a.Op("ora", asm.Zp, zACC+3)
+	g.a.Branch("beq", ok)
+	g.runtimeError("ERRRANGE", line)
 	g.a.Label(ok)
 }
 
@@ -247,6 +274,7 @@ func (g *gen) runtimeError(routine string, line int) {
 // errorRoutines : message de chaque routine d'erreur d'exécution.
 var errorRoutines = map[string]string{
 	"ERRFILE": "File I/O Error", "ERRRANGE": "Out Of Range Error", "ERRDIV": "Division By Zero Error", "ERRDATA": "Out Of Data",
+	"ERRMEM": "Out Of Memory", "ERRSTR": "String Too Long",
 }
 
 // emitErrorRoutine : message, « at line », ACC en décimal, CR, arrêt.
@@ -966,12 +994,14 @@ func (g *gen) intCall(x Call) {
 		g.intExpr(x.Args[0])
 		g.mathUnary(map[string]int{"sin": fnMathSin, "cos": fnMathSin + 1, "tan": fnMathSin + 2, "atan": fnMathSin + 3,
 			"log": fnMathLog, "exp": fnMathExp, "sqr": fnMathSqrt, "rnd": fnMathRandDec}[x.Name])
+		g.apiErrorCheck("ERRRANGE", x.Line) // sqr(-1), log(0)… : l'interpréteur signale Out Of Range
 	case "pow", "atan2":
 		g.intExpr(x.Args[0])
 		g.push()
 		g.intExpr(x.Args[1])
 		g.pop()
 		g.mathBinary(map[string]int{"pow": fnMathPow, "atan2": fnMathAtan2}[x.Name])
+		g.apiErrorCheck("ERRRANGE", x.Line)
 	case "peek", "deek":
 		g.intExpr(x.Args[0])
 		a.Op("lda", asm.Zp, zACC)
@@ -1002,6 +1032,7 @@ func (g *gen) intCall(x Call) {
 		a.Op("lda", asm.Zp, zHEAP+1)
 		a.Op("adc", asm.Zp, zACC+1)
 		a.Op("sta", asm.Zp, zHEAP+1)
+		g.heapCheck(x.Line)
 		a.Op("lda", asm.Zp, zTMP)
 		a.Op("sta", asm.Zp, zACC)
 		a.Op("lda", asm.Zp, zTMP+1)
@@ -1102,7 +1133,11 @@ func (g *gen) strExpr(x Expr) {
 		g.call("STRCOPY") // (PTR) → (PTR2)
 		g.strExpr(x.R)
 		g.setPTR2(buf)
-		g.call("STRAPPEND") // (PTR2) += (PTR)
+		g.call("STRAPPEND") // (PTR2) += (PTR) ; C = 1 si le résultat dépasserait 251 caractères
+		ok := g.a.Uniq("cat")
+		g.a.Branch("bcc", ok)
+		g.runtimeError("ERRSTR", x.Line)
+		g.a.Label(ok)
 		g.setPTR(buf)
 	case Call:
 		buf := g.newTemp()
@@ -1185,6 +1220,7 @@ func (g *gen) strCallNum(x Call, buf string) {
 	{
 		g.intExpr(x.Args[0])
 		if x.Name == "chr$" {
+			g.byteCheck(x.Line)
 			a.Op("lda", asm.Imm, 1)
 			a.OpL("sta", asm.Abs, buf, 0)
 			a.Op("lda", asm.Zp, zACC)

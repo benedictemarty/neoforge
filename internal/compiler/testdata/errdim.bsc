@@ -1,0 +1,5 @@
+dim a(254), b(50,50)
+print "dims ok"
+n = 255
+dim c(n)
+print "jamais"

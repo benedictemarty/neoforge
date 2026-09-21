@@ -1,0 +1,6 @@
+x = 4
+print sqr(x); pow(2,10)
+print chr$(65)
+x = -4
+print sqr(x)
+print "jamais"

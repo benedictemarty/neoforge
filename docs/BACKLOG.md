@@ -120,7 +120,7 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 | S9-1 | E5    | `tools/corpus_run.sh` : différentiel interprété/compilé sur les exemples officiels — **36/48 identiques**, les 12 autres expliqués (chronométrages `bm*`/`test`/`testfile`, adresses `alloc(` dans `inline`/`checkasm`) | P2   | FAIT |
 | S9-2 | E5    | Erreurs d'exécution comme l'interpréteur avec numéro de ligne : File I/O, Division By Zero, Out Of Range (indices), Out Of Data — différentiels `errdiv`/`errrange`/`errdata`, `files.bsc` | P2   | FAIT |
 | S9-3 | E5    | Programmes volumineux : Atic Atac compilé (61 Ko) écrasait la page zéro par son tas → appels API par routines (`RT_API`/`RT_MATH`), **mode compact automatique** au-delà de `$E000` (accès variables par routines, ×2 plus petit), erreur au-delà de `$FE00` ; différentiels exécutés dans les deux modes (21 programmes × 2) | P1   | FAIT |
-| S9-4 | E5    | Autres erreurs d'exécution (String Too Long, Bad Argument, Out Of Memory pour `dim`/`alloc(`) | P3   | TODO |
+| S9-4 | E5    | Autres erreurs d'exécution : String Too Long (concaténation > 251), Out Of Range (`chr$(`, fonctions maths en erreur API, règles de `dim`), Out Of Memory (tas > `$FE00`) — différentiels `errstr`/`errdim`/`errmath`/`errchr` (25 programmes × 2 modes) ; bug de l'interpréteur relevé (chaîne constante corrompue) | P3   | FAIT |
 
 ## Idées non planifiées
 

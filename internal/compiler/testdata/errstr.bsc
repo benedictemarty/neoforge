@@ -1,0 +1,7 @@
+a$ = "abc"
+b$ = a$ + "def"
+print b$; len(b$)
+for i = 1 to 60: a$ = a$ + "xyzw": next
+print len(a$)
+a$ = a$ + "0123456789"
+print "jamais"

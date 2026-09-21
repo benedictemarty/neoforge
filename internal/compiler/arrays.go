@@ -31,13 +31,15 @@ func (g *gen) arrayStmt(s Stmt) bool {
 		for _, ar := range s.Arrays {
 			// total = (n+1) [* (m+1)] → ACC (16 bits)
 			g.intExpr(ar.Idx[0])
+			g.dimCheck(s.Line)
 			a.Op("lda", asm.Zp, zACC)
-			a.OpL("sta", asm.Abs, dimsLabel(ar.Name), 0) // bornes maximales (0-255 chacune)
+			a.OpL("sta", asm.Abs, dimsLabel(ar.Name), 0) // bornes maximales (0-254 chacune)
 			a.OpL("stz", asm.Abs, dimsLabel(ar.Name), 1)
 			g.call("INC32")
 			if len(ar.Idx) == 2 {
 				g.push()
 				g.intExpr(ar.Idx[1])
+				g.dimCheck(s.Line)
 				a.Op("lda", asm.Zp, zACC)
 				a.OpL("sta", asm.Abs, dimsLabel(ar.Name), 1)
 				g.call("INC32")
@@ -48,6 +50,7 @@ func (g *gen) arrayStmt(s Stmt) bool {
 				g.pop()
 				g.call("MUL16") // ACC = TMP * ACC
 			}
+			g.sizeCheck(s.Line)
 			g.scaleACC(elemSize(ar.Name))
 			// base := HEAP ; HEAP += ACC ; mise à zéro
 			a.Op("lda", asm.Zp, zHEAP)
@@ -63,6 +66,7 @@ func (g *gen) arrayStmt(s Stmt) bool {
 			a.Op("lda", asm.Zp, zHEAP+1)
 			a.Op("adc", asm.Zp, zACC+1)
 			a.Op("sta", asm.Zp, zHEAP+1)
+			g.heapCheck(s.Line)
 			g.call("ZEROFILL") // (PTR), ACC octets
 		}
 	case *AssignIndex:
@@ -201,6 +205,43 @@ func (g *gen) elemAddr(x Index) {
 	a.Op("lda", asm.Zp, zACC+1)
 	a.OpL("adc", asm.Abs, arrLabel(x.Name), 1)
 	a.Op("sta", asm.Zp, zPTR+1)
+}
+
+// dimCheck : dimension ACC hors de 0…254 → Out Of Range (dim.asm : 0-255 puis 255 refusé).
+func (g *gen) dimCheck(line int) {
+	bad, ok := g.a.Uniq("dm"), g.a.Uniq("dm")
+	g.a.Op("lda", asm.Zp, zACC+1)
+	g.a.Op("ora", asm.Zp, zACC+2)
+	g.a.Op("ora", asm.Zp, zACC+3)
+	g.a.Branch("bne", bad)
+	g.a.Op("lda", asm.Zp, zACC)
+	g.a.Op("cmp", asm.Imm, 255)
+	g.a.Branch("bne", ok)
+	g.a.Label(bad)
+	g.runtimeError("ERRRANGE", line)
+	g.a.Label(ok)
+}
+
+// sizeCheck : nombre d'éléments ACC × 5 ≥ 13056 (dim.asm : « cpy #51 ») → Out Of Range.
+func (g *gen) sizeCheck(line int) {
+	ok := g.a.Uniq("sz")
+	for i := 0; i < 4; i++ { // TMP = éléments × 5 (16 bits suffisent : ≤ 65 025)
+		g.a.Op("lda", asm.Zp, zACC+i)
+		g.a.Op("sta", asm.Zp, zTMP+i)
+	}
+	g.a.Op("asl", asm.Zp, zTMP) // × 4
+	g.a.Op("rol", asm.Zp, zTMP+1)
+	g.a.Op("asl", asm.Zp, zTMP)
+	g.a.Op("rol", asm.Zp, zTMP+1)
+	g.a.Op("clc", asm.Imp, 0) // + éléments
+	g.a.Op("lda", asm.Zp, zTMP)
+	g.a.Op("adc", asm.Zp, zACC)
+	g.a.Op("lda", asm.Zp, zTMP+1)
+	g.a.Op("adc", asm.Zp, zACC+1)
+	g.a.Op("cmp", asm.Imm, 51)
+	g.a.Branch("bcc", ok)
+	g.runtimeError("ERRRANGE", line)
+	g.a.Label(ok)
 }
 
 // rangeCheck : indice ACC hors de 0…borne (octet k de DIMS) → « Out Of Range Error at line N »

@@ -316,7 +316,7 @@ func (p *parser) statement() (Stmt, error) {
 		return &End{}, nil
 	case "dim":
 		p.next()
-		d := &Dim{}
+		d := &Dim{Line: p.bas}
 		for {
 			v := p.next()
 			if v.Kind != neobasic.ItemIdent || !strings.HasSuffix(v.Text, "(") {
@@ -796,7 +796,7 @@ func (p *parser) call(name string, line int) (Expr, error) {
 	if !ok {
 		return nil, fmt.Errorf("ligne %d : fonction %s( non prise en charge par le compilateur", line, name)
 	}
-	c := Call{Name: name}
+	c := Call{Name: name, Line: p.bas}
 	if name == "mouse" && !p.isKw(")") { // mouse(x, y[, w]) : 3e argument optionnel
 		sig = []Type{TInt, TInt, TInt}
 	}

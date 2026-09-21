@@ -83,7 +83,14 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
 - **Erreurs d'exécution** reproduites avec le numéro de ligne de la numérotation automatique (100, pas
   10, ou numéro explicite) : « File I/O Error at line N » (`load`, `gload`, `open`), « Division By Zero
   Error » (`/ \ %`), « Out Of Range Error » (indice de tableau hors de 0…borne), « Out Of Data »
-  (`read` après le dernier `data`) — message, CR, arrêt, comme `ErrorHandler` de l'interpréteur.
+  (`read` après le dernier `data`), « String Too Long » (concaténation dont le résultat dépasse 251
+  caractères, règle de `mathstd.asm`), « Out Of Range Error » pour `chr$(` hors 0-255, `sqr(`/`log(`/
+  `pow(`… en erreur API, `dim` (dimension 255, ou éléments × 5 ≥ 13056 — « cpy #51 » de `dim.asm`),
+  « Out Of Memory » quand le tas (`alloc(`, `dim`) dépasse `$FE00` (l'interpréteur a moins de mémoire :
+  `alloc(60000)` y échoue, pas ici) — message, CR, arrêt, comme `ErrorHandler` de l'interpréteur.
+  Bug relevé dans l'interpréteur (non reproduit) : une variable affectée d'une constante chaîne
+  (`b$ = "ab"`) puis non lue pendant une boucle de concaténations sur une autre variable est corrompue
+  (`len(b$)` = 119) ; les différentiels évitent ce motif.
 - Expressions : TMP ← gauche, ACC ← droite, opération TMP ∘ ACC. Une feuille (constante, variable) est
   chargée directement ; sinon ACC ← gauche, `PUSH`, ACC ← droite, `POP` → TMP. `* \ %` passent par
   l'API maths (4,2 4,4 4,5) — mesuré plus rapide que des routines 32 bits natives (S8-1). Les

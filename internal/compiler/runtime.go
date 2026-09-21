@@ -22,6 +22,7 @@ var rtDeps = map[string][]string{
 	"TURTLEINIT": {}, "TURTLEDELAY": {}, "FWRITELINE": {"FWRITEBYTE"}, "FREADLINE": {"FREADBYTE"},
 	"ERRFILE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRRANGE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
 	"ERRDIV": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRDATA": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
+	"ERRMEM": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRSTR": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
 	"API": {}, "MATH": {"API"}, "ACC2R1": {}, "TMP2R1": {}, "ACC2R2": {}, "R12ACC": {}, "LDV": {}, "STV": {}, "LDT": {}, "LDI8": {}, "LTI8": {}, "ADD32": {}, "SUB32": {},
 }
 
@@ -32,7 +33,7 @@ var rtOrder = []string{"API", "MATH", "ACC2R1", "TMP2R1", "ACC2R2", "R12ACC", "P
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
 	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32",
-	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE", "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "LDV", "STV", "LDT", "LDI8", "LTI8", "ADD32", "SUB32"}
+	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE", "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR", "LDV", "STV", "LDT", "LDI8", "LTI8", "ADD32", "SUB32"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -89,7 +90,7 @@ func (g *gen) emitRoutine(name string) {
 	case "TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE":
 		g.emitTurtleRoutine(name)
 		return
-	case "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA":
+	case "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR":
 		g.emitErrorRoutine(name)
 		return
 	case "PRHEX":
@@ -410,12 +411,17 @@ func (g *gen) emitRoutine(name string) {
 		a.Op("cpy", asm.Imm, 0xFF)
 		a.Branch("bne", loop) // y = longueur … 0 (longueurs ≥ 128 comprises)
 		rts()
-	case "STRAPPEND": // (PTR2) += (PTR), tronqué à 255
-		loop, done := a.Uniq("sap"), a.Uniq("sap")
+	case "STRAPPEND": // (PTR2) += (PTR) ; résultat > 251 caractères (limite de l'interpréteur) : C = 1, rien copié
+		loop, done, long := a.Uniq("sap"), a.Uniq("sap"), a.Uniq("sap")
 		a.Op("ldy", asm.Imm, 0)
 		a.Op("lda", asm.ZpIndY, zPTR)
 		a.Op("sta", asm.Zp, zCNT) // caractères à copier
-		a.Op("ldx", asm.Imm, 0)   // indice source (1..)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("adc", asm.ZpIndY, zPTR2)
+		a.Branch("bcs", long)
+		a.Op("cmp", asm.Imm, 252)
+		a.Branch("bcs", long)
+		a.Op("ldx", asm.Imm, 0) // indice source (1..)
 		a.Label(loop)
 		a.Op("lda", asm.Zp, zCNT)
 		a.Branch("beq", done)
@@ -423,8 +429,6 @@ func (g *gen) emitRoutine(name string) {
 		a.Op("inx", asm.Imp, 0)
 		a.Op("ldy", asm.Imm, 0)
 		a.Op("lda", asm.ZpIndY, zPTR2)
-		a.Op("cmp", asm.Imm, 255)
-		a.Branch("beq", done)
 		a.Op("inc", asm.Imp, 0) // nouvelle longueur
 		a.Op("sta", asm.ZpIndY, zPTR2)
 		a.Op("tay", asm.Imp, 0)
@@ -436,6 +440,10 @@ func (g *gen) emitRoutine(name string) {
 		a.Op("sta", asm.ZpIndY, zPTR2)
 		a.Branch("bra", loop)
 		a.Label(done)
+		a.Op("clc", asm.Imp, 0)
+		rts()
+		a.Label(long)
+		a.Op("sec", asm.Imp, 0)
 		rts()
 	}
 }

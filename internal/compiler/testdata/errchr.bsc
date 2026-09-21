@@ -1,0 +1,5 @@
+c = 65
+print chr$(c)
+c = 256
+print chr$(c)
+print "jamais"

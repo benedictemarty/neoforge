@@ -51,6 +51,7 @@ type Unary struct {
 type Call struct {
 	Name string
 	Args []Expr
+	Line int // ligne BASIC des erreurs d'exécution (Out Of Range, Out Of Memory)
 }
 
 func (IntLit) Type() Type   { return TInt }
@@ -177,6 +178,7 @@ type Local struct {
 type Dim struct {
 	stmtMarker
 	Arrays []Index
+	Line   int
 }
 
 // AssignIndex : a(i[,j]) = expression.
