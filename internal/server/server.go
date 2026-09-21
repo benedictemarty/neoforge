@@ -17,6 +17,7 @@ import (
 
 	"github.com/bmarty/neoforge/internal/compiler"
 	"github.com/bmarty/neoforge/internal/config"
+	"github.com/bmarty/neoforge/internal/neo"
 	"github.com/bmarty/neoforge/internal/neobasic"
 )
 
@@ -127,12 +128,13 @@ func (s *Server) handleCompile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "requête JSON invalide : "+err.Error())
 		return
 	}
-	bin, err := compiler.CompileNeo(req.Source)
+	code, syms, labels, err := compiler.Symbols(req.Source)
 	if err != nil {
 		writeError(w, 422, err.Error())
 		return
 	}
-	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin)})
+	bin, _ := neo.Pack([]neo.Block{{Addr: compiler.Org, Data: code}}, compiler.Org)
+	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin), "symbols": syms, "labels": labels})
 }
 
 // handleDetok détokenise un .bas (corps binaire) ; réponse : {"source": texte}.

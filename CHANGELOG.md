@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.6.0] - 2026-09-21 — sprint 5 : assembleur en ligne, fichiers, ref, débogueur
+### Ajouté — débogueur (S5-4)
+- Panneau 🐞 sous l'éditeur : ⏸ Pause / ▶ Continuer / ⏭ Pas, registres (PC + étiquette la plus proche, A, X,
+  Y, S, indicateurs, cycles), **variables du programme compilé** (symboles renvoyés par `/api/compile`,
+  nombres décodés selon leur type, chaînes), mémoire (64 octets hexa + ASCII). Exports Phosphoneo
+  `web_pause`/`web_resume`/`web_step`/`web_regs`/`web_peek`/`web_poke` (commit Phosphoneo du 2026-09-21).
+  Doc : `docs/DEBUGGER.md`.
 ### Ajouté — compilateur : ref, wait (S5-3)
 - Paramètres `ref` (valeur recopiée dans la variable de l'appelant au retour de la procédure), `wait n`
   (boucle sur l'horloge 1,1 comme `wait.asm`) ; 40/50 exemples de Trinity compilent, Atic Atac compilé

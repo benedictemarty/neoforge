@@ -2,6 +2,7 @@
 import { registerNeoBasic } from "/neobasic-lang.js";
 import { decodeBase64, errorLine, storageName, filterHelp, tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle } from "/editor-logic.js";
 import { setupGfxEditor } from "/gfx-editor.js";
+import { setupDebugger } from "/debugger.js";
 
 const el = (id) => document.getElementById(id);
 const status = (msg, err) => { const s = el("status"); s.textContent = msg; s.classList.toggle("err", !!err); };
@@ -189,7 +190,8 @@ async function main() {
         return;
       }
       monaco.editor.setModelMarkers(model, "neoforgec", []);
-      diag("compilé : " + j.bytes + " octets (.neo)");
+      diag("compilé : " + j.bytes + " octets (.neo), " + (j.symbols || []).length + " variable(s)");
+      dbg.setSymbols(j.symbols, j.labels);
       if (!emuReady) { status("Émulateur non prêt", true); return; }
       const path = "/storage/" + storageName(el("fname").value).replace(/\.bas$/, ".neo");
       Module.FS.writeFile(path, decodeBase64(j.neo));
@@ -292,6 +294,11 @@ async function main() {
       el("editor-pane").hidden = !pane.hidden;
     };
     el("btn-gfx").addEventListener("click", () => toggleGfx());
+
+    // ─── 🐞 Débogueur (S5-4) ─────────────────────────────────────────────────
+    const dbg = setupDebugger({ status, isReady: () => emuReady });
+    el("btn-dbg").addEventListener("click", () => { el("dbg").hidden = !el("dbg").hidden; });
+    el("dbg-close").addEventListener("click", () => { el("dbg").hidden = true; });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
     // Stop : web_type("\\e") (frappe automatique de Phosphoneo) si l'export existe, sinon touche synthétique.
     el("btn-stop").addEventListener("click", () => {

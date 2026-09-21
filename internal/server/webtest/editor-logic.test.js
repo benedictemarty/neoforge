@@ -71,3 +71,22 @@ test("onglets", () => {
   assert.equal(tabTitle({ name: "", savedVersion: 1 }, 1), "sans titre");
   assert.equal(tabTitle({ name: "a.bsc", savedVersion: 1 }, 2), "a.bsc ●");
 });
+
+import { decodeRegs, decodeNumber, decodeString, hexDump, hex4, nearestLabel } from "../web/editor-logic.js";
+
+test("débogueur : décodages", () => {
+  const regs = decodeRegs(new Uint8Array([0x34, 0x12, 1, 2, 3, 0xff, 0b10000011, 0, 0x10, 0, 0, 0, 0, 0, 0, 0]));
+  assert.equal(regs.pc, 0x1234);
+  assert.equal(regs.s, 0xff);
+  assert.equal(regs.cycles, 16);
+  assert.equal(regs.flags, "Nv-bdiZC");
+  assert.equal(decodeNumber([0, 0xfe, 0xff, 0xff, 0xff]), -2);
+  assert.equal(decodeNumber([0x40, 0, 0, 0xc0, 0x3f]), 1.5);
+  assert.equal(decodeString([2, 65, 66, 0]), "AB");
+  const d = hexDump(0x800, new Uint8Array([0x41, 0x00, 0xff]));
+  assert.match(d, /^0800  41 00 FF/);
+  assert.match(d, /A\.\.$/);
+  assert.equal(hex4(0x1a), "001A");
+  assert.deepEqual(nearestLabel({ PROC_A: 0x900, RT_PRINT: 0xa00, apiw_3: 0x901 }, 0x905), { name: "PROC_A", off: 5 });
+  assert.equal(nearestLabel({}, 5), null);
+});

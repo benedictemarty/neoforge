@@ -114,6 +114,22 @@ func TestFloatsCompile(t *testing.T) {
 	}
 }
 
+func TestSymbols(t *testing.T) {
+	code, syms, labels, err := Symbols("a = 1\nb$ = \"x\"\nfor i = 1 to 2: next\nprint a")
+	if err != nil || len(code) == 0 {
+		t.Fatal(err)
+	}
+	if len(syms) != 3 || syms[0].Name != "a" || syms[0].Kind != "num" || syms[1].Name != "b$" || syms[1].Kind != "str" || syms[2].Name != "i" {
+		t.Errorf("symboles : %+v", syms)
+	}
+	if syms[0].Addr < Org || labels["RT_PRINT"] == 0 {
+		t.Errorf("adresses : %+v %v", syms, labels["RT_PRINT"])
+	}
+	if _, _, _, err := Symbols("goto 9"); err == nil {
+		t.Error("erreur attendue")
+	}
+}
+
 func TestParseForms(t *testing.T) {
 	// Formes acceptées : numéros de ligne, commentaires, if then … endif, procs sans parenthèses, else/endif sur une ligne.
 	src := "10 ' commentaire\ncls\ninput 1+1; a\n20 print 1 // fin\nif 1 then print 2 endif\nif 0: print 3 else print 4 endif\nlet x = 5: x = x + 1\ncall hello\nend\nproc hello\nprint \"hi\"\nendproc\n"

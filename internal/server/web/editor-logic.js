@@ -87,3 +87,54 @@ export function tabsFindByName(state, name) {
 export function tabTitle(tab, currentVersion) {
   return (tab.name || "sans titre") + (currentVersion !== tab.savedVersion ? " ●" : "");
 }
+
+// ─── Débogueur (S5-4) : décodages purs ─────────────────────────────────────
+
+// decodeRegs : 16 octets de web_regs → { pc, a, x, y, s, p, cycles, flags }.
+export function decodeRegs(b) {
+  let cycles = 0;
+  for (let i = 7; i >= 0; i--) cycles = cycles * 256 + b[8 + i];
+  const p = b[6];
+  const flags = ["N", "V", "-", "B", "D", "I", "Z", "C"].map((f, i) => ((p >> (7 - i)) & 1 ? f : f.toLowerCase())).join("");
+  return { pc: b[0] | (b[1] << 8), a: b[2], x: b[3], y: b[4], s: b[5], p, cycles, flags };
+}
+
+// decodeNumber : 5 octets [type][valeur] → nombre (entier 32 bits signé ou float32).
+export function decodeNumber(b) {
+  const dv = new DataView(new ArrayBuffer(4));
+  for (let i = 0; i < 4; i++) dv.setUint8(i, b[1 + i]);
+  return b[0] & 0x40 ? dv.getFloat32(0, true) : dv.getInt32(0, true);
+}
+
+// decodeString : [longueur][caractères] → chaîne.
+export function decodeString(b) {
+  let s = "";
+  for (let i = 0; i < b[0]; i++) s += String.fromCharCode(b[1 + i]);
+  return s;
+}
+
+// hexDump : octets à partir de addr, 16 par ligne, hexadécimal + ASCII.
+export function hexDump(addr, bytes) {
+  const lines = [];
+  for (let i = 0; i < bytes.length; i += 16) {
+    const row = Array.from(bytes.slice(i, i + 16));
+    const hex = row.map((v) => v.toString(16).toUpperCase().padStart(2, "0")).join(" ");
+    const asc = row.map((v) => (v >= 32 && v < 127 ? String.fromCharCode(v) : ".")).join("");
+    lines.push((addr + i).toString(16).toUpperCase().padStart(4, "0") + "  " + hex.padEnd(47) + "  " + asc);
+  }
+  return lines.join("\n");
+}
+
+// hex4 : nombre → 4 chiffres hexadécimaux.
+export function hex4(n) {
+  return (n & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
+// nearestLabel : étiquette (nom, décalage) la plus proche en dessous de addr, ou null.
+export function nearestLabel(labels, addr) {
+  let best = null;
+  for (const [name, a] of Object.entries(labels || {})) {
+    if (a <= addr && (!best || a > best.addr) && !/^(apiw|halt|prs|else|endif|while|wend|repeat|until|do|loop|for|next|bool|sh|inc|dec|sgn|abs|scmp|ins|sub|rs|cl|case|spc|inl|gd|sx|jx|ev|mul|zf|rd|awb|hex|fws|frs|asm|lbl|wait|input|val|minmax|asc|mid|inkey|tab|scp|sap|tab)_\d+/.test(name)) best = { name, addr: a };
+  }
+  return best ? { name: best.name, off: addr - best.addr } : null;
+}

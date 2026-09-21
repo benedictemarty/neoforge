@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0) ; sprint 5 en cours : S5-1 à S5-3 faits. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 5 **livrés** (v0.6.0) ; S5-5 (carte réelle) reporté au sprint 6, avec `mouse`/`pin`/`i2c`/`uconfig`, la récursion et `library`. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -72,15 +72,15 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S4-4 | E5    | Graphisme chaîné, sprites, `gload`, `tilemap`, son, `vmode`, `ink`, `cursor`, `palette`, `event( joypad( hit(`… — différentiel texte **et image** 11/11 | P1   | FAIT |
 | S4-5 | E9    | `tools/corpus.sh` : 34/50 exemples de Trinity compilent (+ `data`/`read`, `assert`, `defchr`, `load`, `sys`, `local` chaîne) ; 13 programmes différentiels | P2   | FAIT |
 
-## Sprint 5 — Compilateur : assembleur, fichiers, débogueur (v0.6.0) — EN COURS
+## Sprint 5 — Compilateur : assembleur, fichiers, débogueur (v0.6.0) — FAIT (S5-5 reporté)
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S5-1 | E5    | Assembleur en ligne (mnémoniques à l'exécution dans `P`/`O`, `.nom`, tous modes, `mem[i]`) — code identique à l'interpréteur ; 37/50 exemples | P2   | FAIT |
 | S5-2 | E5    | Fichiers (`open`, `close`, `print #`, `input #`, `eof(`, `save`) — FAIT (39/50) ; `mouse`, `pin`, `i2c`, `uconfig` reportés | P3   | FAIT |
 | S5-3 | E5    | Paramètres `ref` (copie entrée/sortie) + `wait` — FAIT ; récursion reportée (Atic Atac compile, 40/50) | P3   | FAIT |
-| S5-4 | E8    | Débogueur : exports Phosphoneo (`web_pause`, registres, mémoire), symboles du compilateur | P2   | TODO |
-| S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO |
+| S5-4 | E8    | Débogueur 🐞 : pause/pas/reprise (exports Phosphoneo), registres, variables du programme compilé (symboles), mémoire | P2   | FAIT |
+| S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO (sprint 6) |
 
 ## Idées non planifiées
 

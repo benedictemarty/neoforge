@@ -28,6 +28,7 @@
       <label class="btn" title="Envoyer des fichiers de données (.gfx, niveaux, .bas…) dans le stockage de l'émulateur (/storage)">📎 Fichiers<input type="file" id="storage-files" multiple hidden /></label>
       <button id="btn-help" title="Aide des commandes NeoBASIC (F1)">❔ Aide</button>
       <button id="btn-gfx" title="Éditeur de sprites, tuiles et tilemaps (graphics.gfx)">🎨 Graphismes</button>
+      <button id="btn-dbg" title="Débogueur : pause, pas à pas, registres, variables du programme compilé, mémoire">🐞 Débogueur</button>
     </div>
     <span id="status" class="status"></span>
   </header>
@@ -68,6 +69,16 @@
     <section id="editor-pane">
       <div id="tabs" role="tablist"></div>
       <div id="editor" aria-label="Éditeur"></div>
+  <aside id="dbg" hidden aria-label="Débogueur">
+      <div class="gfx-tools">
+        <button id="dbg-pause" title="Suspendre l'émulateur">⏸ Pause</button><button id="dbg-continue" title="Reprendre">▶ Continuer</button><button id="dbg-step" title="Une instruction 65C02">⏭ Pas</button><button id="dbg-refresh" title="Relire registres, variables et mémoire">⟲</button>
+        <span id="dbg-state" class="dim">en cours</span>
+        <label class="dim">mémoire $<input id="dbg-addr" type="text" size="5" value="" /></label>
+        <button id="dbg-close" title="Fermer">✕</button>
+      </div>
+      <pre id="dbg-regs"></pre>
+      <div class="dbg-body"><table id="dbg-vars-table"><tbody id="dbg-vars"></tbody></table><pre id="dbg-mem"></pre></div>
+    </aside>
     </section>
     <aside id="help" hidden aria-label="Aide">
       <div class="help-head"><input id="help-filter" type="search" placeholder="Filtrer (print, sprite, tile…)" /><button id="help-close" title="Fermer">✕</button></div>

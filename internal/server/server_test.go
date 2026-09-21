@@ -108,7 +108,7 @@ func TestBuild(t *testing.T) {
 func TestCompile(t *testing.T) {
 	s, _ := newTest(t)
 	code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"print 1"}`)
-	if code != 200 || m["neo"] == nil || m["bytes"].(float64) < 8 {
+	if code != 200 || m["neo"] == nil || m["bytes"].(float64) < 8 || m["symbols"] == nil || m["labels"] == nil {
 		t.Errorf("compile : %d %v", code, m)
 	}
 	if code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"goto 1"}`); code != 422 || !strings.Contains(m["error"].(string), "ligne 1") {
