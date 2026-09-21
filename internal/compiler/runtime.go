@@ -19,6 +19,7 @@ var rtDeps = map[string][]string{
 	"ASMBYTE": {"PRHEX", "PRCHR"}, "PRHEX": {"PRCHR"},
 	"FWRITEBYTE": {}, "FREADBYTE": {}, "FWRITENUM": {"FWRITEBYTE"}, "FWRITESTR": {"FWRITEBYTE"}, "FREADNUM": {"FREADBYTE"}, "FREADSTR": {"FREADBYTE"},
 	"TXBYTE": {}, "TXSTR": {"TXBYTE"}, "CMP32": {},
+	"TURTLEINIT": {}, "TURTLEDELAY": {}, "FWRITELINE": {"FWRITEBYTE"}, "FREADLINE": {"FREADBYTE"},
 }
 
 // Ordre d'émission stable.
@@ -27,7 +28,8 @@ var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NE
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
-	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32"}
+	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32",
+	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -71,6 +73,9 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "TXBYTE", "TXSTR":
 		g.emitSerialRoutine(name)
+		return
+	case "TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE":
+		g.emitTurtleRoutine(name)
 		return
 	case "PRHEX":
 		g.emitPrHex()

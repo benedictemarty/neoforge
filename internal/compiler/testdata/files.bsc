@@ -13,3 +13,12 @@ close
 save "mem.dat", $7000, 4
 print exists("test.dat"); exists("absent.dat")
 print "fin"
+open output 2, "lines.txt"
+print line #2, "premiere", "deux" + "ieme", "tab" + chr$(9) + "x"
+close 2
+dim l$(3)
+open input 2, "lines.txt"
+input line #2, a$, l$(1)
+input line #2, b$
+print a$; "/"; l$(1); "/"; b$; "/"; eof(2)
+close

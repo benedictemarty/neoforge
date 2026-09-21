@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 7 **livrés** (v0.8.0), sprint 8 **en cours** (S8-1 fait) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 7 **livrés** (v0.8.0), sprint 8 **en cours** (S8-1 à S8-3 faits) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -107,8 +107,8 @@ Objectif : ce qui est faisable sans matériel. Mesure `tools/bench.sh` (Phosphon
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S8-1 | E5    | Code généré plus rapide : comparaisons entières natives (`CMP32`, reproduit la comparaison sans correction de débordement de `compare.asm`), branchement direct des conditions, opérandes feuilles sans pile, `for` incrémenté sur place — bench total 795 → 205 (×3,9 ; boucle entière ×5). Constat : `* \ %` natifs mesurés **plus lents** que l'API 4,2/4,4/4,5 dans l'émulateur (mul/div 48 → 255) → conservés en API ; latence de l'API sur carte réelle inconnue (non mesurée) | P2   | FAIT |
-| S8-2 | E5    | Sweet16 dans l'assembleur en ligne (`mixedassembler.bsc`)                          | P3   | TODO |
-| S8-3 | E5    | `input line`, tortue (groupe 9), `cat`                                             | P3   | TODO |
+| S8-2 | E5    | Sweet16 : **absent de NeoBASIC actuel** (aucun token, aucune source ; `mixedassembler.bsc` donne « Syntax Error at line 200 » dans l'interpréteur lui-même) — exemple obsolète, rien à compiler | P3   | FAIT (constat) |
+| S8-3 | E5    | `input line #`/`print line #`, tortue (groupe 9), `cat` — différentiels `turtle.bsc` (texte + image) et `files.bsc` étendus | P3   | FAIT |
 | S8-4 | E1    | Paquets de release (`make dist` : binaire + web + émulateur)                        | P3   | TODO |
 
 ## Idées non planifiées

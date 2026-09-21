@@ -204,7 +204,16 @@ func TestFiles(t *testing.T) {
 		{"print #1, (", "expression attendue"},
 		{"input #1, 2", "variable attendue"},
 		{"input #1, t(1)", "avant dim"},
-		{"input line #1, a", "input line"},
+		{"input line #1, a", "chaîne attendue"},
+		{"input line #1, \"x\"", "variable chaîne attendue"},
+		{"input line 1, a$", "« # » attendu"},
+		{"input line #\"a\", a$", "nombre attendu"},
+		{"input line #1 a$", "« , » attendu"},
+		{"print line #1, 2", "chaîne attendue"},
+		{"turtle 3", "home, fast, hide ou show"},
+		{"pendown \"a\"", "nombre attendu"},
+		{"forward \"a\"", "nombre attendu"},
+		{"cat 3", "chaîne attendue"},
 	} {
 		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)

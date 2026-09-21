@@ -201,58 +201,65 @@ func (g *gen) fileStmt(s Stmt) bool {
 			}
 		}
 	case *InputFile:
-		g.intExpr(s.Channel)
-		a.Op("lda", asm.Zp, zACC)
-		a.OpL("sta", asm.Abs, "FHCHAN", 0)
-		for _, t := range s.Targets {
-			str := t.Type() == TStr
-			if ix, ok := t.(Index); ok {
-				if !g.checkArray(ix) {
-					continue
-				}
-				g.elemAddr(ix)
-				a.Op("lda", asm.Zp, zPTR)
-				a.Op("sta", asm.Zp, zACC)
-				a.Op("lda", asm.Zp, zPTR+1)
-				a.Op("sta", asm.Zp, zACC+1)
-				g.push()
-			}
-			if str {
-				g.call("FREADSTR") // → INBUF
-			} else {
-				g.call("FREADNUM") // → ACC
-			}
-			switch t := t.(type) {
-			case Var:
-				g.vars[t.Name] = true
-				if str {
-					g.setPTR("INBUF")
-					g.call("STRCOPY", varLabel(t.Name))
-				} else {
-					g.storeACC(varLabel(t.Name))
-				}
-			case Index:
-				g.pop() // TMP = adresse de l'élément
-				if str {
-					a.Op("lda", asm.Zp, zTMP)
-					a.Op("sta", asm.Zp, zPTR2)
-					a.Op("lda", asm.Zp, zTMP+1)
-					a.Op("sta", asm.Zp, zPTR2+1)
-					g.setPTR("INBUF")
-					g.call("STRCOPY")
-				} else {
-					a.Op("lda", asm.Zp, zTMP)
-					a.Op("sta", asm.Zp, zPTR)
-					a.Op("lda", asm.Zp, zTMP+1)
-					a.Op("sta", asm.Zp, zPTR+1)
-					g.call("STOREELEM")
-				}
-			}
-		}
+		g.inputTargets(s.Channel, s.Targets, "FREADSTR")
 	default:
 		return false
 	}
 	return true
+}
+
+// inputTargets : FHCHAN = canal, puis chaque cible reçoit un enregistrement (nombre : FREADNUM ;
+// chaîne : strRoutine → INBUF).
+func (g *gen) inputTargets(channel Expr, targets []Expr, strRoutine string) {
+	a := g.a
+	g.intExpr(channel)
+	a.Op("lda", asm.Zp, zACC)
+	a.OpL("sta", asm.Abs, "FHCHAN", 0)
+	for _, t := range targets {
+		str := t.Type() == TStr
+		if ix, ok := t.(Index); ok {
+			if !g.checkArray(ix) {
+				continue
+			}
+			g.elemAddr(ix)
+			a.Op("lda", asm.Zp, zPTR)
+			a.Op("sta", asm.Zp, zACC)
+			a.Op("lda", asm.Zp, zPTR+1)
+			a.Op("sta", asm.Zp, zACC+1)
+			g.push()
+		}
+		if str {
+			g.call(strRoutine) // → INBUF
+		} else {
+			g.call("FREADNUM") // → ACC
+		}
+		switch t := t.(type) {
+		case Var:
+			g.vars[t.Name] = true
+			if str {
+				g.setPTR("INBUF")
+				g.call("STRCOPY", varLabel(t.Name))
+			} else {
+				g.storeACC(varLabel(t.Name))
+			}
+		case Index:
+			g.pop() // TMP = adresse de l'élément
+			if str {
+				a.Op("lda", asm.Zp, zTMP)
+				a.Op("sta", asm.Zp, zPTR2)
+				a.Op("lda", asm.Zp, zTMP+1)
+				a.Op("sta", asm.Zp, zPTR2+1)
+				g.setPTR("INBUF")
+				g.call("STRCOPY")
+			} else {
+				a.Op("lda", asm.Zp, zTMP)
+				a.Op("sta", asm.Zp, zPTR)
+				a.Op("lda", asm.Zp, zTMP+1)
+				a.Op("sta", asm.Zp, zPTR+1)
+				g.call("STOREELEM")
+			}
+		}
+	}
 }
 
 // emitFileRoutine : FBYTEIO (lecture/écriture d'un octet FHBUF sur FHCHAN), FWRITENUM,

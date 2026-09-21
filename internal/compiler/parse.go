@@ -199,6 +199,9 @@ func (p *parser) statement() (Stmt, error) {
 	if s, ok, err := p.serialStatement(it.Tok.Name); ok {
 		return s, err
 	}
+	if s, ok, err := p.turtleStatement(it.Tok.Name); ok {
+		return s, err
+	}
 	switch it.Tok.Name {
 	case "let":
 		p.next()
@@ -208,14 +211,17 @@ func (p *parser) statement() (Stmt, error) {
 		if p.isKw("#") {
 			return p.fileChannelItems(false)
 		}
+		if p.accept("line") {
+			return p.lineIO(false)
+		}
 		return p.print()
 	case "input":
 		p.next()
 		if p.isKw("#") {
 			return p.fileChannelItems(true)
 		}
-		if p.isKw("line") {
-			return nil, p.errorf("input line non pris en charge")
+		if p.accept("line") {
+			return p.lineIO(true)
 		}
 		pr, err := p.print() // les tableaux sont déjà refusés par l'analyse des expressions
 		if err != nil {

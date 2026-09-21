@@ -1,0 +1,20 @@
+turtle home
+pendown 2
+forward 40
+right 90
+forward 40
+penup
+left 45
+forward 20
+pendown
+forward 30
+turtle fast
+right 120: forward 50
+left 30
+forward 25
+turtle hide
+turtle show
+turtle home
+print "fin"
+cat
+cat "*.map"

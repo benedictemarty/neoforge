@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : tortue, `cat`, lignes de fichier (S8-3)
+- `turtle home|fast|hide|show`, `penup`, `pendown [couleur]`, `left`/`right`/`forward` (groupe 9, sprite $7F,
+  initialisation implicite et temporisations comme `turtle.asm`) ; `cat [motif$]` (3,1 / 3,32) ;
+  `input line #canal, a$…` / `print line #canal, s$…` (LF, tabulation → espace, 252 caractères max).
+  Nouveau différentiel `turtle.bsc` (texte et image identiques), `files.bsc` étendu ; 18 différentiels.
+### Constat — Sweet16 (S8-2)
+- Sweet16 n'existe pas dans NeoBASIC actuel (aucun token, aucune source) ; `mixedassembler.bsc` provoque
+  « Syntax Error » dans l'interpréteur lui-même : exemple obsolète, hors périmètre (48/50 reste le maximum).
 ### Modifié — compilateur : performance du code généré (S8-1)
 - Comparaisons entières natives (`RT_CMP32`, reproduit `compare.asm` : différence 32 bits sans correction de
   débordement), branchement direct des conditions `if`/`while`/`until` sur le résultat $FF/0/1, opérandes

@@ -148,6 +148,14 @@ func (g *gen) program() {
 	a.Bytes(0)
 	a.Label("FHBUF") // tampon d'un octet (3,8 / 3,9)
 	a.Bytes(0)
+	a.Label("TTLON") // tortue : initialisée, stylo ($FF baissé), couleur, mode rapide
+	a.Bytes(0)
+	a.Label("TTLPEN")
+	a.Bytes(0)
+	a.Label("TTLCOL")
+	a.Bytes(0)
+	a.Label("TTLFAST")
+	a.Bytes(0)
 	a.Label("TXLEN") // taille du bloc à envoyer (usend…)
 	a.Bytes(0)
 	a.Label("TXBUF")
@@ -325,7 +333,7 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) && !g.fileStmt(s) && !g.serialStmt(s) {
+		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) && !g.fileStmt(s) && !g.serialStmt(s) && !g.turtleStmt(s) {
 			g.hwStmt(s)
 		}
 	}
