@@ -90,6 +90,16 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S6-2 | E5    | `library`, récursion, blocs `usend`/`isend`/`ssend`/`uconfig`, transfert du `.neo` compilé | P3   | TODO (sprint 7) |
 | S6-3 | E3    | 📡 Carte : dépôt sur neoforge + récepteur NeoBASIC (`atget$(` par tranches, `save`) — validé dans l'émulateur via le modem logiciel ; carte réelle à valider | P3   | FAIT |
 
+## Sprint 7 — Finitions du compilateur (v0.8.0) — EN COURS
+
+| ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
+|------|-------|------------------------------------------------------------------------------------|------|------|
+| S7-1 | E5    | `library` : commande d'éditeur, rien à compiler ; `asteroids.bsc` incomplet côté firmware | P3   | FAIT (constat) |
+| S7-2 | E5    | Récursion : paramètres sauvegardés/restaurés comme l'interpréteur                  | P3   | FAIT |
+| S7-3 | E5    | Blocs `usend`/`ureceive`/`uconfig`, `isend`/`itransmit`, `ssend` (UART/I2C/SPI)    | P3   | TODO |
+| S7-4 | E3    | 📡 Carte : transfert du `.neo` compilé                                             | P3   | TODO |
+| S7-5 | E3    | Validation sur carte réelle (Neo6502 + modem Pico W) — nécessite le matériel        | P3   | TODO |
+
 ## Idées non planifiées
 
 - Débogueur (E8) : Phosphoneo expose `--gdb`, `--tui`, `--break-api` en natif ; en WASM il faudra

@@ -5,6 +5,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Modifié — compilateur : procédures récursives (S7-2)
+- Les paramètres de procédure sont sauvegardés à l'appel et restaurés à `endproc` (fait relevé sur
+  l'interpréteur : `local` implicite, variables globales pendant l'exécution) ; les paramètres `ref` ne
+  sont pas restaurés. `recursion.bsc` (factorielle, Fibonacci, Hanoï) identique ; 16 différentiels.
+- `library` est une commande d'éditeur (rien à compiler) ; `asteroids.bsc` appelle `Machine.Code()` d'une
+  bibliothèque que le Makefile officiel n'inclut pas (exemple incomplet, hors périmètre).
 
 ## [0.7.0] - 2026-09-21 — sprint 6 : périphériques, carte réelle
 ### Ajouté — 📡 Carte (S6-3)

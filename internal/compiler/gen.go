@@ -112,6 +112,7 @@ func (g *gen) program() {
 		g.locals = nil
 		g.stmts(pr.Body)
 		g.restoreLocals()
+		g.restoreParams(name, pr)
 		g.locals = saved
 		a.Op("rts", asm.Imp, 0)
 		for _, p := range pr.Params {
@@ -387,7 +388,8 @@ func (g *gen) callProc(s *CallProc) {
 		g.errorf("call %s : %d argument(s), %d attendu(s)", strings.ToLower(s.Name), len(s.Args), len(pr.Params))
 		return
 	}
-	// Les arguments sont évalués puis empilés, puis affectés aux paramètres (par valeur).
+	// Les arguments sont évalués puis empilés ; les anciennes valeurs des paramètres sont
+	// sauvegardées (restaurées à endproc, comme l'interpréteur) ; puis les paramètres sont affectés.
 	for i, x := range s.Args {
 		p := pr.Params[i]
 		g.vars[p] = true
@@ -401,6 +403,18 @@ func (g *gen) callProc(s *CallProc) {
 		} else {
 			g.intExpr(x)
 			g.push()
+		}
+	}
+	for i, p := range pr.Params { // sauvegarde des anciennes valeurs (chaînes : tampon propre au paramètre)
+		if pr.Ref[i] { // ref : la valeur finale est recopiée dans la variable de l'appelant après le retour
+			continue
+		}
+		if isStrName(p) {
+			g.setPTR(bufLabel(p))
+			g.call("STRCOPY", g.paramSave(s.Name, i))
+		} else {
+			g.loadACC(varLabel(p))
+			g.call("LPUSH")
 		}
 	}
 	for i := len(pr.Params) - 1; i >= 0; i-- {
@@ -426,6 +440,34 @@ func (g *gen) callProc(s *CallProc) {
 		} else {
 			g.loadACC(varLabel(pr.Params[i]))
 			g.storeACC(varLabel(v.Name))
+		}
+	}
+}
+
+// paramSave : tampon de sauvegarde d'un paramètre chaîne (nom de procédure, indice).
+func (g *gen) paramSave(proc string, i int) string {
+	key := fmt.Sprintf("%s#%d", proc, i)
+	if b, ok := g.localBuf[key]; ok {
+		return b
+	}
+	b := g.newTemp()
+	g.localBuf[key] = b
+	return b
+}
+
+// restoreParams : épilogue — restaure les paramètres sauvegardés à l'appel (ordre inverse).
+func (g *gen) restoreParams(name string, pr *Proc) {
+	for i := len(pr.Params) - 1; i >= 0; i-- {
+		p := pr.Params[i]
+		if pr.Ref[i] {
+			continue
+		}
+		if isStrName(p) {
+			g.setPTR(g.paramSave(name, i))
+			g.call("STRCOPY", varLabel(p))
+		} else {
+			g.call("LPOP")
+			g.storeACC(varLabel(p))
 		}
 	}
 }
