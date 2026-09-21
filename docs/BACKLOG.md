@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 6 **livrés** (v0.7.0) ; reste (sprint 7) : `library`, récursion, blocs UART/I2C/SPI, transfert du `.neo`, validation sur carte réelle. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 7 **livrés** (v0.8.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -90,15 +90,15 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S6-2 | E5    | `library`, récursion, blocs `usend`/`isend`/`ssend`/`uconfig`, transfert du `.neo` compilé | P3   | TODO (sprint 7) |
 | S6-3 | E3    | 📡 Carte : dépôt sur neoforge + récepteur NeoBASIC (`atget$(` par tranches, `save`) — validé dans l'émulateur via le modem logiciel ; carte réelle à valider | P3   | FAIT |
 
-## Sprint 7 — Finitions du compilateur (v0.8.0) — EN COURS
+## Sprint 7 — Finitions du compilateur (v0.8.0) — FAIT (S7-5 à réaliser sur matériel)
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S7-1 | E5    | `library` : commande d'éditeur, rien à compiler ; `asteroids.bsc` incomplet côté firmware | P3   | FAIT (constat) |
 | S7-2 | E5    | Récursion : paramètres sauvegardés/restaurés comme l'interpréteur                  | P3   | FAIT |
 | S7-3 | E5    | Blocs UART/I2C/SPI, `exists(`, terminateurs orphelins — 48/50 exemples              | P3   | FAIT |
-| S7-4 | E3    | 📡 Carte : transfert du `.neo` compilé                                             | P3   | TODO |
-| S7-5 | E3    | Validation sur carte réelle (Neo6502 + modem Pico W) — nécessite le matériel        | P3   | TODO |
+| S7-4 | E3    | 📡 Carte : choix `.neo` compilé / `.bas` — validé dans l'émulateur (1 451 octets identiques) | P3   | FAIT |
+| S7-5 | E3    | Validation sur carte réelle (Neo6502 + modem Pico W) — déroulé dans `docs/CARD.md`, nécessite le matériel | P3   | TODO (bmarty) |
 
 ## Idées non planifiées
 

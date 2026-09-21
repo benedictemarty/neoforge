@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.8.0] - 2026-09-21 — sprint 7 : finitions du compilateur
+### Ajouté — 📡 Carte : .neo compilé (S7-4)
+- Le bouton 📡 Carte propose le `.neo` compilé ou le `.bas` ; transfert binaire vérifié dans l'émulateur
+  (1 451 octets identiques). Déroulé de validation sur carte réelle dans `docs/CARD.md` (S7-5, matériel).
 ### Ajouté — compilateur : UART/I2C/SPI (S7-3)
 - `uconfig`, `usend`/`ssend`/`isend` (tampon : octet bas, « ; » ajoute l'octet haut, chaînes), `ureceive`/
   `utransmit`/`sreceive`/`stransmit`/`ireceive`/`itransmit`, `uhasdata(`, `exists(` ; un terminateur orphelin

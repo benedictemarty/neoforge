@@ -303,10 +303,21 @@ async function main() {
 
     // ─── 📡 Carte réelle (S6-3) : dépôt du .bas puis récepteur NeoBASIC dans un onglet ────
     el("btn-card").addEventListener("click", async () => {
-      const bas = await build();
-      if (!bas) return;
-      const name = storageName(el("fname").value);
-      const r = await fetch("/api/xfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, data: btoa(String.fromCharCode(...bas)) }) });
+      // .bas (interprété, load + run) ou .neo (compilé, load "x.neo" le lance) : au choix.
+      const neo = confirm("Envoyer le programme COMPILÉ (.neo) ? Annuler = envoyer le .bas (interprété).");
+      let bytes, name;
+      if (neo) {
+        const r0 = await fetch("/api/compile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: editor.getValue() }) });
+        const j0 = await r0.json();
+        if (j0.error) { diag(j0.error, true); return; }
+        bytes = decodeBase64(j0.neo);
+        name = storageName(el("fname").value).replace(/\.bas$/, ".neo");
+      } else {
+        bytes = await build();
+        if (!bytes) return;
+        name = storageName(el("fname").value);
+      }
+      const r = await fetch("/api/xfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, data: btoa(String.fromCharCode(...bytes)) }) });
       const j = await r.json();
       if (j.error) { status(j.error, true); return; }
       const addr = cfg.lanAddr || location.host;

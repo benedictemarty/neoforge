@@ -19,5 +19,16 @@ attaché au démarrage) route `atget$(` vers l'origine de la page — c'est ains
 (315 octets, fichier reçu identique à l'original). Sur carte réelle : à valider avec le modem Pico W (Internet
 réel, `atconnect`) — non testé ici.
 
-Limites : un fichier à la fois par nom, transfert `.bas` (tokenisé) ; pour un `.neo` compilé, déposer le
-fichier via le même mécanisme reste à ajouter (S6-2).
+Le bouton propose d'envoyer le **`.neo` compilé** (`load "x.neo"` le lance sur la carte) ou le **`.bas`**
+(interprété : `load` + `run`) ; les deux ont été vérifiés dans l'émulateur (fichiers reçus identiques).
+Limite : un fichier à la fois par nom (mémoire du serveur).
+
+## Validation sur carte réelle (S7-5, à faire par vous)
+
+1. Carte sous Trinity avec `boot/neobasic.bin` et le modem Pico W branché ; PC et carte sur le même réseau.
+2. `make run` sur le PC ; dans neoforge, **📡 Carte**, saisir le SSID et le mot de passe (ou laisser vide
+   si `atconnect` a déjà été fait) ; copier le contenu de l'onglet `recv.bsc` sur la carte (une seule fois :
+   il reste valable tant que l'adresse LAN ne change pas) et le lancer.
+3. Attendu : une ligne de points puis `<nom> recu (<n> octets)` ; puis `load "<nom>"` (+ `run` pour un `.bas`).
+4. En cas d'échec, `atresult$` porte la ligne du modem (`no ip`, `DNS Fail`…) — voir `docs/MODEM-AT.md` de
+   Neo6502Basic.
