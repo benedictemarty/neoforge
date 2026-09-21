@@ -173,3 +173,29 @@ func TestInlineAsm(t *testing.T) {
 		t.Error("Bracket.Type")
 	}
 }
+
+func TestFiles(t *testing.T) {
+	src := "open output 1, \"f\"\nopen input 2, \"f\"\nprint #1, 1, \"a\"\ndim v(1), s$(1)\ninput #2, a, b$, v(0), s$(0)\nclose 1\nclose\nsave \"f\", 1, 2\nx = eof(2)\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ src, want string }{
+		{"open 1", "« input » ou « output »"},
+		{"open input \"a\"", "nombre attendu"},
+		{"open input 1 \"a\"", "« , » attendu"},
+		{"open input 1, 2", "chaîne attendue"},
+		{"close \"a\"", "nombre attendu"},
+		{"save 1", "chaîne attendue"},
+		{"save \"a\"", "save : seule la forme"},
+		{"save \"a\", \"b\", 1", "nombre attendu"},
+		{"print #\"a\"", "nombre attendu"},
+		{"print #1, (", "expression attendue"},
+		{"input #1, 2", "variable attendue"},
+		{"input #1, t(1)", "avant dim"},
+		{"input line #1, a", "input line"},
+	} {
+		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)
+		}
+	}
+}

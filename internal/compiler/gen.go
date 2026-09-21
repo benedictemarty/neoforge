@@ -143,6 +143,10 @@ func (g *gen) program() {
 	g.fill(16)
 	a.Label("INBUF") // ligne saisie par input (80 caractères max, comme l'interpréteur)
 	g.fill(82)
+	a.Label("FHCHAN") // canal courant de print #/input #
+	a.Bytes(0)
+	a.Label("FHBUF") // tampon d'un octet (3,8 / 3,9)
+	a.Bytes(0)
 	a.Label("GSTATE") // état des commandes graphiques
 	g.fill(gState)
 	a.Label("SPRBLK") // bloc de mise à jour d'un sprite (6,2)
@@ -322,7 +326,7 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) {
+		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) && !g.fileStmt(s) {
 			g.hwStmt(s)
 		}
 	}
@@ -1147,7 +1151,7 @@ func (g *gen) inferInt() {
 
 // Fonctions dont le résultat est toujours entier.
 var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true,
-	"alloc": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
+	"alloc": true, "eof": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
 
 // isInt : l'expression numérique est-elle prouvée entière ?
 func (g *gen) isInt(x Expr) bool {

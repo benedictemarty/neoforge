@@ -17,6 +17,7 @@ var rtDeps = map[string][]string{
 	"GFXSEND":   {}, "GFXPOS": {}, "GFXDRAW": {"GFXPOS"}, "GFXRESET": {}, "SPRINIT": {}, "SPRUPDATE": {}, "SEXT16": {}, "JOYAXIS": {}, "EVENT": {},
 	"MUL16": {}, "ZEROFILL": {}, "LOADELEM": {}, "STOREELEM": {}, "READDATA": {}, "SYSCALL": {},
 	"ASMBYTE": {"PRHEX", "PRCHR"}, "PRHEX": {"PRCHR"},
+	"FWRITEBYTE": {}, "FREADBYTE": {}, "FWRITENUM": {"FWRITEBYTE"}, "FWRITESTR": {"FWRITEBYTE"}, "FREADNUM": {"FREADBYTE"}, "FREADSTR": {"FREADBYTE"},
 }
 
 // Ordre d'émission stable.
@@ -24,7 +25,8 @@ var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NE
 	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
-	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE"}
+	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
+	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -62,6 +64,9 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "ASMBYTE":
 		g.emitAsmRoutine()
+		return
+	case "FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR":
+		g.emitFileRoutine(name)
 		return
 	case "PRHEX":
 		g.emitPrHex()

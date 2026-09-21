@@ -52,7 +52,7 @@ func TestParseErrors(t *testing.T) {
 		{"call a(1)\nend\nproc a()\nendproc", "argument(s)"},
 		{"call a(1)\nend\nproc a(s$)\nendproc", "type incompatible"},
 		{"exit", "exit hors"},
-		{"input #1, a", "input sur fichier"},
+		{"input line #1, a", "input line"},
 		{"input 2 *", "expression attendue"},
 		{"input a(1)", "avant dim"},
 		// propagation des erreurs dans chaque construction

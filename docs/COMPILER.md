@@ -1,8 +1,8 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 5 en cours** — S5-1 assembleur en ligne livré. **37 des 50 exemples `.bsc` de Trinity compilent**
-(`tools/corpus.sh`) ; Breakout (jeu officiel) tourne compilé. Restent : les fichiers (`open`/`save`), `mouse`,
-`pin`/`i2c`/`uconfig`, `ref`, `library`.
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 5 en cours** — S5-1 assembleur en ligne, S5-2 fichiers livrés. **39 des 50 exemples `.bsc` de
+Trinity compilent** (`tools/corpus.sh`) ; Breakout (jeu officiel) tourne compilé. Restent : `mouse`,
+`pin`/`i2c`/`uconfig`, `ref`, `library`, Sweet16.
 
 ## Utilisation
 
@@ -20,7 +20,7 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 |---|---|
 | entiers 32 bits signés (`+ - * \ % & \| ^ << >>`, comparaisons → -1/0, `not` logique, `-` unaire) ; **flottants** simple précision (constantes décimales, `/`, `sin( cos( tan( atan( atan2( log( exp( sqr( pow( rnd( int( abs( sgn(`, mixte entier/flottant) | `& \| ^ << >>` sur un flottant |
 | chaînes : constantes, variables (`x$`, 255 caractères), `+`, comparaisons (`= <> < > <= >=`, lexicographiques → -1/0), `len( asc( chr$( str$( left$( right$( mid$( instr( val( isval( upper$( lower$( spc( inkey$(` | `tab(`, `key(`, `event(` |
-| `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` | fichiers (`#`), son |
+| `print` (`;` `,` taquets de 8, nombres via 4,34), `input` (saisie de 80 caractères avec écho, conversion 4,33, « ?? » et relecture si invalide, comme l'interpréteur), `cls`, `poke`/`doke`, `peek(`/`deek(` ; **fichiers** `open input/output`, `close`, `print #` / `input #` (enregistrements de l'interpréteur : nombre = `$FF` + type + 4 octets, chaîne = longueur + caractères), `eof(`, `save "f",adr,taille` | `input line #`, `cat`, `exists(` |
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `on error` |
 | `proc`/`endproc` (paramètres par valeur), `call`, `local` (entiers et chaînes), `data`/`read`/`restore`, `assert`, `defchr`, `load "f",adr`, `sys` (A, X, Y) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | `ref`, récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
 | `abs( sgn( int( min( max( rand( alloc( true false` ; opérateur `mem[i]` (mot 16 bits) | `pin`/`i2c`/`serial`, `mouse`, turtle |

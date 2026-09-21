@@ -1,0 +1,14 @@
+open output 4, "test.dat"
+print #4, 42, "Hello", 2.5, -7
+close 4
+open input 5, "test.dat"
+input #5, n, t$, f, m
+print n; t$; f; m; eof(5)
+close 5
+dim v(2)
+open input 5, "test.dat"
+input #5, v(1)
+print v(1); eof(5)
+close
+save "mem.dat", $7000, 4
+print "fin"

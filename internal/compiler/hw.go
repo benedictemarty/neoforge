@@ -677,6 +677,10 @@ func (g *gen) hwCall(x Call) bool {
 			a.Op("sta", asm.Zp, zACC+i)
 		}
 		a.Op("stz", asm.Zp, zTYPE)
+	case "eof": // 3,22 → Param0
+		g.param8(x.Args[0], 0)
+		emitAPICall(a, grpFile, fnFileEOF)
+		g.byteResult()
 	case "key", "vmode", "notes", "point", "spoint": // octet dans Param0
 		if len(x.Args) == 1 {
 			g.param8(x.Args[0], 0)

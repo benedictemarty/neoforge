@@ -5,6 +5,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : fichiers (S5-2)
+- `open input|output canal,"nom"` (3,4), `close` (3,5), `print #`/`input #` (enregistrements typés octet par
+  octet comme `inputprintfile.asm`, variables et éléments de tableau), `eof(` (3,22), `save "nom",adresse,taille`
+  (3,3) ; 15 différentiels identiques ; 39/50 exemples de Trinity compilent.
 ### Ajouté — compilateur : assembleur en ligne (S5-1)
 - Mnémoniques 65C02 assemblés à l'exécution dans la variable `P` (`O` : bit 0 dernière passe, bit 1
   listing hexadécimal), étiquettes `.nom` (fixées si la variable vaut 0), choix page zéro/absolu sur la

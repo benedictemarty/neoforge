@@ -193,17 +193,26 @@ func (p *parser) statement() (Stmt, error) {
 	if s, ok, err := p.hwStatement(it.Tok.Name); ok {
 		return s, err
 	}
+	if s, ok, err := p.fileStatement(it.Tok.Name); ok {
+		return s, err
+	}
 	switch it.Tok.Name {
 	case "let":
 		p.next()
 		return p.assign()
 	case "print":
 		p.next()
+		if p.isKw("#") {
+			return p.fileChannelItems(false)
+		}
 		return p.print()
 	case "input":
 		p.next()
-		if p.isKw("#") || p.isKw("line") {
-			return nil, p.errorf("input sur fichier non pris en charge")
+		if p.isKw("#") {
+			return p.fileChannelItems(true)
+		}
+		if p.isKw("line") {
+			return nil, p.errorf("input line non pris en charge")
 		}
 		pr, err := p.print() // les tableaux sont déjà refusés par l'analyse des expressions
 		if err != nil {
@@ -758,6 +767,7 @@ var builtins = map[string][]Type{
 	"pow": {TInt, TInt}, "atan2": {TInt, TInt}, "rnd": {TInt},
 	"alloc": {TInt}, "time": {}, "vblanks": {}, "key": {TInt}, "vmode": {}, "notes": {TInt}, "point": {TInt, TInt}, "spoint": {TInt, TInt},
 	"hit": {TInt, TInt, TInt}, "spritex": {TInt}, "spritey": {TInt}, "event": {TInt, TInt}, "joypad": {TInt, TInt},
+	"eof": {TInt},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {
