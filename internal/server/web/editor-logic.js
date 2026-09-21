@@ -138,3 +138,30 @@ export function nearestLabel(labels, addr) {
   }
   return best ? { name: best.name, off: addr - best.addr } : null;
 }
+
+// ─── Carte réelle (S6-3) ────────────────────────────────────────────────────
+
+// receiverProgram : programme NeoBASIC qui télécharge `name` depuis neoforge (adresse
+// hôte:port) par tranches de 200 octets via atget$( et l'enregistre sur la clé du Neo6502.
+// wifi = { ssid, pwd } ajoute la connexion Wi-Fi (atconnect) en tête.
+export function receiverProgram(addr, name, size, wifi) {
+  const q = '"';
+  const lines = ["' neoforge : reception de " + name + " (" + size + " octets)"];
+  if (wifi && wifi.ssid) lines.push("atconnect " + q + wifi.ssid + q + ", " + q + (wifi.pwd || "") + q);
+  lines.push(
+    "u$ = " + q + "http://" + addr + "/api/xfer/" + name + q,
+    "n = val(atget$(u$ + " + q + "/size" + q + "))",
+    "if n = 0 then print " + q + "serveur injoignable : " + q + "; atresult$: end",
+    "base = alloc(n + 1)",
+    "i = 0",
+    "while i * 200 < n",
+    "  t$ = atget$(u$ + " + q + "?c=" + q + " + str$(i))",
+    "  for j = 1 to len(t$): poke base + i * 200 + j - 1, asc(mid$(t$, j, 1)): next",
+    "  print " + q + "." + q + ";",
+    "  i = i + 1",
+    "wend",
+    "save " + q + name + q + ", base, n",
+    "print: print " + q + name + " recu (" + q + "; n; " + q + " octets)" + q,
+  );
+  return lines.join("\n") + "\n";
+}

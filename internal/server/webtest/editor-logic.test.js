@@ -90,3 +90,14 @@ test("débogueur : décodages", () => {
   assert.deepEqual(nearestLabel({ PROC_A: 0x900, RT_PRINT: 0xa00, apiw_3: 0x901 }, 0x905), { name: "PROC_A", off: 5 });
   assert.equal(nearestLabel({}, 5), null);
 });
+
+import { receiverProgram } from "../web/editor-logic.js";
+
+test("receiverProgram", () => {
+  const p = receiverProgram("192.168.1.19:8098", "jeu.bas", 450, { ssid: "reseau", pwd: "secret" });
+  assert.match(p, /^' neoforge : reception de jeu\.bas \(450 octets\)\n/);
+  assert.match(p, /atconnect "reseau", "secret"/);
+  assert.match(p, /u\$ = "http:\/\/192\.168\.1\.19:8098\/api\/xfer\/jeu\.bas"/);
+  assert.match(p, /save "jeu\.bas", base, n/);
+  assert.doesNotMatch(receiverProgram("h:1", "a.bas", 1), /atconnect/);
+});

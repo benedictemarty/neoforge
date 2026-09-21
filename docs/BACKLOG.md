@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 5 **livrés** (v0.6.0) ; S5-5 (carte réelle) reporté au sprint 6, avec `mouse`/`pin`/`i2c`/`uconfig`, la récursion et `library`. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 6 **livrés** (v0.7.0) ; reste (sprint 7) : `library`, récursion, blocs UART/I2C/SPI, transfert du `.neo`, validation sur carte réelle. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -82,13 +82,13 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 | S5-4 | E8    | Débogueur 🐞 : pause/pas/reprise (exports Phosphoneo), registres, variables du programme compilé (symboles), mémoire | P2   | FAIT |
 | S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO (sprint 6) |
 
-## Sprint 6 — Périphériques, carte réelle (v0.7.0) — EN COURS
+## Sprint 6 — Périphériques, carte réelle (v0.7.0) — FAIT (S6-2 reporté)
 
 | ID   | Épop. | Récit utilisateur                                                                  | Prio | État |
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S6-1 | E5    | `mouse` (commande et fonction), `havemouse(`, `pin`/`pin(`/`analog(`, `iwrite`/`iread(` — 44/50 exemples | P2   | FAIT |
-| S6-2 | E5    | `library` (bibliothèques `.bas`), récursion des procédures, blocs `usend`/`isend`/`ssend`/`uconfig` | P3   | TODO |
-| S6-3 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W (S5-5)                   | P3   | TODO |
+| S6-2 | E5    | `library`, récursion, blocs `usend`/`isend`/`ssend`/`uconfig`, transfert du `.neo` compilé | P3   | TODO (sprint 7) |
+| S6-3 | E3    | 📡 Carte : dépôt sur neoforge + récepteur NeoBASIC (`atget$(` par tranches, `save`) — validé dans l'émulateur via le modem logiciel ; carte réelle à valider | P3   | FAIT |
 
 ## Idées non planifiées
 

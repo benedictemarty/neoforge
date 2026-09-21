@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.7.0] - 2026-09-21 — sprint 6 : périphériques, carte réelle
+### Ajouté — 📡 Carte (S6-3)
+- `POST /api/xfer` (dépôt), `GET /api/xfer/{nom}?c=N` (tranches de 200 octets), `GET /api/xfer/{nom}/size`,
+  `lanAddr` dans `/api/config` ; bouton **📡 Carte** : dépose le `.bas` et ouvre `recv.bsc`, récepteur
+  NeoBASIC généré (`atconnect` optionnel, `atget$(` par tranches, `poke`, `save`). Le modem logiciel de
+  Phosphoneo (`neomodem.js`) est attaché dans la page : le récepteur validé dans l'émulateur (fichier reçu
+  identique). Doc : `docs/CARD.md`.
 ### Ajouté — compilateur : souris, GPIO, I2C (S6-1)
 - `mouse to/show/hide/cursor` (11,1/11,2/11,5), `mouse(x,y[,w])` (11,3, par référence, 16 bits comme
   l'interpréteur), `havemouse(` (11,4), `pin n,input|output|analog|valeur` (10,4/10,2), `pin(` (10,3), `analog(`

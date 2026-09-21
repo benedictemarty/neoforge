@@ -30,11 +30,12 @@ type Server struct {
 	version string
 	tokens  *neobasic.TokenSet
 	mux     *http.ServeMux
+	xfer    xferStore
 }
 
 // New crée le serveur ; version est affichée dans /api/config.
 func New(cfg config.Config, version string) *Server {
-	s := &Server{cfg: cfg, version: version, tokens: neobasic.NewTokenSet(), mux: http.NewServeMux()}
+	s := &Server{cfg: cfg, version: version, tokens: neobasic.NewTokenSet(), mux: http.NewServeMux(), xfer: xferStore{files: map[string][]byte{}}}
 	sub, _ := fs.Sub(webFS, "web")
 	s.mux.Handle("/", http.FileServer(http.FS(sub)))
 	s.mux.Handle("/emu/", http.StripPrefix("/emu/", http.FileServer(http.Dir(cfg.PhosphoneoWeb))))
@@ -49,6 +50,9 @@ func New(cfg config.Config, version string) *Server {
 	s.mux.HandleFunc("POST /api/gfx/sheet/import", s.handleGfxSheetImport)
 	s.mux.HandleFunc("POST /api/gfx/sheet/export", s.handleGfxSheetExport)
 	s.mux.HandleFunc("POST /api/gfx/image", s.handleGfxImage)
+	s.mux.HandleFunc("POST /api/xfer", s.handleXferPut)
+	s.mux.HandleFunc("GET /api/xfer/{name}", s.handleXferGet)
+	s.mux.HandleFunc("GET /api/xfer/{name}/size", s.handleXferSize)
 	s.mux.HandleFunc("GET /api/files", s.handleFiles)
 	s.mux.HandleFunc("GET /api/file", s.handleFileGet)
 	s.mux.HandleFunc("PUT /api/file", s.handleFilePut)
@@ -74,6 +78,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		"emulator":    s.cfg.EmulatorAvailable(),
 		"neobasic":    s.cfg.NeoBasicAvailable(),
 		"projectsDir": s.cfg.ProjectsDir,
+		"lanAddr":     lanAddress(s.cfg.Addr),
 	})
 }
 

@@ -10,11 +10,11 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 5 livré (v0.6.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> État : **sprint 6 livré (v0.7.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
 > détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** couvrant entiers, flottants, chaînes, tableaux,
 > graphisme, sprites, son, assembleur en ligne, fichiers (`docs/COMPILER.md` ; 40/50 exemples de Trinity,
 > Breakout et Atic Atac compilés), **éditeur de sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`),
-> **débogueur** (`docs/DEBUGGER.md`).
+> **débogueur** (`docs/DEBUGGER.md`), **envoi à la carte réelle** par le modem Pico W (`docs/CARD.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
 ## Architecture en un coup d'œil
@@ -59,6 +59,8 @@ make run          # http://127.0.0.1:8098
   (essayer `examples/sprites.bsc` avec `examples/graphics.gfx`).
 - **🎨 Graphismes** : éditeur de sprites/tuiles (`graphics.gfx`, planches PNG `makeimg`, import d'image) et de
   tilemaps (`.map`, code BASIC) — voir `docs/GRAPHICS.md`.
+- **📡 Carte** : dépose le programme sur neoforge et génère le récepteur NeoBASIC à lancer sur le Neo6502
+  (modem Pico W, `atget$(` par tranches) — `docs/CARD.md`.
 - **🐞 Débogueur** : pause, pas à pas, registres, variables du programme compilé, mémoire (`docs/DEBUGGER.md`).
 - **❔ Aide** (F1) : référence des commandes (documentation officielle neo6502-documents, MIT) filtrable,
   clic pour insérer ; la même aide apparaît au survol et dans la complétion.

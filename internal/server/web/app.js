@@ -1,6 +1,6 @@
 // Application neoforge : éditeur Monaco (NeoBASIC) + émulateur Phosphoneo (WASM).
 import { registerNeoBasic } from "/neobasic-lang.js";
-import { decodeBase64, errorLine, storageName, filterHelp, tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle } from "/editor-logic.js";
+import { decodeBase64, errorLine, storageName, filterHelp, tabsAdd, tabsActivate, tabsClose, tabsFindByName, tabTitle, receiverProgram } from "/editor-logic.js";
 import { setupGfxEditor } from "/gfx-editor.js";
 import { setupDebugger } from "/debugger.js";
 
@@ -28,7 +28,13 @@ window.Module = {
   print: (t) => console.log(t),
   printErr: (t) => { console.log(t); if (/^phosphoneo|^sdl/.test(t)) el("emu-status").textContent = t; },
   setStatus: (t) => { if (t) el("emu-status").textContent = t; },
-  onRuntimeInitialized: () => { emuReady = true; el("emu-status").textContent = "NeoBASIC démarre…"; },
+  onRuntimeInitialized: () => {
+    emuReady = true;
+    el("emu-status").textContent = "NeoBASIC démarre…";
+    // Modem logiciel de Phosphoneo (Hayes + ESP-AT → fetch vers l'origine de la page) : permet de tester
+    // le récepteur 📡 Carte dans l'émulateur.
+    if (window.NeoModem) { try { window.neoModem = new NeoModem(Module, {}); neoModem.attach(); } catch (e) { console.log("modem :", e); } }
+  },
 };
 
 async function loadEmulator(cfg) {
@@ -294,6 +300,21 @@ async function main() {
       el("editor-pane").hidden = !pane.hidden;
     };
     el("btn-gfx").addEventListener("click", () => toggleGfx());
+
+    // ─── 📡 Carte réelle (S6-3) : dépôt du .bas puis récepteur NeoBASIC dans un onglet ────
+    el("btn-card").addEventListener("click", async () => {
+      const bas = await build();
+      if (!bas) return;
+      const name = storageName(el("fname").value);
+      const r = await fetch("/api/xfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, data: btoa(String.fromCharCode(...bas)) }) });
+      const j = await r.json();
+      if (j.error) { status(j.error, true); return; }
+      const addr = cfg.lanAddr || location.host;
+      const ssid = prompt("SSID Wi-Fi de la carte (vide si déjà connectée) :", "") || "";
+      const pwd = ssid ? prompt("Mot de passe Wi-Fi :", "") || "" : "";
+      openTab("recv.bsc", receiverProgram(addr, name, j.size, { ssid, pwd }));
+      status(name + " déposé (" + j.size + " octets, " + j.chunks + " tranche(s)) — lancer recv.bsc sur le Neo6502 (ou ▶ ici pour tester)");
+    });
 
     // ─── 🐞 Débogueur (S5-4) ─────────────────────────────────────────────────
     const dbg = setupDebugger({ status, isReady: () => emuReady });
