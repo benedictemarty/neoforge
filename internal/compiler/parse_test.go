@@ -45,7 +45,7 @@ func TestParseErrors(t *testing.T) {
 		{"call a(1 2)", "« , » ou « ) »"},
 		{"call 1", "nom de procédure"},
 		{"call a(\"x\")", "inconnue"},
-		{"endif", "non prise en charge"},
+		{"then", "non prise en charge"},
 		{"print 1 )", "inattendu"},
 		{"poke 1 2", "« , » attendu"},
 		{"x = zz(", "expression attendue"},

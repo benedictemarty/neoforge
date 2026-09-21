@@ -148,6 +148,10 @@ func (g *gen) program() {
 	a.Bytes(0)
 	a.Label("FHBUF") // tampon d'un octet (3,8 / 3,9)
 	a.Bytes(0)
+	a.Label("TXLEN") // taille du bloc à envoyer (usend…)
+	a.Bytes(0)
+	a.Label("TXBUF")
+	g.fill(255)
 	a.Label("GSTATE") // état des commandes graphiques
 	g.fill(gState)
 	a.Label("SPRBLK") // bloc de mise à jour d'un sprite (6,2)
@@ -327,7 +331,7 @@ func (g *gen) stmt(s Stmt) {
 		g.call("PRCHR")
 		g.call("GFXRESET")
 	default:
-		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) && !g.fileStmt(s) {
+		if !g.arrayStmt(s) && !g.dataStmt(s) && !g.asmStmt(s) && !g.fileStmt(s) && !g.serialStmt(s) {
 			g.hwStmt(s)
 		}
 	}
@@ -1211,7 +1215,7 @@ func (g *gen) inferInt() {
 
 // Fonctions dont le résultat est toujours entier.
 var intFuncs = map[string]bool{"sgn": true, "int": true, "peek": true, "deek": true, "rand": true, "len": true, "asc": true, "instr": true, "isval": true,
-	"alloc": true, "eof": true, "pin": true, "analog": true, "havemouse": true, "iread": true, "mouse": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
+	"alloc": true, "eof": true, "pin": true, "analog": true, "havemouse": true, "iread": true, "mouse": true, "uhasdata": true, "exists": true, "time": true, "vblanks": true, "key": true, "vmode": true, "notes": true, "point": true, "spoint": true, "hit": true, "spritex": true, "spritey": true, "event": true, "joypad": true}
 
 // isInt : l'expression numérique est-elle prouvée entière ?
 func (g *gen) isInt(x Expr) bool {
@@ -1378,6 +1382,12 @@ func (g *gen) dataStmt(s Stmt) bool {
 		a.Op("lda", asm.Zp, zACC+1)
 		a.Op("sta", asm.Abs, apiParam0+3)
 		a.Op("jsr", asm.Abs, kernelLoadExtended)
+	case *StrayEnd:
+		idx := len(g.strLits)
+		g.strLits = append(g.strLits, "Structure Imbalance")
+		g.setPTR(fmt.Sprintf("STR_%d", idx))
+		g.call("PRSTR")
+		g.stop()
 	case *Assert: // expression nulle → message éventuel, « : », « Assert failed », arrêt
 		g.intExpr(s.Cond)
 		g.testACC()

@@ -11,4 +11,5 @@ input #5, v(1)
 print v(1); eof(5)
 close
 save "mem.dat", $7000, 4
+print exists("test.dat"); exists("absent.dat")
 print "fin"

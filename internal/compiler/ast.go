@@ -240,6 +240,13 @@ type Defchr struct {
 	Rows []Expr
 }
 
+// StrayEnd : terminateur de structure sans ouverture (l'interpréteur signale « Structure
+// Imbalance » à l'exécution ; le compilé arrête le programme avec ce message).
+type StrayEnd struct {
+	stmtMarker
+	Name string
+}
+
 // Input : même forme que Print ; un item Var est lu au clavier (chaîne ou nombre).
 type Input struct {
 	stmtMarker

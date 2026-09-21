@@ -18,6 +18,7 @@ var rtDeps = map[string][]string{
 	"MUL16": {}, "ZEROFILL": {}, "LOADELEM": {}, "STOREELEM": {}, "READDATA": {}, "SYSCALL": {},
 	"ASMBYTE": {"PRHEX", "PRCHR"}, "PRHEX": {"PRCHR"},
 	"FWRITEBYTE": {}, "FREADBYTE": {}, "FWRITENUM": {"FWRITEBYTE"}, "FWRITESTR": {"FWRITEBYTE"}, "FREADNUM": {"FREADBYTE"}, "FREADSTR": {"FREADBYTE"},
+	"TXBYTE": {}, "TXSTR": {"TXBYTE"},
 }
 
 // Ordre d'émission stable.
@@ -26,7 +27,7 @@ var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NE
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
-	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR"}
+	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -67,6 +68,9 @@ func (g *gen) emitRoutine(name string) {
 		return
 	case "FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR":
 		g.emitFileRoutine(name)
+		return
+	case "TXBYTE", "TXSTR":
+		g.emitSerialRoutine(name)
 		return
 	case "PRHEX":
 		g.emitPrHex()

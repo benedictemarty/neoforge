@@ -196,6 +196,9 @@ func (p *parser) statement() (Stmt, error) {
 	if s, ok, err := p.fileStatement(it.Tok.Name); ok {
 		return s, err
 	}
+	if s, ok, err := p.serialStatement(it.Tok.Name); ok {
+		return s, err
+	}
 	switch it.Tok.Name {
 	case "let":
 		p.next()
@@ -362,6 +365,9 @@ func (p *parser) statement() (Stmt, error) {
 	case "restore":
 		p.next()
 		return &Restore{}, nil
+	case "next", "wend", "until", "loop", "endif", "endproc", "endcase": // terminateur orphelin : erreur à l'exécution
+		p.next()
+		return &StrayEnd{Name: it.Tok.Name}, nil
 	case "assert":
 		p.next()
 		x, err := p.expr(TInt)
@@ -767,6 +773,7 @@ var builtins = map[string][]Type{
 	"alloc": {TInt}, "time": {}, "vblanks": {}, "key": {TInt}, "vmode": {}, "notes": {TInt}, "point": {TInt, TInt}, "spoint": {TInt, TInt},
 	"hit": {TInt, TInt, TInt}, "spritex": {TInt}, "spritey": {TInt}, "event": {TInt, TInt}, "joypad": {TInt, TInt},
 	"eof": {TInt}, "pin": {TInt}, "analog": {TInt}, "havemouse": {}, "iread": {TInt, TInt}, "mouse": {TInt, TInt},
+	"uhasdata": {}, "exists": {TStr},
 }
 
 func (p *parser) call(name string, line int) (Expr, error) {

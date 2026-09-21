@@ -211,3 +211,26 @@ func TestFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestSerial(t *testing.T) {
+	if _, err := Compile("x = exists(\"f\")\nnext\nwend\nendif"); err != nil {
+		t.Fatal(err)
+	}
+	src := "uconfig 9600\nusend 1, 2; \"ab\", 3\nssend 1\nisend 5, 1, 2\nureceive $7000, 10\nutransmit $7000, 10\nsreceive 1,2\nstransmit 1,2\nireceive 5, $7000, 4\nitransmit 5, $7000, 4\nx = uhasdata()\nusend\n"
+	if _, err := Compile(src); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ src, want string }{
+		{"uconfig \"a\"", "nombre attendu"},
+		{"usend 1 2", "« , » ou « ; » attendu"},
+		{"usend (", "expression attendue"},
+		{"isend \"a\", 1", "nombre attendu"},
+		{"isend 1 1", "« , » attendu"},
+		{"ureceive 1", "« , » attendu"},
+		{"ireceive 1, 2", "« , » attendu"},
+	} {
+		if _, err := Compile(c.src); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%q : %v, attendu « %s »", c.src, err, c.want)
+		}
+	}
+}

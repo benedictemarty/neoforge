@@ -5,6 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : UART/I2C/SPI (S7-3)
+- `uconfig`, `usend`/`ssend`/`isend` (tampon : octet bas, « ; » ajoute l'octet haut, chaînes), `ureceive`/
+  `utransmit`/`sreceive`/`stransmit`/`ireceive`/`itransmit`, `uhasdata(`, `exists(` ; un terminateur orphelin
+  (`next` sans `for`…) compile en arrêt « Structure Imbalance » à l'exécution, comme l'interpréteur.
+  **48/50 exemples de Trinity compilent.**
 ### Modifié — compilateur : procédures récursives (S7-2)
 - Les paramètres de procédure sont sauvegardés à l'appel et restaurés à `endproc` (fait relevé sur
   l'interpréteur : `local` implicite, variables globales pendant l'exécution) ; les paramètres `ref` ne

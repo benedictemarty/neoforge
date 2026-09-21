@@ -875,6 +875,21 @@ func (g *gen) hwCall(x Call) bool {
 		a.Op("lda", asm.Abs, apiParam0+4)
 		a.Op("sta", asm.Abs, apiParam0)
 		g.byteResult()
+	case "uhasdata": // 10,18 → booléen
+		emitAPICall(a, grpGPIO, fnUARTHasData)
+		a.Op("lda", asm.Abs, apiParam0)
+		a.Op("cmp", asm.Imm, 0)
+		g.call("BOOLNE")
+	case "exists": // 3,16 : vrai si le stat ne renvoie pas d'erreur
+		g.strExpr(x.Args[0])
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Abs, apiParam0)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Abs, apiParam0+1)
+		emitAPICall(a, grpFile, 16)
+		a.Op("lda", asm.Abs, apiError)
+		a.Op("cmp", asm.Imm, 0)
+		g.call("BOOLEQ")
 	case "eof": // 3,22 → Param0
 		g.param8(x.Args[0], 0)
 		emitAPICall(a, grpFile, fnFileEOF)
