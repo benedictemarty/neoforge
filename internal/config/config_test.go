@@ -38,3 +38,26 @@ func TestLoad(t *testing.T) {
 		t.Error("NeoBASIC devrait être détecté")
 	}
 }
+
+// TestLoadDist : un paquet autonome (emu/ et boot/ à côté de l'exécutable) est privilégié.
+func TestLoadDist(t *testing.T) {
+	for _, k := range []string{"NEOFORGE_PHOSPHONEO_WEB", "NEOFORGE_NEOBASIC_BIN"} {
+		t.Setenv(k, "")
+	}
+	exe := t.TempDir()
+	c := load("/home/x", exe)
+	if c.PhosphoneoWeb != "/home/x/Phosphoneo/web" || c.NeoBasicBin != "/home/x/Neo6502Basic/bin/basic.bin" {
+		t.Errorf("sans paquet : %+v", c)
+	}
+	os.MkdirAll(filepath.Join(exe, "emu"), 0o755)
+	os.MkdirAll(filepath.Join(exe, "boot"), 0o755)
+	os.WriteFile(filepath.Join(exe, "emu", "phosphoneo.wasm"), []byte{0}, 0o644)
+	os.WriteFile(filepath.Join(exe, "boot", "neobasic.bin"), []byte{0}, 0o644)
+	c = load("/home/x", exe)
+	if c.PhosphoneoWeb != filepath.Join(exe, "emu") || c.NeoBasicBin != filepath.Join(exe, "boot", "neobasic.bin") {
+		t.Errorf("paquet : %+v", c)
+	}
+	if !c.EmulatorAvailable() || !c.NeoBasicAvailable() {
+		t.Error("paquet : émulateur et NeoBASIC attendus")
+	}
+}

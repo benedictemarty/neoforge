@@ -3,11 +3,12 @@
 BIN := neoforge
 PKG := ./...
 PHOSPHONEO ?= $(HOME)/Phosphoneo
+NEOBASIC_BIN ?= $(HOME)/Neo6502Basic/bin/basic.bin
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build run test test-emu test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json
+.PHONY: all build run test test-emu test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json dist
 
 all: test test-js build
 
@@ -62,7 +63,6 @@ emu-wasm:
 # Validation de bout en bout : examples/hello.bsc tokenisé par neobas, exécuté par
 # Phosphoneo natif (même moteur que le WASM), écran texte vérifié.
 # Trinity : le firmware démarre sur NeoDOS, NeoBASIC vient de storage/boot/neobasic.bin (+ auto.txt).
-NEOBASIC_BIN ?= $(HOME)/Neo6502Basic/bin/basic.bin
 e2e: build
 	@rm -rf /tmp/neoforge-e2e && mkdir -p /tmp/neoforge-e2e/storage/boot
 	cp $(NEOBASIC_BIN) /tmp/neoforge-e2e/storage/boot/neobasic.bin && echo neobasic.bin > /tmp/neoforge-e2e/storage/boot/auto.txt
@@ -71,6 +71,20 @@ e2e: build
 		--load-at 20000000:storage/hello.bas --cycles 45000000 --screenshot-text out.txt >/dev/null 2>&1
 	@grep -q "NEOFORGE OK" /tmp/neoforge-e2e/out.txt && grep -q "x=42" /tmp/neoforge-e2e/out.txt \
 		&& echo "e2e OK" || (echo "e2e ÉCHEC"; cat /tmp/neoforge-e2e/out.txt; exit 1)
+
+# Paquet de release autonome : binaires + émulateur WASM (emu/) + NeoBASIC (boot/) + docs.
+# dist/neoforge-<version>-<os>-<arch>.tar.gz ; le serveur trouve emu/ et boot/ à côté de lui.
+DIST := dist/$(BIN)-$(VERSION)-$(shell go env GOOS)-$(shell go env GOARCH)
+dist: build
+	@test -f $(PHOSPHONEO)/web/phosphoneo.wasm || (echo "build WASM absent : make emu-wasm"; exit 1)
+	@test -f $(NEOBASIC_BIN) || (echo "NeoBASIC absent : $(NEOBASIC_BIN)"; exit 1)
+	rm -rf $(DIST) && mkdir -p $(DIST)/emu $(DIST)/boot $(DIST)/docs $(DIST)/examples
+	cp $(BIN) neobas neoforgec $(DIST)/
+	cp $(PHOSPHONEO)/web/phosphoneo.js $(PHOSPHONEO)/web/phosphoneo.wasm $(PHOSPHONEO)/web/phosphoneo.data $(PHOSPHONEO)/web/neomodem.js $(DIST)/emu/
+	cp $(NEOBASIC_BIN) $(DIST)/boot/neobasic.bin
+	cp README.md CHANGELOG.md LICENSE $(DIST)/ && cp docs/*.md $(DIST)/docs/ && cp examples/* $(DIST)/examples/
+	tar -C dist -czf $(DIST).tar.gz $(notdir $(DIST))
+	@echo "paquet : $(DIST).tar.gz ($$(du -h $(DIST).tar.gz | cut -f1))"
 
 # Validation dans un vrai navigateur (Chrome headless piloté par CDP) : ouvre neoforge,
 # clique ▶ Exécuter, capture /tmp/neoforge-browser.png. Le serveur doit tourner (make run).

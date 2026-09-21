@@ -5,6 +5,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.9.0] - 2026-09-21 — sprint 8 : performance, tortue, paquet de release
+### Ajouté — `make dist` (S8-4)
+- Paquet autonome `dist/neoforge-<version>-<os>-<arch>.tar.gz` : `neoforge`, `neobas`, `neoforgec`, `emu/`
+  (Phosphoneo WASM), `boot/neobasic.bin`, docs et exemples. La configuration privilégie `emu/` et `boot/`
+  placés à côté de l'exécutable (vérifié avec `HOME` inexistant : émulateur et NeoBASIC détectés).
 ### Ajouté — compilateur : tortue, `cat`, lignes de fichier (S8-3)
 - `turtle home|fast|hide|show`, `penup`, `pendown [couleur]`, `left`/`right`/`forward` (groupe 9, sprite $7F,
   initialisation implicite et temporisations comme `turtle.asm`) ; `cat [motif$]` (3,1 / 3,32) ;

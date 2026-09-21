@@ -10,9 +10,9 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 7 livré (v0.8.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> État : **sprint 8 livré (v0.9.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
 > détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** couvrant entiers, flottants, chaînes, tableaux,
-> graphisme, sprites, son, assembleur en ligne, fichiers, UART/I2C/SPI, récursion (`docs/COMPILER.md` ; 48/50 exemples de Trinity,
+> graphisme, sprites, son, tortue, assembleur en ligne, fichiers, UART/I2C/SPI, récursion — code ×3,9 plus rapide que l'interpréteur (`docs/COMPILER.md` ; 48/50 exemples de Trinity,
 > Breakout et Atic Atac compilés), **éditeur de sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`),
 > **débogueur** (`docs/DEBUGGER.md`), **envoi à la carte réelle** par le modem Pico W (`docs/CARD.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
@@ -42,7 +42,11 @@ Voir `docs/ARCHITECTURE.md`.
 
 ```bash
 make run          # http://127.0.0.1:8098
+make dist         # paquet autonome dist/neoforge-<version>-<os>-<arch>.tar.gz (binaires + emu/ + boot/)
 ```
+
+Le paquet se lance sans les dépôts de développement : `emu/` (Phosphoneo WASM) et `boot/neobasic.bin`
+placés à côté de `neoforge` priment sur `~/Phosphoneo/web` et `~/Neo6502Basic/bin/basic.bin`.
 
 - **▶ Exécuter** (F5) : tokenise le source ; la ligne en erreur est soulignée ; sinon le `.bas` est écrit
   dans le stockage de l'émulateur et lancé (`load "prog.bas"` + `run`).
@@ -70,9 +74,9 @@ make run          # http://127.0.0.1:8098
 | Variable                  | Défaut              | Rôle                                            |
 |---------------------------|---------------------|-------------------------------------------------|
 | `NEOFORGE_ADDR`           | `127.0.0.1:8098`    | Adresse d'écoute HTTP                           |
-| `NEOFORGE_PHOSPHONEO_WEB` | `~/Phosphoneo/web`  | Build WASM de Phosphoneo (servi sous `/emu/`)   |
+| `NEOFORGE_PHOSPHONEO_WEB` | `~/Phosphoneo/web` (ou `emu/` à côté du binaire) | Build WASM de Phosphoneo (servi sous `/emu/`)   |
 | `NEOFORGE_PROJECTS_DIR`   | `~/NeoPrograms`     | Programmes `.bsc` (Ouvrir/Enregistrer)          |
-| `NEOFORGE_NEOBASIC_BIN`   | `~/Neo6502Basic/bin/basic.bin` | NeoBASIC injecté dans `/storage/boot/` (Trinity démarre sur NeoDOS) |
+| `NEOFORGE_NEOBASIC_BIN`   | `~/Neo6502Basic/bin/basic.bin` (ou `boot/neobasic.bin` à côté du binaire) | NeoBASIC injecté dans `/storage/boot/` (Trinity démarre sur NeoDOS) |
 
 ## Outil en ligne de commande
 

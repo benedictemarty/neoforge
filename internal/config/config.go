@@ -15,13 +15,28 @@ type Config struct {
 }
 
 // Load construit la configuration : valeurs par défaut surchargées par l'environnement.
+// Un paquet de release (make dist) est autonome : `emu/` et `boot/neobasic.bin` à côté de
+// l'exécutable priment sur les dépôts de développement (~/Phosphoneo, ~/Neo6502Basic).
 func Load() Config {
 	home, _ := os.UserHomeDir()
+	exe, _ := os.Executable()
+	return load(home, filepath.Dir(exe))
+}
+
+func load(home, exeDir string) Config {
+	web := filepath.Join(home, "Phosphoneo", "web")
+	if _, err := os.Stat(filepath.Join(exeDir, "emu", "phosphoneo.wasm")); err == nil {
+		web = filepath.Join(exeDir, "emu")
+	}
+	basic := filepath.Join(home, "Neo6502Basic", "bin", "basic.bin")
+	if _, err := os.Stat(filepath.Join(exeDir, "boot", "neobasic.bin")); err == nil {
+		basic = filepath.Join(exeDir, "boot", "neobasic.bin")
+	}
 	return Config{
 		Addr:          env("NEOFORGE_ADDR", "127.0.0.1:8098"),
-		PhosphoneoWeb: env("NEOFORGE_PHOSPHONEO_WEB", filepath.Join(home, "Phosphoneo", "web")),
+		PhosphoneoWeb: env("NEOFORGE_PHOSPHONEO_WEB", web),
 		ProjectsDir:   env("NEOFORGE_PROJECTS_DIR", filepath.Join(home, "NeoPrograms")),
-		NeoBasicBin:   env("NEOFORGE_NEOBASIC_BIN", filepath.Join(home, "Neo6502Basic", "bin", "basic.bin")),
+		NeoBasicBin:   env("NEOFORGE_NEOBASIC_BIN", basic),
 	}
 }
 
