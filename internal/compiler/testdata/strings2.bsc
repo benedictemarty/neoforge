@@ -14,3 +14,6 @@ while n > 0: b$ = b$ + mid$(a$,n,1): n = n - 1: wend
 print b$
 if a$ = "Hello World" then print "egal"
 if left$(a$,1) < "I" then print "avant I"
+b$ = "ab": a$ = "abc"
+for i = 1 to 3: a$ = a$ + "xyzw": next
+print len(b$); b$; len(a$ + b$)

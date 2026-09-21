@@ -5,6 +5,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Corrigé — interpréteur NeoBASIC (dépôt Neo6502Basic, `c1fe87c`)
+- Le bug relevé par le différentiel (chaîne voisine écrasée quand une chaîne grandit sur place, `concrete.asm`)
+  est corrigé dans Neo6502Basic avec `tests/strconcrete.bsc` ; `bin/basic.bin` régénéré. Le motif entre dans
+  `strings2.bsc` ; 25 différentiels × 2 modes identiques avec le BASIC corrigé.
 
 ## [0.10.0] - 2026-09-21 — sprint 9 : fidélité et robustesse du code généré
 ### Ajouté — compilateur : erreurs d'exécution et différentiel sur les exemples officiels (S9-1, S9-2)

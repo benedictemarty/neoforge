@@ -88,9 +88,9 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
   `pow(`… en erreur API, `dim` (dimension 255, ou éléments × 5 ≥ 13056 — « cpy #51 » de `dim.asm`),
   « Out Of Memory » quand le tas (`alloc(`, `dim`) dépasse `$FE00` (l'interpréteur a moins de mémoire :
   `alloc(60000)` y échoue, pas ici) — message, CR, arrêt, comme `ErrorHandler` de l'interpréteur.
-  Bug relevé dans l'interpréteur (non reproduit) : une variable affectée d'une constante chaîne
-  (`b$ = "ab"`) puis non lue pendant une boucle de concaténations sur une autre variable est corrompue
-  (`len(b$)` = 119) ; les différentiels évitent ce motif.
+  Bug de l'interpréteur trouvé par ce différentiel et **corrigé dans Neo6502Basic** (commit `c1fe87c`,
+  `concrete.asm` : une chaîne qui grandissait sur place débordait de 2 octets sur la chaîne concrétisée
+  voisine — `b$ = "ab"` puis `a$ = a$ + "xyzw"` ×3 donnait `len(b$)` = 119) ; `strings2.bsc` couvre le motif.
 - Expressions : TMP ← gauche, ACC ← droite, opération TMP ∘ ACC. Une feuille (constante, variable) est
   chargée directement ; sinon ACC ← gauche, `PUSH`, ACC ← droite, `POP` → TMP. `* \ %` passent par
   l'API maths (4,2 4,4 4,5) — mesuré plus rapide que des routines 32 bits natives (S8-1). Les
