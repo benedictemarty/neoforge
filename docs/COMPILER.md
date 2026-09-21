@@ -70,8 +70,13 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
   `VARBUF_x$` : 256 octets), tampons de chaînes temporaires (un par nœud), `NBUF`, piles `STK`/`LSTK`.
 - Page zéro : `$20` ACC (32 bits), `$24` TMP, `$28`/`$2A` pointeurs de chaînes, `$2C`/`$2D` indices de
   piles, `$2E` compteur, `$30-$39` registres maths de l'API (entrelacés au pas 2).
-- Expressions : ACC ← gauche, `PUSH`, ACC ← droite, `POP` → TMP, opération TMP ∘ ACC. `* \ %` et les
-  comparaisons passent par l'API maths (4,2 4,4 4,5 4,6) — mêmes résultats que l'interpréteur par construction.
+- Expressions : TMP ← gauche, ACC ← droite, opération TMP ∘ ACC. Une feuille (constante, variable) est
+  chargée directement ; sinon ACC ← gauche, `PUSH`, ACC ← droite, `POP` → TMP. `* \ %` passent par
+  l'API maths (4,2 4,4 4,5) — mesuré plus rapide que des routines 32 bits natives (S8-1). Les
+  comparaisons entières sont natives (`CMP32` : signe de la différence 32 bits **sans** correction de
+  débordement, exactement comme `compare.asm` de l'interpréteur, où `2147483647 > -5` est faux) ; flottantes
+  ou incertaines : 4,6. Une condition (`if`, `while`, `until`) se branche directement sur le résultat
+  $FF/0/1 ; `for` incrémente l'indice sur place et compare par `CMP32`.
 - Console : 2,6 (caractère), 2,12 (`cls`), 2,13 (position pour `,`), 4,34 (nombre → chaîne).
 
 ## Validation

@@ -11,23 +11,23 @@ var rtDeps = map[string][]string{
 	"NEG":    {},
 	"ABS":    {"NEG"},
 	"BOOLEQ": {}, "BOOLNE": {}, "NOT": {}, "SHL": {"TMPTOACC"}, "SHR": {"TMPTOACC"}, "PUSH": {}, "POP": {}, "POPACC": {},
-	"LPUSH": {}, "LPOP": {}, "INC32": {}, "DEC32": {}, "TMPTOACC": {}, "PRCHR": {}, "STRCOPY": {}, "STRAPPEND": {},
+	"LPUSH": {}, "LPOP": {}, "INC32": {}, "TMPTOACC": {}, "PRCHR": {}, "STRCOPY": {}, "STRAPPEND": {},
 	"STRCMP": {}, "INSTR": {}, "STRSUB": {}, "RIGHTSTART": {}, "CLAMP255": {}, "UPPER": {}, "LOWER": {}, "SPACES": {},
 	"INPUTLINE": {"PRCHR"},
 	"GFXSEND":   {}, "GFXPOS": {}, "GFXDRAW": {"GFXPOS"}, "GFXRESET": {}, "SPRINIT": {}, "SPRUPDATE": {}, "SEXT16": {}, "JOYAXIS": {}, "EVENT": {},
 	"MUL16": {}, "ZEROFILL": {}, "LOADELEM": {}, "STOREELEM": {}, "READDATA": {}, "SYSCALL": {},
 	"ASMBYTE": {"PRHEX", "PRCHR"}, "PRHEX": {"PRCHR"},
 	"FWRITEBYTE": {}, "FREADBYTE": {}, "FWRITENUM": {"FWRITEBYTE"}, "FWRITESTR": {"FWRITEBYTE"}, "FREADNUM": {"FREADBYTE"}, "FREADSTR": {"FREADBYTE"},
-	"TXBYTE": {}, "TXSTR": {"TXBYTE"},
+	"TXBYTE": {}, "TXSTR": {"TXBYTE"}, "CMP32": {},
 }
 
 // Ordre d'émission stable.
 var rtOrder = []string{"PUSH", "POP", "POPACC", "LPUSH", "LPOP", "TMPTOACC", "NEG", "NOT", "ABS", "SGN", "BOOLEQ", "BOOLNE",
-	"SHL", "SHR", "INC32", "DEC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
+	"SHL", "SHR", "INC32", "PRCHR", "PRSTR", "PRINT", "TAB", "STRCOPY", "STRAPPEND",
 	"STRCMP", "INSTR", "STRSUB", "RIGHTSTART", "CLAMP255", "UPPER", "LOWER", "SPACES", "INPUTLINE",
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
-	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR"}
+	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -145,6 +145,29 @@ func (g *gen) emitRoutine(name string) {
 			a.Op("sta", asm.Zp, dst+i)
 		}
 		rts()
+	case "CMP32": // compare TMP à ACC : A = $FF si <, 0 si =, 1 si > — signe de la différence 32 bits
+		// SANS correction de débordement, comme compare.asm de l'interpréteur (son `eor #$80` après
+		// `bvc` n'est pas réécrit dans le résultat) : 2147483647 > -5 y est faux, et ici aussi.
+		ne, less := a.Uniq("cmp"), a.Uniq("cmp")
+		for i := 0; i < 4; i++ {
+			a.Op("lda", asm.Zp, zTMP+i)
+			a.Op("cmp", asm.Zp, zACC+i)
+			a.Branch("bne", ne)
+		}
+		a.Op("lda", asm.Imm, 0)
+		rts()
+		a.Label(ne) // TMP - ACC : seul l'octet de poids fort compte
+		a.Op("sec", asm.Imp, 0)
+		for i := 0; i < 4; i++ {
+			a.Op("lda", asm.Zp, zTMP+i)
+			a.Op("sbc", asm.Zp, zACC+i)
+		}
+		a.Branch("bmi", less)
+		a.Op("lda", asm.Imm, 1)
+		rts()
+		a.Label(less)
+		a.Op("lda", asm.Imm, 0xFF)
+		rts()
 	case "TMPTOACC":
 		a.Op("lda", asm.Zp, zTMPT)
 		a.Op("sta", asm.Zp, zTYPE)
@@ -234,18 +257,6 @@ func (g *gen) emitRoutine(name string) {
 			a.Op("inc", asm.Zp, zACC+i)
 			if i < 3 {
 				a.Branch("bne", done)
-			}
-		}
-		a.Label(done)
-		rts()
-	case "DEC32":
-		done := a.Uniq("dec")
-		for i := 0; i < 4; i++ {
-			a.Op("dec", asm.Zp, zACC+i)
-			if i < 3 {
-				a.Op("lda", asm.Zp, zACC+i)
-				a.Op("cmp", asm.Imm, 0xFF)
-				a.Branch("bne", done) // emprunt seulement si l'octet est passé de 0 à $FF
 			}
 		}
 		a.Label(done)

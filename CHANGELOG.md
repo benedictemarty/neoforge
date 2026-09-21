@@ -5,6 +5,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Modifié — compilateur : performance du code généré (S8-1)
+- Comparaisons entières natives (`RT_CMP32`, reproduit `compare.asm` : différence 32 bits sans correction de
+  débordement), branchement direct des conditions `if`/`while`/`until` sur le résultat $FF/0/1, opérandes
+  feuilles chargés sans pile, indice de `for` incrémenté/décrémenté sur place. `tools/bench.sh`
+  (`tools/bench/bench.bsc`) : total 795 → 205 centièmes (interprété → compilé, ×3,9 ; boucle entière 439 → 87).
+- Essayé puis retiré : `* \ %` en routines 32 bits natives — 5 fois plus lents que l'API 4,2/4,4/4,5 dans
+  l'émulateur ; conservés en API. Différentiels `loops.bsc` (emprunts sur 16/24 bits, bornes négatives) et
+  `compare.bsc` (flottants, chaînes, extrêmes) étendus.
 
 ## [0.8.0] - 2026-09-21 — sprint 7 : finitions du compilateur
 ### Ajouté — 📡 Carte : .neo compilé (S7-4)

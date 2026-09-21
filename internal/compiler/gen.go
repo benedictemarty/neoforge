@@ -250,10 +250,8 @@ func (g *gen) stmt(s Stmt) {
 	case *Input:
 		g.input(s)
 	case *If:
-		g.intExpr(s.Cond)
-		g.testACC()
 		els, end := a.Uniq("else"), a.Uniq("endif")
-		a.Branch("beq", els)
+		g.condFalse(s.Cond, els)
 		g.stmts(s.Then)
 		if len(s.Else) > 0 {
 			a.Branch("bra", end)
@@ -264,9 +262,7 @@ func (g *gen) stmt(s Stmt) {
 	case *While:
 		top, end := a.Uniq("while"), a.Uniq("wend")
 		a.Label(top)
-		g.intExpr(s.Cond)
-		g.testACC()
-		a.Branch("beq", end)
+		g.condFalse(s.Cond, end)
 		g.stmts(s.Body)
 		a.Branch("bra", top)
 		a.Label(end)
@@ -274,9 +270,7 @@ func (g *gen) stmt(s Stmt) {
 		top, end := a.Uniq("repeat"), a.Uniq("until")
 		a.Label(top)
 		g.stmts(s.Body)
-		g.intExpr(s.Cond)
-		g.testACC()
-		a.Branch("beq", top)
+		g.condFalse(s.Cond, top)
 		a.Label(end)
 	case *Do:
 		top, end := a.Uniq("do"), a.Uniq("loop")
@@ -359,23 +353,38 @@ func (g *gen) forStmt(s *For) {
 	top, end := a.Uniq("for"), a.Uniq("next")
 	a.Label(top)
 	g.stmts(s.Body)
-	// var += ±1 ; compare var (REG1) à la borne (REG2)
-	g.loadACC(varLabel(s.Name))
-	if s.Down {
-		g.call("DEC32")
+	// var += ±1 sur place, puis comparaison native TMP (indice) / ACC (borne)
+	v := varLabel(s.Name)
+	if s.Down { // emprunt : décrémente les octets de poids fort tant que l'octet inférieur vaut 0
+		var labels []string
+		for i := 1; i <= 3; i++ {
+			l := a.Uniq("dec")
+			labels = append(labels, l)
+			a.OpL("lda", asm.Abs, v, i)
+			a.Branch("bne", l)
+		}
+		a.OpL("dec", asm.Abs, v, 4)
+		for i := 3; i >= 1; i-- {
+			a.Label(labels[i-1])
+			a.OpL("dec", asm.Abs, v, i)
+		}
 	} else {
-		g.call("INC32")
+		done := a.Uniq("inc")
+		for i := 1; i <= 4; i++ {
+			a.OpL("inc", asm.Abs, v, i)
+			if i < 4 {
+				a.Branch("bne", done)
+			}
+		}
+		a.Label(done)
 	}
-	g.storeACC(varLabel(s.Name))
-	g.accToReg1()
-	g.loadTMP(varLabel(lim))
-	g.tmpToReg2()
-	emitMathCall(a, fnMathCompare)
-	a.Op("lda", asm.Abs, apiParam0)
+	g.loadTMP(v)
+	g.loadACC(varLabel(lim))
+	g.call("CMP32")
 	if s.Down {
-		a.Op("cmp", asm.Imm, 0xFF) // var < borne → fin
+		a.Op("cmp", asm.Imm, 0xFF) // indice < borne → fin
 	} else {
-		a.Op("cmp", asm.Imm, 1) // var > borne → fin
+		a.Op("cmp", asm.Imm, 1) // indice > borne → fin
 	}
 	a.Branch("beq", end)
 	a.OpL("jmp", asm.Abs, top, 0)
@@ -632,23 +641,11 @@ func (g *gen) intExpr(x Expr) {
 
 func (g *gen) binary(x Binary) {
 	a := g.a
-	if x.L.Type() == TStr { // comparaison de chaînes : STRCMP → A = $FF / 0 / 1 comme 4,6
-		g.strExpr(x.L)
-		a.Op("lda", asm.Zp, zPTR)
-		a.Op("sta", asm.Zp, zACC)
-		a.Op("lda", asm.Zp, zPTR+1)
-		a.Op("sta", asm.Zp, zACC+1)
-		g.push()
-		g.strExpr(x.R)
-		g.pop() // TMP = pointeur gauche, PTR = droite
-		g.call("STRCMP")
-		g.compareResult(x.Op, false)
+	if compareOps[x.Op] {
+		g.compareResult(x.Op, g.compare(x))
 		return
 	}
-	g.intExpr(x.L)
-	g.push()
-	g.intExpr(x.R)
-	g.pop()                                            // TMP = gauche, ACC = droite
+	g.operands(x)
 	if !g.isInt(x.L) || !g.isInt(x.R) || x.Op == "/" { // opérandes flottants ou incertains : API (types dynamiques)
 		if fn, ok := map[string]int{"+": fnMathAdd, "-": fnMathSub, "*": fnMathMul, "/": fnMathFDiv, "\\": fnMathIDiv, "%": fnMathMod}[x.Op]; ok {
 			g.mathBinary(fn)
@@ -682,7 +679,7 @@ func (g *gen) binary(x Binary) {
 			a.Op("sta", asm.Zp, zACC+i)
 		}
 		a.Op("stz", asm.Zp, zTYPE)
-	case "*":
+	case "*": // mesuré (S8-1) : l'API 4,2/4,4/4,5 est bien plus rapide qu'une routine 32 bits native
 		g.mathBinary(fnMathMul)
 	case "\\":
 		g.mathBinary(fnMathIDiv)
@@ -692,16 +689,119 @@ func (g *gen) binary(x Binary) {
 		g.call("SHL")
 	case ">>":
 		g.call("SHR")
-	default: // comparaisons : 4,6 → $FF / 0 / 1 dans Param0
-		g.mathCompare()
-		g.compareResult(x.Op, true)
+	}
+}
+
+// operands : TMP = gauche, ACC = droite (chargements directs quand les feuilles le permettent).
+func (g *gen) operands(x Binary) {
+	switch {
+	case g.isLeaf(x.R) && g.leafToTMP(x.L): // deux feuilles : ni pile ni copie
+		g.intExpr(x.R)
+	case g.isLeaf(x.R): // opérande droit constante/variable : pas de pile (ACC → TMP, puis chargement direct)
+		g.intExpr(x.L)
+		g.accToTMP()
+		g.intExpr(x.R)
+	default:
+		g.intExpr(x.L)
+		g.push()
+		g.intExpr(x.R)
+		g.pop()
+	}
+}
+
+// compare émet la comparaison gauche/droite : A = $FF / 0 / 1 (chaînes : STRCMP ; entiers : CMP32 ;
+// sinon 4,6, résultat dans Param0 → fromAPI).
+func (g *gen) compare(x Binary) (fromAPI bool) {
+	a := g.a
+	if x.L.Type() == TStr {
+		g.strExpr(x.L)
+		a.Op("lda", asm.Zp, zPTR)
+		a.Op("sta", asm.Zp, zACC)
+		a.Op("lda", asm.Zp, zPTR+1)
+		a.Op("sta", asm.Zp, zACC+1)
+		g.push()
+		g.strExpr(x.R)
+		g.pop() // TMP = pointeur gauche, PTR = droite
+		g.call("STRCMP")
+		return false
+	}
+	g.operands(x)
+	if g.isInt(x.L) && g.isInt(x.R) { // comparaison 32 bits signée native
+		g.call("CMP32")
+		return false
+	}
+	g.mathCompare()
+	return true
+}
+
+// condFalse : saute à label si la condition est fausse. Une comparaison se branche directement
+// sur son résultat $FF/0/1 sans matérialiser -1/0 dans ACC.
+func (g *gen) condFalse(x Expr, label string) {
+	a := g.a
+	if b, ok := x.(Binary); ok && compareOps[b.Op] {
+		want, invert := compareWant(b.Op)
+		if g.compare(b) {
+			a.Op("lda", asm.Abs, apiParam0)
+		}
+		a.Op("cmp", asm.Imm, want)
+		if invert { // vrai si ≠ want : faux si =
+			a.Branch("beq", label)
+		} else {
+			a.Branch("bne", label)
+		}
+		return
+	}
+	g.intExpr(x)
+	g.testACC()
+	a.Branch("beq", label)
+}
+
+// compareWant : valeur de 4,6/CMP32 qui rend l'opérateur vrai (invert : vrai si différent).
+func compareWant(op string) (want int, invert bool) {
+	return map[string]int{"<": 0xFF, "=": 0, ">": 1, "<=": 1, ">=": 0xFF, "<>": 0}[op], op == "<=" || op == ">=" || op == "<>"
+}
+
+// isLeaf : expression chargeable directement dans ACC sans détruire TMP.
+func (g *gen) isLeaf(x Expr) bool {
+	switch x.(type) {
+	case IntLit, FloatLit, Var:
+		return true
+	}
+	return false
+}
+
+// leafToTMP charge une constante entière ou une variable directement dans TMP ; false sinon.
+func (g *gen) leafToTMP(x Expr) bool {
+	switch x := x.(type) {
+	case IntLit:
+		g.a.Op("stz", asm.Zp, zTMPT)
+		for i := 0; i < 4; i++ {
+			g.a.Op("lda", asm.Imm, int(byte(uint32(int32(x.V))>>(8*i))))
+			g.a.Op("sta", asm.Zp, zTMP+i)
+		}
+		return true
+	case Var:
+		g.vars[x.Name] = true
+		g.loadTMP(varLabel(x.Name))
+		return true
+	}
+	return false
+}
+
+// accToTMP : TMP := ACC (valeur et type).
+func (g *gen) accToTMP() {
+	g.a.Op("lda", asm.Zp, zTYPE)
+	g.a.Op("sta", asm.Zp, zTMPT)
+	for i := 0; i < 4; i++ {
+		g.a.Op("lda", asm.Zp, zACC+i)
+		g.a.Op("sta", asm.Zp, zTMP+i)
 	}
 }
 
 // compareResult : ACC = -1/0 selon l'opérateur et le code $FF/0/1 (dans Param0 si fromAPI, sinon dans A).
 func (g *gen) compareResult(op string, fromAPI bool) {
 	a := g.a
-	var want, invert = map[string]int{"<": 0xFF, "=": 0, ">": 1, "<=": 1, ">=": 0xFF, "<>": 0}[op], op == "<=" || op == ">=" || op == "<>"
+	want, invert := compareWant(op)
 	if fromAPI {
 		a.Op("lda", asm.Abs, apiParam0)
 	}
@@ -1079,11 +1179,10 @@ func (g *gen) push()   { g.call("PUSH") }
 func (g *gen) pop()    { g.call("POP") }    // → TMP
 func (g *gen) popACC() { g.call("POPACC") } // → ACC
 
-// accToReg1 / tmpToReg1 / accToReg2 / tmpToReg2 / reg1ToACC : registres maths (type entier).
+// accToReg1 / tmpToReg1 / accToReg2 / reg1ToACC : registres maths (type entier).
 func (g *gen) accToReg1() { g.regCopy(zACC, zREG) }
 func (g *gen) tmpToReg1() { g.regCopy(zTMP, zREG) }
 func (g *gen) accToReg2() { g.regCopy(zACC, zREG2) }
-func (g *gen) tmpToReg2() { g.regCopy(zTMP, zREG2) }
 
 func (g *gen) regCopy(from, reg int) {
 	typ := zTYPE

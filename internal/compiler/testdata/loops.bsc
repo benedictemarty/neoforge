@@ -26,3 +26,13 @@ do
   if i = 3 then exit
   print "do"; i
 loop
+for i = 258 downto 254: print i;: next
+print
+for i = 65537 downto 65534: print i;: next
+print
+for i = 1 downto -2: print i;: next
+print
+for i = 254 to 258: print i;: next
+print
+for i = 65534 to 65537: print i;: next
+print

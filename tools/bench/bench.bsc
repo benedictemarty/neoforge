@@ -1,0 +1,23 @@
+t0 = time()
+s = 0
+for i = 1 to 20000: s = s + i: next
+t1 = time()
+print "boucle entiere : "; t1 - t0
+c = 0
+for i = 1 to 5000: if i % 7 = 3 then c = c + 1
+next
+t2 = time()
+print "modulo/compare : "; t2 - t1
+x = 0
+for i = 1 to 3000: x = x + i * 3 \ 2: next
+t3 = time()
+print "mul/div : "; t3 - t2
+a$ = ""
+for i = 1 to 200: a$ = left$(a$ + "x", 100): next
+t4 = time()
+print "chaines : "; t4 - t3
+f = 0
+for i = 1 to 2000: f = f + sqr(i) / 3: next
+t5 = time()
+print "flottants : "; t5 - t4
+print "total : "; t5 - t0

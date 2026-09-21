@@ -10,3 +10,16 @@ else
   print "sinon"
 endif
 if x:print "vrai":endif
+f = 1.5: s$ = "abc"
+if f > 1 then print "f>1"
+if f <= 1 then print "f<=1"
+if s$ = "abc" then print "s=abc"
+if s$ <> "abc" then print "s<>abc"
+while f < 3: f = f + 0.5: wend
+print f
+repeat: f = f - 1: until f <= 0
+print f
+if -5 < 3 then print "neg<"
+if 2147483647 > -2147483648 then print "max>min"
+if 100000 * 3 >= 300000 then print ">="
+if 2147483647 > -5 then print "jamais (debordement reproduit)"
