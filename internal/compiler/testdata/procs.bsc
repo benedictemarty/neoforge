@@ -7,6 +7,9 @@ call hello()
 s$ = "global"
 call strloc()
 print "s$="; s$
+n = 1: m$ = "a"
+call twice(n, m$)
+print "ref="; n; m$
 end
 proc square(x)
   print x * x
@@ -28,4 +31,8 @@ proc strloc()
   local s$
   s$ = "locale"
   print s$
+endproc
+proc twice(ref x, ref y$)
+  x = x * 2
+  y$ = y$ + y$
 endproc

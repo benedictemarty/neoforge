@@ -410,6 +410,24 @@ func (g *gen) callProc(s *CallProc) {
 		}
 	}
 	g.a.OpL("jsr", asm.Abs, procLabel(s.Name), 0)
+	// Paramètres ref : copie de sortie vers la variable de l'appelant (équivalent hors récursion).
+	for i, x := range s.Args {
+		if !pr.Ref[i] {
+			continue
+		}
+		v, ok := x.(Var)
+		if !ok {
+			g.errorf("call %s : l'argument %d (ref) doit être une variable", strings.ToLower(s.Name), i+1)
+			return
+		}
+		if isStrName(v.Name) {
+			g.setPTR(bufLabel(pr.Params[i]))
+			g.call("STRCOPY", varLabel(v.Name))
+		} else {
+			g.loadACC(varLabel(pr.Params[i]))
+			g.storeACC(varLabel(v.Name))
+		}
+	}
 }
 
 func (g *gen) restoreLocals() {

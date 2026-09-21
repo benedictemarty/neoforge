@@ -12,7 +12,7 @@ func TestHwForms(t *testing.T) {
 		`line 0,0 to 10,10`, `rect from 0,0 solid ink 1,2 to 5,5 frame dim 2`, `ellipse 1,2 to 3,4`, `plot to 1,1`,
 		`move 1,1 by 2,2`, `text "x" to 1,1`, `image 1 to 2,2`, `image 1,2 to 2,2`, `tiledraw 0,0 to 10,10`,
 		`tilemap 1,2,3`, `sound clear`, `sound 1 clear`, `sound 1 clear 440,10`, `sound 0,440,10,1`, `noise 1,2,3`,
-		`sfx 1,2`, `vmode 1`, `ink 3`, `ink 3,1`, `cursor 1,2`, `palette 1,2,3,4`, `palette clear`,
+		`sfx 1,2`, `vmode 1`, `wait 2`, `ink 3`, `ink 3,1`, `cursor 1,2`, `palette 1,2,3,4`, `palette clear`,
 		`x = time() + vblanks() + key(1) + vmode() + notes(0) + point(1,2) + spoint(1,2) + hit(1,2,3) + spritex(1) + spritey(1)`,
 		`x = event(t, 5) + joypad(dx, dy) + alloc(10)`,
 	}, "\n")
@@ -40,6 +40,7 @@ func TestHwForms(t *testing.T) {
 		{`tilemap 1`, "« , » attendu"},
 		{`sfx 1`, "« , » attendu"},
 		{`vmode "a"`, "nombre attendu"},
+		{`wait "a"`, "nombre attendu"},
 		{`ink "a"`, "nombre attendu"},
 		{`ink 1,"a"`, "nombre attendu"},
 		{`cursor 1`, "« , » attendu"},

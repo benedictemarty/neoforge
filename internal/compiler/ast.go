@@ -148,11 +148,13 @@ type For struct {
 	Body     []Stmt
 }
 
-// Proc : définition de procédure ; Params = noms des paramètres (par valeur).
+// Proc : définition de procédure ; Params = noms des paramètres, Ref = paramètres
+// par référence (recopiés dans la variable de l'appelant au retour).
 type Proc struct {
 	stmtMarker
 	Name   string
 	Params []string
+	Ref    []bool
 	Body   []Stmt
 }
 

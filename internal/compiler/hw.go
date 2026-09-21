@@ -66,6 +66,12 @@ type Sfx struct {
 	Channel, Effect Expr
 }
 
+// Wait : wait n (centisecondes, 16 bits : boucle sur 1,1 comme wait.asm).
+type Wait struct {
+	stmtMarker
+	N Expr
+}
+
 // Vmode : vmode n.
 type Vmode struct {
 	stmtMarker
@@ -125,6 +131,10 @@ func (p *parser) hwStatement(kw string) (Stmt, bool, error) {
 		p.next()
 		x, err := p.expr(TInt)
 		return &Vmode{Mode: x}, true, err
+	case "wait":
+		p.next()
+		x, err := p.expr(TInt)
+		return &Wait{N: x}, true, err
 	case "ink":
 		p.next()
 		x, err := p.expr(TInt)
@@ -398,6 +408,24 @@ func (g *gen) hwStmt(s Stmt) {
 	case *Vmode:
 		g.param8(s.Mode, 0)
 		emitAPICall(a, grpGraphics, fnGfxSetMode)
+	case *Wait: // fin = horloge + n ; boucle tant que horloge - fin < 0 (comparaison 16 bits signée)
+		g.intExpr(s.N)
+		emitAPICall(a, grpSystem, fnSysTimer)
+		a.Op("clc", asm.Imp, 0)
+		a.Op("lda", asm.Zp, zACC)
+		a.Op("adc", asm.Abs, apiParam0)
+		a.Op("sta", asm.Zp, zTMP)
+		a.Op("lda", asm.Zp, zACC+1)
+		a.Op("adc", asm.Abs, apiParam0+1)
+		a.Op("sta", asm.Zp, zTMP+1)
+		loop := a.Uniq("wait")
+		a.Label(loop)
+		emitAPICall(a, grpSystem, fnSysTimer)
+		a.Op("lda", asm.Abs, apiParam0)
+		a.Op("cmp", asm.Zp, zTMP)
+		a.Op("lda", asm.Abs, apiParam0+1)
+		a.Op("sbc", asm.Zp, zTMP+1)
+		a.Branch("bmi", loop)
 	case *Ink: // codes console $80|encre et $90|papier
 		g.intExpr(s.Ink)
 		a.Op("lda", asm.Zp, zACC)

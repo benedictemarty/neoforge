@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0) ; sprint 5 en cours : S5-1, S5-2 faits. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 4 **livrés** (v0.5.0) ; sprint 5 en cours : S5-1 à S5-3 faits. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -78,7 +78,7 @@ Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `E
 |------|-------|------------------------------------------------------------------------------------|------|------|
 | S5-1 | E5    | Assembleur en ligne (mnémoniques à l'exécution dans `P`/`O`, `.nom`, tous modes, `mem[i]`) — code identique à l'interpréteur ; 37/50 exemples | P2   | FAIT |
 | S5-2 | E5    | Fichiers (`open`, `close`, `print #`, `input #`, `eof(`, `save`) — FAIT (39/50) ; `mouse`, `pin`, `i2c`, `uconfig` reportés | P3   | FAIT |
-| S5-3 | E5    | Paramètres `ref`, récursion (pile de variables)                                    | P3   | TODO |
+| S5-3 | E5    | Paramètres `ref` (copie entrée/sortie) + `wait` — FAIT ; récursion reportée (Atic Atac compile, 40/50) | P3   | FAIT |
 | S5-4 | E8    | Débogueur : exports Phosphoneo (`web_pause`, registres, mémoire), symboles du compilateur | P2   | TODO |
 | S5-5 | E3    | Carte réelle : envoi du `.bas`/`.neo` par le modem Pico W                          | P3   | TODO |
 

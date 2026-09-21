@@ -39,7 +39,7 @@ func TestParseErrors(t *testing.T) {
 		{"local 1", "nom de variable"},
 		{"proc 1", "nom de procédure"},
 		{"proc a()\nendproc\nproc a()\nendproc", "déjà définie"},
-		{"proc a(ref x)\nendproc", "référence"},
+		{"call a(1)\nend\nproc a(ref x)\nendproc", "doit être une variable"},
 		{"proc a(1)\nendproc", "paramètre attendu"},
 		{"proc a(x y)\nendproc", "« , » ou « ) »"},
 		{"call a(1 2)", "« , » ou « ) »"},

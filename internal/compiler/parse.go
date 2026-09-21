@@ -585,14 +585,13 @@ func (p *parser) procStmt() (Stmt, error) {
 	pr := &Proc{Name: name}
 	if paren {
 		for !p.accept(")") {
-			if p.accept("ref") {
-				return nil, p.errorf("paramètres par référence (ref) non pris en charge")
-			}
+			ref := p.accept("ref")
 			v := p.next()
 			if v.Kind != neobasic.ItemIdent || strings.HasSuffix(v.Text, "(") {
 				return nil, p.errorf("paramètre attendu")
 			}
 			pr.Params = append(pr.Params, v.Text)
+			pr.Ref = append(pr.Ref, ref)
 			if !p.accept(",") && !p.isKw(")") {
 				return nil, p.errorf("« , » ou « ) » attendu")
 			}

@@ -5,6 +5,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — compilateur : ref, wait (S5-3)
+- Paramètres `ref` (valeur recopiée dans la variable de l'appelant au retour de la procédure), `wait n`
+  (boucle sur l'horloge 1,1 comme `wait.asm`) ; 40/50 exemples de Trinity compilent, Atic Atac compilé
+  tourne dans Phosphoneo.
 ### Ajouté — compilateur : fichiers (S5-2)
 - `open input|output canal,"nom"` (3,4), `close` (3,5), `print #`/`input #` (enregistrements typés octet par
   octet comme `inputprintfile.asm`, variables et éléments de tableau), `eof(` (3,22), `save "nom",adresse,taille`
