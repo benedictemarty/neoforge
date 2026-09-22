@@ -130,13 +130,24 @@ export function hex4(n) {
   return (n & 0xffff).toString(16).toUpperCase().padStart(4, "0");
 }
 
-// nearestLabel : étiquette (nom, décalage) la plus proche en dessous de addr, ou null.
+// nearestLabel : étiquette (nom, décalage) la plus proche en dessous de addr, ou null. Les
+// étiquettes locales du générateur (minuscules suivies de « _numéro » : else_12, forc_3, apiw_7…)
+// sont ignorées : seules restent les repères utiles (PROC_…, RT_…, VAR_…, STR_…, STK, ENDPROG…).
 export function nearestLabel(labels, addr) {
   let best = null;
   for (const [name, a] of Object.entries(labels || {})) {
-    if (a <= addr && (!best || a > best.addr) && !/^(apiw|halt|prs|else|endif|while|wend|repeat|until|do|loop|for|next|bool|sh|inc|dec|sgn|abs|scmp|ins|sub|rs|cl|case|spc|inl|gd|sx|jx|ev|mul|zf|rd|awb|hex|fws|frs|asm|lbl|wait|input|val|minmax|asc|mid|inkey|tab|scp|sap|tab)_\d+/.test(name)) best = { name, addr: a };
+    if (a <= addr && (!best || a > best.addr) && !/^[a-z][a-z0-9]*_\d+$/.test(name)) best = { name, addr: a };
   }
   return best ? { name: best.name, off: addr - best.addr } : null;
+}
+
+// decodeRuntimeError : 3 octets d'ERRINFO ([code][ligne lo][ligne hi]) → null si aucune erreur,
+// sinon { message, basLine, srcLine } (srcLine = 0 si la ligne BASIC est inconnue).
+export function decodeRuntimeError(bytes, messages, lines) {
+  if (!bytes || !bytes[0]) return null;
+  const basLine = bytes[1] | (bytes[2] << 8);
+  const message = (messages || [])[bytes[0] - 1] || "Erreur d'exécution";
+  return { message, basLine, srcLine: (lines || {})[basLine] || 0 };
 }
 
 // ─── Carte réelle (S6-3) ────────────────────────────────────────────────────

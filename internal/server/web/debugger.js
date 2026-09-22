@@ -1,12 +1,12 @@
 // Débogueur (S5-4) : pause / pas / reprise de Phosphoneo (exports web_pause…), registres,
 // variables du programme compilé (symboles de /api/compile), mémoire.
-import { decodeRegs, decodeNumber, decodeString, hexDump, hex4, nearestLabel } from "/editor-logic.js";
+import { decodeRegs, decodeNumber, decodeString, hexDump, hex4, nearestLabel, decodeRuntimeError } from "/editor-logic.js";
 
 const el = (id) => document.getElementById(id);
 
-export function setupDebugger({ status, isReady }) {
-  let symbols = [], labels = {};
-  let timer = null;
+export function setupDebugger({ status, isReady, onRuntimeError }) {
+  let symbols = [], labels = {}, lines = {}, errors = [];
+  let timer = null, watch = null;
 
   const available = () => isReady() && typeof Module._web_pause === "function";
   const peek = (addr, n) => {
@@ -42,7 +42,24 @@ export function setupDebugger({ status, isReady }) {
   el("dbg-step").addEventListener("click", () => { if (available()) { Module._web_step(); setTimeout(refresh, 60); setPaused(true); } });
   el("dbg-refresh").addEventListener("click", refresh);
   el("dbg-addr").addEventListener("change", refresh);
+  // watchRuntimeError : après un lancement, surveille ERRINFO (écrit par les routines RT_ERR*)
+  // pendant `seconds` et signale l'erreur d'exécution une seule fois.
+  const watchRuntimeError = (seconds = 30) => {
+    if (watch) { clearInterval(watch); watch = null; }
+    if (!labels.ERRINFO || !onRuntimeError) return;
+    let left = Math.round(seconds * 2);
+    watch = setInterval(() => {
+      if (!available() || left-- <= 0) { clearInterval(watch); watch = null; return; }
+      const e = decodeRuntimeError(peek(labels.ERRINFO, 3), errors, lines);
+      if (e) { clearInterval(watch); watch = null; onRuntimeError(e); }
+    }, 500);
+  };
   return {
-    setSymbols(syms, labs) { symbols = syms || []; labels = labs || {}; if (el("dbg-addr").value === "" && symbols.length) el("dbg-addr").value = hex4(symbols[0].addr); refresh(); },
+    setSymbols(syms, labs, lineMap, errMsgs) {
+      symbols = syms || []; labels = labs || {}; lines = lineMap || {}; errors = errMsgs || [];
+      if (el("dbg-addr").value === "" && symbols.length) el("dbg-addr").value = hex4(symbols[0].addr);
+      refresh();
+    },
+    watchRuntimeError,
   };
 }

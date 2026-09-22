@@ -55,7 +55,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, lst)
 		return 0
 	}
-	data, _, labels, err := compiler.Symbols(string(src))
+	data, _, labels, _, err := compiler.Symbols(string(src))
 	if err == nil && !*bin {
 		data, err = compiler.CompileNeo(string(src))
 	}

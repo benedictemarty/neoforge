@@ -14,11 +14,12 @@ type Symbol struct {
 	Kind string `json:"kind"` // "num" ou "str"
 }
 
-// Symbols compile et renvoie le binaire, ses variables et toutes les étiquettes.
-func Symbols(src string) ([]byte, []Symbol, map[string]int, error) {
+// Symbols compile et renvoie le binaire, ses variables, toutes les étiquettes et la carte
+// « numéro de ligne BASIC → ligne du source » (erreurs d'exécution).
+func Symbols(src string) ([]byte, []Symbol, map[string]int, map[int]int, error) {
 	g, code, err := compile(src)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	labels := g.a.Symbols()
 	syms := []Symbol{}
@@ -33,7 +34,7 @@ func Symbols(src string) ([]byte, []Symbol, map[string]int, error) {
 		syms = append(syms, Symbol{Name: strings.ToLower(v), Addr: labels[varLabel(v)], Kind: kind})
 	}
 	sort.Slice(syms, func(i, j int) bool { return syms[i].Name < syms[j].Name })
-	return code, syms, labels, nil
+	return code, syms, labels, g.prog.Lines, nil
 }
 
 // CompileNeo compile un source en fichier .neo exécutable (chargé et lancé en Org).

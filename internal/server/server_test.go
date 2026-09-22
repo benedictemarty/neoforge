@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bmarty/neoforge/internal/compiler"
 	"github.com/bmarty/neoforge/internal/config"
 )
 
@@ -110,6 +111,11 @@ func TestCompile(t *testing.T) {
 	code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"print 1"}`)
 	if code != 200 || m["neo"] == nil || m["bytes"].(float64) < 8 || m["symbols"] == nil || m["labels"] == nil {
 		t.Errorf("compile : %d %v", code, m)
+	}
+	// Le débogueur a besoin de la carte des lignes, des messages d'erreur, de ERRINFO et du mode.
+	if m["lines"].(map[string]any)["100"].(float64) != 1 || len(m["errors"].([]any)) == 0 ||
+		m["labels"].(map[string]any)["ERRINFO"] == nil || m["compact"] != false || m["end"].(float64) < float64(compiler.Org) {
+		t.Errorf("diagnostic : %v", m)
 	}
 	if code, m, _ := do(t, s, "POST", "/api/compile", `{"source":"goto 1"}`); code != 422 || !strings.Contains(m["error"].(string), "ligne 1") {
 		t.Errorf("erreur de compilation : %d %v", code, m)

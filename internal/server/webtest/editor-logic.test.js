@@ -72,7 +72,7 @@ test("onglets", () => {
   assert.equal(tabTitle({ name: "a.bsc", savedVersion: 1 }, 2), "a.bsc ●");
 });
 
-import { decodeRegs, decodeNumber, decodeString, hexDump, hex4, nearestLabel } from "../web/editor-logic.js";
+import { decodeRegs, decodeNumber, decodeString, hexDump, hex4, nearestLabel, decodeRuntimeError } from "../web/editor-logic.js";
 
 test("débogueur : décodages", () => {
   const regs = decodeRegs(new Uint8Array([0x34, 0x12, 1, 2, 3, 0xff, 0b10000011, 0, 0x10, 0, 0, 0, 0, 0, 0, 0]));
@@ -87,8 +87,18 @@ test("débogueur : décodages", () => {
   assert.match(d, /^0800  41 00 FF/);
   assert.match(d, /A\.\.$/);
   assert.equal(hex4(0x1a), "001A");
-  assert.deepEqual(nearestLabel({ PROC_A: 0x900, RT_PRINT: 0xa00, apiw_3: 0x901 }, 0x905), { name: "PROC_A", off: 5 });
+  assert.deepEqual(nearestLabel({ PROC_A: 0x900, RT_PRINT: 0xa00, apiw_3: 0x901, forc_12: 0x902 }, 0x905), { name: "PROC_A", off: 5 });
   assert.equal(nearestLabel({}, 5), null);
+});
+
+test("débogueur : erreur d'exécution (ERRINFO)", () => {
+  const messages = ["File I/O Error", "Out Of Range Error"];
+  const lines = { 120: 3 };
+  assert.equal(decodeRuntimeError([0, 0, 0], messages, lines), null);
+  assert.equal(decodeRuntimeError(null, messages, lines), null);
+  assert.deepEqual(decodeRuntimeError([2, 120, 0], messages, lines), { message: "Out Of Range Error", basLine: 120, srcLine: 3 });
+  assert.deepEqual(decodeRuntimeError([1, 0x10, 0x27], messages, lines), { message: "File I/O Error", basLine: 10000, srcLine: 0 });
+  assert.deepEqual(decodeRuntimeError([9, 1, 0], messages, lines), { message: "Erreur d'exécution", basLine: 1, srcLine: 0 });
 });
 
 import { receiverProgram } from "../web/editor-logic.js";

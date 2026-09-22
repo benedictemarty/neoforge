@@ -51,5 +51,17 @@ try {
   console.log("statut :", status, "|", diag, "| capture :", shot);
   console.log(logs.filter((l) => /phosphoneo|chargement|FIS|sdl/.test(l)).slice(-6).join("\n"));
   if (!/lancé/.test(status || "")) fail("le programme n'a pas été lancé : " + status);
+
+  // ⚙ Compiler (F6) sur un programme qui échoue à l'exécution : le bandeau doit annoncer
+  // l'erreur avec son numéro de ligne (ERRINFO relu par le débogueur) et Monaco la souligner.
+  await evaluate(`window.monaco.editor.getModels()[0].setValue('print "avant"\\nx = 0\\nprint 7 \\\\ x\\nprint "jamais"\\n')`);
+  await evaluate(`document.getElementById("btn-compile").click()`);
+  await sleep(9000);
+  const rtDiag = await evaluate(`document.getElementById("diag").textContent`);
+  const markers = await evaluate(`JSON.stringify(window.monaco.editor.getModelMarkers({}).map((m) => [m.startLineNumber, m.message]))`);
+  writeFileSync(shot.replace(/\.png$/, "-erreur.png"), Buffer.from((await send("Page.captureScreenshot", { format: "png" })).data, "base64"));
+  console.log("erreur d'exécution :", rtDiag, "| marqueurs :", markers);
+  if (!/Division By Zero Error à la ligne 120/.test(rtDiag || "")) fail("erreur d'exécution non signalée : " + rtDiag);
+  if (!/\[3,/.test(markers || "")) fail("ligne du source non soulignée : " + markers);
   chrome.kill();
 } catch (e) { fail(String(e)); }

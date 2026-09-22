@@ -5,6 +5,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — IDE : erreurs d'exécution dans l'éditeur (S10-3)
+- Les routines d'erreur écrivent leur code et le numéro de ligne en `ERRINFO` ; `/api/compile` renvoie la
+  carte « ligne BASIC → ligne du source » (`lines`) et les libellés (`errors`). Après ⚙ Compiler, la page
+  surveille `ERRINFO` : le bandeau affiche « Division By Zero Error à la ligne 120 » et **souligne la ligne
+  du source**. Étiquettes du débogueur filtrées par une règle générique (plus de liste à rallonge) :
+  les routines des deux modes de génération sont reconnues. `make e2e-browser` vérifie la chaîne complète
+  dans Chrome headless (bandeau + marqueur Monaco).
 ### Ajouté — vérification complète des exemples officiels (S10-1)
 - `tools/corpus_run.sh` rejoue les écarts avec un budget de cycles large puis compare sous deux
   normalisations (adresses hexadécimales de `alloc(`, chronométrages) et, pour les programmes sans fin,

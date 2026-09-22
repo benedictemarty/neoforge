@@ -128,7 +128,7 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 |-------|-------|------------------------------------------------------------------------------------|------|------|
 | S10-1 | E5    | `tools/corpus_run.sh` classe les écarts au lieu de les laisser « expliqués » : rejeu avec un budget large, masquage des adresses `alloc(` puis des chronométrages, comparaison de préfixe pour les programmes sans fin — **48/48 vérifiés** (36 identiques, 2 adresses, 9 chronos, 1 préfixe) | P2   | FAIT |
 | S10-2 | E5    | Vitesse : opérations directes entre feuilles entières, `v = v ∘ feuille` sur place, boucle `for` à borne constante comparée en ligne — bench 214 → 146 (×5,4 contre l'interpréteur ; boucle entière ×13,7), benchmarks officiels ×5 à ×17,5 ; Atic Atac repasse en mode rapide (55 Ko) | P2   | FAIT |
-| S10-3 | E8    | IDE : le débogueur ignore le mode compact (symboles `RT_LDV`…), les erreurs d'exécution ne sont visibles qu'à l'écran de l'émulateur | P3   | TODO |
+| S10-3 | E8    | IDE : erreurs d'exécution remontées dans l'éditeur (`ERRINFO` + carte des lignes, bandeau et ligne soulignée), étiquettes du débogueur filtrées génériquement (mode compact compris) ; `make e2e-browser` contrôle la chaîne dans Chrome | P3   | FAIT |
 
 ## Idées non planifiées
 

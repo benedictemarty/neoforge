@@ -172,6 +172,8 @@ func (g *gen) program() {
 	a.Bytes(0)
 	a.Label("FHBUF") // tampon d'un octet (3,8 / 3,9)
 	a.Bytes(0)
+	a.Label("ERRINFO") // erreur d'exécution : code (0 = aucune), numéro de ligne 16 bits
+	a.Bytes(0, 0, 0)
 	a.Label("TTLON") // tortue : initialisée, stylo ($FF baissé), couleur, mode rapide
 	a.Bytes(0)
 	a.Label("TTLPEN")
@@ -271,17 +273,23 @@ func (g *gen) runtimeError(routine string, line int) {
 	g.a.OpL("jmp", asm.Abs, "RT_"+routine, 0)
 }
 
-// errorRoutines : message de chaque routine d'erreur d'exécution.
-var errorRoutines = map[string]string{
-	"ERRFILE": "File I/O Error", "ERRRANGE": "Out Of Range Error", "ERRDIV": "Division By Zero Error", "ERRDATA": "Out Of Data",
-	"ERRMEM": "Out Of Memory", "ERRSTR": "String Too Long",
-}
+// ErrorMessages : message de chaque routine d'erreur d'exécution, dans l'ordre des codes écrits
+// en ERRINFO (code = indice + 1, puis le numéro de ligne sur 16 bits) — lus par le débogueur.
+var ErrorMessages = []string{"File I/O Error", "Out Of Range Error", "Division By Zero Error", "Out Of Data", "Out Of Memory", "String Too Long"}
+
+var errorRoutines = map[string]int{"ERRFILE": 0, "ERRRANGE": 1, "ERRDIV": 2, "ERRDATA": 3, "ERRMEM": 4, "ERRSTR": 5}
 
 // emitErrorRoutine : message, « at line », ACC en décimal, CR, arrêt.
 func (g *gen) emitErrorRoutine(name string) {
+	g.a.Op("lda", asm.Imm, errorRoutines[name]+1) // ERRINFO : code puis numéro de ligne (débogueur)
+	g.a.OpL("sta", asm.Abs, "ERRINFO", 0)
+	g.a.Op("lda", asm.Zp, zACC)
+	g.a.OpL("sta", asm.Abs, "ERRINFO", 1)
+	g.a.Op("lda", asm.Zp, zACC+1)
+	g.a.OpL("sta", asm.Abs, "ERRINFO", 2)
 	g.push()
 	idx := len(g.strLits)
-	g.strLits = append(g.strLits, errorRoutines[name]+" at line ")
+	g.strLits = append(g.strLits, ErrorMessages[errorRoutines[name]]+" at line ")
 	g.setPTR(fmt.Sprintf("STR_%d", idx))
 	g.call("PRSTR")
 	g.popACC()

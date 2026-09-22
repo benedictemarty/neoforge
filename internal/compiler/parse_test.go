@@ -114,7 +114,7 @@ func TestFloatsCompile(t *testing.T) {
 }
 
 func TestSymbols(t *testing.T) {
-	code, syms, labels, err := Symbols("a = 1\nb$ = \"x\"\nfor i = 1 to 2: next\nprint a")
+	code, syms, labels, lines, err := Symbols("a = 1\nb$ = \"x\"\nfor i = 1 to 2: next\nprint a")
 	if err != nil || len(code) == 0 {
 		t.Fatal(err)
 	}
@@ -124,7 +124,10 @@ func TestSymbols(t *testing.T) {
 	if syms[0].Addr < Org || labels["RT_PRINT"] == 0 {
 		t.Errorf("adresses : %+v %v", syms, labels["RT_PRINT"])
 	}
-	if _, _, _, err := Symbols("goto 9"); err == nil {
+	if lines[100] != 1 || lines[130] != 4 || labels["ERRINFO"] < Org {
+		t.Errorf("lignes : %v, ERRINFO $%X", lines, labels["ERRINFO"])
+	}
+	if _, _, _, _, err := Symbols("goto 9"); err == nil {
 		t.Error("erreur attendue")
 	}
 }
@@ -203,7 +206,7 @@ func TestCompactAuto(t *testing.T) {
 	if fast.a.Symbols()["ENDPROG"] <= fastLimit {
 		t.Fatalf("le mode rapide devrait dépasser fastLimit : $%X", fast.a.Symbols()["ENDPROG"])
 	}
-	_, _, labels, err := Symbols(src)
+	_, _, labels, _, err := Symbols(src)
 	if err != nil {
 		t.Fatal(err)
 	}

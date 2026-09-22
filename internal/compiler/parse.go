@@ -19,23 +19,25 @@ type item struct {
 
 // parser consomme le flux d'éléments produit par neobasic.Lex.
 type parser struct {
-	items []item
-	pos   int
-	procs map[string]*Proc
-	bas   int // ligne BASIC de l'instruction en cours d'analyse
+	items    []item
+	pos      int
+	procs    map[string]*Proc
+	bas      int         // ligne BASIC de l'instruction en cours d'analyse
+	basLines map[int]int // ligne BASIC → ligne du source
 }
 
 // Program est le résultat du parseur.
 type Program struct {
 	Body  []Stmt
 	Procs map[string]*Proc
+	Lines map[int]int // numéro de ligne BASIC → ligne du source (messages d'erreur d'exécution)
 }
 
 // Parse analyse un source NeoBASIC. Les numéros de ligne en tête de ligne sont
 // ignorés (le compilateur ne gère pas goto/gosub), les directives `#…` refusées.
 func Parse(src string) (*Program, error) {
 	ts := neobasic.NewTokenSet()
-	p := &parser{procs: map[string]*Proc{}}
+	p := &parser{procs: map[string]*Proc{}, basLines: map[int]int{}}
 	bas := 100 // même numérotation que neobasic.Program (messages d'erreur « at line N »)
 	for n, line := range strings.Split(src, "\n") {
 		line = strings.TrimSpace(line)
@@ -62,6 +64,7 @@ func Parse(src string) (*Program, error) {
 			bas = lineNo
 			p.items = append(p.items, item{line: n + 1, lineNo: lineNo, bas: bas})
 		}
+		p.basLines[bas] = n + 1
 		for _, it := range its {
 			if it.Kind != neobasic.ItemComment {
 				p.items = append(p.items, item{Item: it, line: n + 1, bas: bas})
@@ -74,7 +77,7 @@ func Parse(src string) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Program{Body: body, Procs: p.procs}, nil
+	return &Program{Body: body, Procs: p.procs, Lines: p.basLines}, nil
 }
 
 func (p *parser) atEnd() bool { return p.pos >= len(p.items) }

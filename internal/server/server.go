@@ -133,14 +133,15 @@ func (s *Server) handleCompile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "requête JSON invalide : "+err.Error())
 		return
 	}
-	code, syms, labels, err := compiler.Symbols(req.Source)
+	code, syms, labels, lines, err := compiler.Symbols(req.Source)
 	if err != nil {
 		writeError(w, 422, err.Error())
 		return
 	}
 	bin, _ := neo.Pack([]neo.Block{{Addr: compiler.Org, Data: code}}, compiler.Org)
 	_, compact := labels["COMPACT"]
-	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin), "symbols": syms, "labels": labels, "end": labels["ENDPROG"], "compact": compact})
+	writeJSON(w, 200, map[string]any{"neo": bin, "bytes": len(bin), "symbols": syms, "labels": labels,
+		"end": labels["ENDPROG"], "compact": compact, "lines": lines, "errors": compiler.ErrorMessages})
 }
 
 // handleDetok détokenise un .bas (corps binaire) ; réponse : {"source": texte}.

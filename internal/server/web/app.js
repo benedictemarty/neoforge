@@ -197,12 +197,12 @@ async function main() {
       }
       monaco.editor.setModelMarkers(model, "neoforgec", []);
       diag("compilé : " + j.bytes + " octets (.neo), fin $" + (j.end || 0).toString(16).toUpperCase() + (j.compact ? " (mode compact)" : "") + ", " + (j.symbols || []).length + " variable(s)");
-      dbg.setSymbols(j.symbols, j.labels);
+      dbg.setSymbols(j.symbols, j.labels, j.lines, j.errors);
       if (!emuReady) { status("Émulateur non prêt", true); return; }
       const path = "/storage/" + storageName(el("fname").value).replace(/\.bas$/, ".neo");
       Module.FS.writeFile(path, decodeBase64(j.neo));
       const rc = Module.ccall("web_load_neo", "number", ["string"], [path]);
-      if (rc === 0) { status(path.slice(9) + " compilé et lancé"); Module.canvas.focus(); } else status("échec du lancement", true);
+      if (rc === 0) { status(path.slice(9) + " compilé et lancé"); Module.canvas.focus(); dbg.watchRuntimeError(); } else status("échec du lancement", true);
     };
     el("btn-compile").addEventListener("click", compile);
     editor.addCommand(monaco.KeyCode.F6, compile);
@@ -328,7 +328,17 @@ async function main() {
     });
 
     // ─── 🐞 Débogueur (S5-4) ─────────────────────────────────────────────────
-    const dbg = setupDebugger({ status, isReady: () => emuReady });
+    // Une erreur d'exécution du programme compilé (ERRINFO) est signalée dans le bandeau et
+    // soulignée dans le source, comme une erreur de compilation.
+    const showRuntimeError = (e) => {
+      const msg = e.message + (e.basLine ? " à la ligne " + e.basLine : "");
+      diag(msg, true);
+      const model = editor.getModel();
+      if (!e.srcLine || e.srcLine > model.getLineCount()) return;
+      monaco.editor.setModelMarkers(model, "neoforgec", [{ startLineNumber: e.srcLine, endLineNumber: e.srcLine, startColumn: 1, endColumn: model.getLineMaxColumn(e.srcLine), message: msg, severity: monaco.MarkerSeverity.Error }]);
+      editor.revealLineInCenter(e.srcLine);
+    };
+    const dbg = setupDebugger({ status, isReady: () => emuReady, onRuntimeError: showRuntimeError });
     el("btn-dbg").addEventListener("click", () => { el("dbg").hidden = !el("dbg").hidden; });
     el("dbg-close").addEventListener("click", () => { el("dbg").hidden = true; });
     el("btn-focus").addEventListener("click", () => Module.canvas.focus());
