@@ -5,6 +5,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.11.0] - 2026-09-22 — sprint 10 : vérification complète, vitesse, erreurs dans l'éditeur
 ### Ajouté — IDE : erreurs d'exécution dans l'éditeur (S10-3)
 - Les routines d'erreur écrivent leur code et le numéro de ligne en `ERRINFO` ; `/api/compile` renvoie la
   carte « ligne BASIC → ligne du source » (`lines`) et les libellés (`errors`). Après ⚙ Compiler, la page

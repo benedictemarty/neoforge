@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 9 **livrés** (v0.10.0), sprint 10 **en cours** ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-22)** : sprints 0 à 10 **livrés** (v0.11.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -122,7 +122,7 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 | S9-3 | E5    | Programmes volumineux : Atic Atac compilé (61 Ko) écrasait la page zéro par son tas → appels API par routines (`RT_API`/`RT_MATH`), **mode compact automatique** au-delà de `$E000` (accès variables par routines, ×2 plus petit), erreur au-delà de `$FE00` ; différentiels exécutés dans les deux modes (21 programmes × 2) | P1   | FAIT |
 | S9-4 | E5    | Autres erreurs d'exécution : String Too Long (concaténation > 251), Out Of Range (`chr$(`, fonctions maths en erreur API, règles de `dim`), Out Of Memory (tas > `$FE00`) — différentiels `errstr`/`errdim`/`errmath`/`errchr` (25 programmes × 2 modes) ; bug de l'interpréteur relevé (chaîne constante corrompue) | P3   | FAIT |
 
-## Sprint 10 — Vérification complète et vitesse — EN COURS
+## Sprint 10 — Vérification complète, vitesse, erreurs dans l'éditeur (v0.11.0) — FAIT
 
 | ID    | Épop. | Récit utilisateur                                                                 | Prio | État |
 |-------|-------|------------------------------------------------------------------------------------|------|------|
