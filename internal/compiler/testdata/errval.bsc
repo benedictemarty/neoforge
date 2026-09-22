@@ -1,0 +1,4 @@
+print val("12"); isval("ab"); isval("7")
+x$ = "zz"
+print val(x$)
+print "jamais"

@@ -92,8 +92,9 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
   annoncent la fin du programme et le mode. Les appels API passent toujours par `RT_API` (A = fonction,
   X = groupe) et `RT_MATH` (7 et 5 octets au lieu de 16 et 33).
 - **Différentiel aléatoire** (`make fuzz N=200`) : des programmes tirés au sort dans une grammaire
-  sûre (déterministe, sans `rnd(`, `time(` ni saisie) sont exécutés interprétés puis compilés et les
-  écrans comparés. 320 programmes vérifiés ; il a mis au jour trois défauts de **l'interpréteur**,
+  sûre (déterministe, sans `rnd(`, `time(` ni saisie ; expressions, tableaux 1D/2D, `data`/`read`,
+  procédures par valeur et par `ref`, boucles et conditions imbriquées) sont exécutés interprétés puis
+  compilés et les écrans comparés. 450 programmes vérifiés ; il a mis au jour trois défauts de **l'interpréteur**,
   corrigés dans Neo6502Basic : `upper$(`/`lower$(` qui lisaient au-delà de la chaîne (US-13), la
   pile d'expressions sans contrôle de débordement (US-14) et, plus tôt, la concrétisation des chaînes
   (US-12).
@@ -104,7 +105,8 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
 - **Erreurs d'exécution** reproduites avec le numéro de ligne de la numérotation automatique (100, pas
   10, ou numéro explicite) : « File I/O Error at line N » (`load`, `gload`, `open`), « Division By Zero
   Error » (`/ \ %`), « Out Of Range Error » (indice de tableau hors de 0…borne), « Out Of Data »
-  (`read` après le dernier `data`), « String Too Long » (concaténation dont le résultat dépasse 251
+  (`read` après le dernier `data`), « Type Mismatch Error » (`read` d'une chaîne dans une variable
+  numérique et inversement), « Out Of Range Error » pour `val(` d'une chaîne non numérique, « String Too Long » (concaténation dont le résultat dépasse 251
   caractères, règle de `mathstd.asm`), « Out Of Range Error » pour `chr$(` hors 0-255, `sqr(`/`log(`/
   `pow(`… en erreur API, `dim` (dimension 255, ou éléments × 5 ≥ 13056 — « cpy #51 » de `dim.asm`),
   « Out Of Memory » quand le tas (`alloc(`, `dim`) dépasse `$FE00` (l'interpréteur a moins de mémoire :

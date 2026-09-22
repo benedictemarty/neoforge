@@ -6,3 +6,8 @@ read a
 print a
 read b$, c, d
 print "jamais"
+restore
+read a
+print a
+read b
+print "jamais"

@@ -275,9 +275,9 @@ func (g *gen) runtimeError(routine string, line int) {
 
 // ErrorMessages : message de chaque routine d'erreur d'exécution, dans l'ordre des codes écrits
 // en ERRINFO (code = indice + 1, puis le numéro de ligne sur 16 bits) — lus par le débogueur.
-var ErrorMessages = []string{"File I/O Error", "Out Of Range Error", "Division By Zero Error", "Out Of Data", "Out Of Memory", "String Too Long", "Structure Imbalance"}
+var ErrorMessages = []string{"File I/O Error", "Out Of Range Error", "Division By Zero Error", "Out Of Data", "Out Of Memory", "String Too Long", "Structure Imbalance", "Type Mismatch Error"}
 
-var errorRoutines = map[string]int{"ERRFILE": 0, "ERRRANGE": 1, "ERRDIV": 2, "ERRDATA": 3, "ERRMEM": 4, "ERRSTR": 5, "ERRSTRUCT": 6}
+var errorRoutines = map[string]int{"ERRFILE": 0, "ERRRANGE": 1, "ERRDIV": 2, "ERRDATA": 3, "ERRMEM": 4, "ERRSTR": 5, "ERRSTRUCT": 6, "ERRTYPE": 7}
 
 // emitErrorRoutine : message, « at line », ACC en décimal, CR, arrêt.
 func (g *gen) emitErrorRoutine(name string) {
@@ -1202,7 +1202,7 @@ func (g *gen) intCall(x Call) {
 		g.strExpr(x.Args[1])
 		g.pop() // TMP = chaîne, PTR = motif
 		g.call("INSTR")
-	case "val", "isval": // 4,33 ; val invalide → 0 (l'interpréteur signale une erreur), isval → -1/0
+	case "val", "isval": // 4,33 ; `val(` d'une chaîne non numérique = Out Of Range (erreur de l'API), isval → -1/0
 		g.strExpr(x.Args[0])
 		a.Op("lda", asm.Zp, zPTR)
 		a.Op("sta", asm.Abs, apiParam0+4)
@@ -1214,15 +1214,8 @@ func (g *gen) intCall(x Call) {
 			a.Op("cmp", asm.Imm, 0)
 			g.call("BOOLEQ")
 		} else {
-			ok := a.Uniq("val")
+			g.apiErrorCheck("ERRRANGE", x.Line)
 			g.reg1ToACC()
-			a.Op("lda", asm.Abs, apiError)
-			a.Branch("beq", ok)
-			for i := 0; i < 4; i++ {
-				a.Op("stz", asm.Zp, zACC+i)
-			}
-			a.Op("stz", asm.Zp, zTYPE)
-			a.Label(ok)
 		}
 	case "len", "asc":
 		g.strExpr(x.Args[0])
@@ -1734,6 +1727,13 @@ func (g *gen) dataStmt(s Stmt) bool {
 			a.Branch("bne", ok)
 			g.runtimeError("ERRDATA", s.Line)
 			a.Label(ok)
+			typeOK := a.Uniq("rdty") // genre de l'item (0 nombre, 1 chaîne) ≠ variable → Type Mismatch
+			a.Op("ldy", asm.Imm, 0)
+			a.Op("lda", asm.ZpIndY, zDATA)
+			a.Op("cmp", asm.Imm, map[bool]int{true: 1, false: 0}[str])
+			a.Branch("beq", typeOK)
+			g.runtimeError("ERRTYPE", s.Line)
+			a.Label(typeOK)
 			g.call("READDATA") // nombre → ACC ; chaîne → PTR (l'item est consommé)
 			switch t := t.(type) {
 			case Var:

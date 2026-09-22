@@ -69,17 +69,24 @@ const maxDepth = 1
 // comparer les deux exécutions.
 func randomProgram(r *rand.Rand) string {
 	g := &progGen{r: r}
-	lines := []string{"cls", "dim h(6)", "a = 3: b = -7: c = 11: d = 1.5: e = -0.25: f$ = \"abc\": g$ = \"XY\""}
+	lines := []string{"cls", "dim h(6), k(3,2), k$(3)", "data 7, \"sept\", -2, 3.5, \"fin des data\"",
+		"a = 3: b = -7: c = 11: d = 1.5: e = -0.25: f$ = \"abc\": g$ = \"XY\""}
 	for i := 0; i < 6+r.Intn(6); i++ {
 		lines = append(lines, g.stmt(0)...)
 	}
-	lines = append(lines, "print a; b; c; d; e; f$; g$; h(0); h(3)", "print \"fin\"")
+	lines = append(lines, "print a; b; c; d; e; f$; g$; h(0); h(3); k(1,1)", "print \"fin\"")
+	if len(g.procs) > 0 { // les procédures se déclarent après la fin du programme principal
+		lines = append(lines, "end")
+		lines = append(lines, g.procs...)
+	}
 	return strings.Join(lines, "\n") + "\n"
 }
 
 type progGen struct {
-	r *rand.Rand
-	n int
+	r     *rand.Rand
+	n     int
+	procs []string // définitions de procédures (après `end`)
+	reads int      // items data déjà consommés par read
 }
 
 var (
@@ -100,7 +107,10 @@ func (g *progGen) stmt(depth int) []string {
 		return []string{pad + g.pick(floatVarNames) + " = " + g.numExpr(0)}
 	case k == 4: // chaîne
 		return []string{pad + g.pick(strVarNames) + " = " + g.strExpr(0)}
-	case k == 5: // tableau
+	case k == 5: // tableau (une ou deux dimensions)
+		if g.r.Intn(3) == 0 {
+			return []string{pad + "k(" + strconv.Itoa(g.r.Intn(4)) + ", " + strconv.Itoa(g.r.Intn(3)) + ") = " + g.intExpr(1)}
+		}
 		return []string{pad + "h(" + g.index() + ") = " + g.intExpr(0)}
 	case k == 6: // impression
 		return []string{pad + "print " + g.anyExpr()}
@@ -119,6 +129,28 @@ func (g *progGen) stmt(depth int) []string {
 		out := []string{pad + "for " + v + " = 1 to " + strconv.Itoa(1+g.r.Intn(4))}
 		out = append(out, g.stmt(depth+1)...)
 		return append(out, pad+"  print "+v+";", pad+"next", pad+"print")
+	case k == 9 && depth < 2 && g.reads < 2: // read : les items du pool sont lus dans l'ordre
+		g.reads++
+		if g.reads == 2 {
+			return []string{pad + "read " + g.pick(strVarNames), pad + "print " + g.pick(strVarNames)}
+		}
+		return []string{pad + "read " + g.pick(intVarNames), pad + "print " + g.pick(intVarNames)}
+	case k == 9 && depth == 0 && len(g.procs) < 2: // procédure : paramètre par valeur ou par référence
+		g.n++
+		name := fmt.Sprintf("p%d", g.n)
+		ref := g.r.Intn(2) == 0
+		body := []string{"  local t", "  t = x * 2 + " + strconv.Itoa(g.r.Intn(10)), "  print \"" + name + "\"; t;"}
+		if ref {
+			body = append(body, "  x = t")
+		}
+		g.procs = append(g.procs, "proc "+name+"("+map[bool]string{true: "ref ", false: ""}[ref]+"x)")
+		g.procs = append(g.procs, body...)
+		g.procs = append(g.procs, "endproc")
+		v := g.pick(intVarNames)
+		if ref {
+			return []string{pad + "call " + name + "(" + v + ")", pad + "print " + v}
+		}
+		return []string{pad + "call " + name + "(" + g.intExpr(1) + ")", pad + "print"}
 	case k == 9 && depth < 2: // boucle while bornée
 		g.n++
 		v := fmt.Sprintf("j%d", g.n)
@@ -151,6 +183,8 @@ func (g *progGen) intExpr(depth int) string {
 		return g.pick([]string{"min(", "max("}) + g.intExpr(depth+1) + ", " + g.intExpr(depth+1) + ")"
 	case 6:
 		return "h(" + g.index() + ")"
+	case 7:
+		return g.pick([]string{"asc(", "val(", "instr(\"abcXY\", "}) + g.strExpr(depth+1) + ")"
 	}
 	return g.intAtom()
 }
@@ -201,6 +235,8 @@ func (g *progGen) strExpr(depth int) string {
 		return g.pick([]string{"upper$(", "lower$("}) + g.strExpr(depth+1) + ")"
 	case 4:
 		return "chr$(" + strconv.Itoa(65+g.r.Intn(26)) + ")"
+	case 5:
+		return g.pick([]string{"str$(" + g.intExpr(depth+1) + ")", "k$(" + strconv.Itoa(g.r.Intn(3)) + ")"})
 	}
 	return "\"" + string(rune('a'+g.r.Intn(6))) + string(rune('A'+g.r.Intn(6))) + "\""
 }

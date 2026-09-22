@@ -137,6 +137,7 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 | S11-1 | E5    | `make fuzz` : programmes tirés au sort dans une grammaire sûre, interprétés et compilés, écrans comparés — 320 programmes vérifiés | P2   | FAIT |
 | S11-2 | E5    | Terminateurs orphelins fidèles à `if.asm` : `endif` isolé sans effet, `else` isolé saute jusqu'à son `endif`, `wend`/`next`/… = « Structure Imbalance **at line N** » ; différentiel `orphans.bsc` | P2   | FAIT |
 | S11-3 | —     | Défauts de l'**interpréteur** trouvés par le fuzz et corrigés dans Neo6502Basic : `upper$(`/`lower$(` lisaient au-delà de la chaîne (US-13), pile d'expressions sans contrôle (US-14, « Out Of Stack Space » au lieu d'écrire en page zéro) | P1   | FAIT |
+| S11-4 | E5    | Grammaire du fuzz étendue (tableaux 2D et de chaînes, `data`/`read`, procédures par valeur et `ref`, `val(`, `instr(`, `str$(`, `asc(`) — 450 programmes ; deux écarts du compilateur corrigés : `read` sans contrôle de genre (« Type Mismatch Error ») et `val(` d'une chaîne non numérique (« Out Of Range Error » au lieu de 0) | P2   | FAIT |
 
 ## Idées non planifiées
 
