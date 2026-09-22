@@ -1,6 +1,6 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
-Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 9** — **48 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) et
+Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 11** — **48 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) et
 **tous donnent le même écran que l'interpréteur** (`tools/corpus_run.sh` : 36 au caractère près, 2 après
 masquage des adresses de `alloc(`, 9 après masquage des chronométrages, 1 sur son préfixe — programme sans fin). Restent : Sweet16 (`mixedassembler.bsc`, absent de NeoBASIC)
 et `asteroids.bsc` (bibliothèque non incluse par le Makefile officiel). Performance : `tools/bench.sh` (795 → 146 centièmes, ×5,4) et les benchmarks Rugg/Feldman officiels
@@ -94,7 +94,7 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
 - **Différentiel aléatoire** (`make fuzz N=200`) : des programmes tirés au sort dans une grammaire
   sûre (déterministe, sans `rnd(`, `time(` ni saisie ; expressions, tableaux 1D/2D, `data`/`read`,
   procédures par valeur et par `ref`, boucles et conditions imbriquées) sont exécutés interprétés puis
-  compilés et les écrans comparés. 450 programmes vérifiés ; il a mis au jour trois défauts de **l'interpréteur**,
+  compilés et les écrans comparés. 700 programmes vérifiés ; il a mis au jour trois défauts de **l'interpréteur**,
   corrigés dans Neo6502Basic : `upper$(`/`lower$(` qui lisaient au-delà de la chaîne (US-13), la
   pile d'expressions sans contrôle de débordement (US-14) et, plus tôt, la concrétisation des chaînes
   (US-12).

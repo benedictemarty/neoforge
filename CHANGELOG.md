@@ -5,9 +5,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+
+## [0.12.0] - 2026-09-23 — sprint 11 : différentiel aléatoire
 ### Ajouté — différentiel aléatoire (S11-1)
 - `make fuzz N=… SEED=…` : des programmes tirés au sort dans une grammaire sûre (déterministe) sont
-  exécutés interprétés puis compilés et les écrans comparés. **450 programmes vérifiés.** Il a mis au jour
+  exécutés interprétés puis compilés et les écrans comparés. **700 programmes vérifiés.** Il a mis au jour
   deux défauts de l'interpréteur, corrigés dans Neo6502Basic : `upper$(`/`lower$(` qui lisaient au-delà de
   la chaîne (US-13) et la pile d'expressions sans contrôle de débordement (US-14, « Out Of Stack Space »
   au lieu d'écrire en page zéro). Différences connues documentées dans `docs/COMPILER.md`.
@@ -15,7 +17,7 @@ versionnage [SemVer](https://semver.org/lang/fr/).
 - `read` vérifie le genre de l'item (« Type Mismatch Error at line N » si une chaîne arrive dans une
   variable numérique ou l'inverse) et `val(` d'une chaîne non numérique signale « Out Of Range Error »
   au lieu de renvoyer 0. Grammaire du différentiel aléatoire étendue (tableaux 2D et de chaînes,
-  `data`/`read`, procédures par valeur et `ref`, `val(`, `instr(`, `str$(`, `asc(`) : **450 programmes**.
+  `data`/`read`, procédures par valeur et `ref`, `val(`, `instr(`, `str$(`, `asc(`) : **700 programmes**.
 ### Corrigé — compilateur : terminateurs orphelins (S11-2)
 - `endif` isolé ne fait rien et `else` isolé saute jusqu'à son `endif` (`if.asm` : `EndIf: rts`,
   `ElseCode` cherche `endif` en avant) ; `wend`/`next`/`until`/`loop`/`endproc` isolés et `else` sans

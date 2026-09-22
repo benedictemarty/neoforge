@@ -10,11 +10,11 @@ Neo6502 (Olimex, W65C02S + RP2040) sous firmware **Trinity**.
 compilé en **WebAssembly** : on écrit à gauche, ▶ Exécuter tokenise le source et le lance *dans la
 page*, à droite, sur le vrai firmware Neo6502.
 
-> État : **sprint 10 livré (v0.11.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
+> État : **sprint 11 livré (v0.12.0)** — éditeur à onglets + aide, émulateur Trinity dans la page, tokeniseur/
 > détokeniseur NeoBASIC, **compilateur NeoBASIC → 65C02** couvrant entiers, flottants, chaînes, tableaux,
 > graphisme, sprites, son, tortue, assembleur en ligne, fichiers, UART/I2C/SPI, récursion — **×5,4 plus rapide que l'interpréteur** (`docs/COMPILER.md` ;
 > 48/50 exemples de Trinity compilent et **les 48 donnent le même écran que l'interpréteur**, Breakout et
-> Atic Atac compris), **éditeur de sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`),
+> Atic Atac compris ; **700 programmes tirés au sort** vérifiés de la même façon, `make fuzz`), **éditeur de sprites, tuiles et tilemaps** (`docs/GRAPHICS.md`),
 > **débogueur** (`docs/DEBUGGER.md`), **envoi à la carte réelle** par le modem Pico W (`docs/CARD.md`).
 > Voir `docs/BACKLOG.md` (épopées, sprints) et `CHANGELOG.md`.
 
