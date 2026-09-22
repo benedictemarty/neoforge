@@ -246,11 +246,24 @@ type Defchr struct {
 	Rows []Expr
 }
 
-// StrayEnd : terminateur de structure sans ouverture (l'interpréteur signale « Structure
-// Imbalance » à l'exécution ; le compilé arrête le programme avec ce message).
+// StrayEnd : terminateur de structure sans ouverture qui arrête le programme (« Structure
+// Imbalance at line N », comme l'interpréteur). `endif` isolé ne fait rien (if.asm : `EndIf: rts`)
+// et `else` isolé saute jusqu'à son `endif` : voir Nop et SkipTo.
 type StrayEnd struct {
 	stmtMarker
 	Name string
+	Line int
+}
+
+// Nop : instruction sans effet (`endif` isolé).
+type Nop struct{ stmtMarker }
+
+// SkipTo : `else` isolé — le bloc jusqu'au `endif` correspondant est sauté à l'exécution
+// (if.asm : `ElseCode` cherche `endif` en avant), mais il est compilé : il peut être atteint
+// autrement (goto) et ses erreurs de compilation doivent être signalées.
+type SkipTo struct {
+	stmtMarker
+	Body []Stmt
 }
 
 // Input : même forme que Print ; un item Var est lu au clavier (chaîne ou nombre).

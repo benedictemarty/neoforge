@@ -5,6 +5,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — différentiel aléatoire (S11-1)
+- `make fuzz N=… SEED=…` : des programmes tirés au sort dans une grammaire sûre (déterministe) sont
+  exécutés interprétés puis compilés et les écrans comparés. **320 programmes vérifiés.** Il a mis au jour
+  deux défauts de l'interpréteur, corrigés dans Neo6502Basic : `upper$(`/`lower$(` qui lisaient au-delà de
+  la chaîne (US-13) et la pile d'expressions sans contrôle de débordement (US-14, « Out Of Stack Space »
+  au lieu d'écrire en page zéro). Différences connues documentées dans `docs/COMPILER.md`.
+### Corrigé — compilateur : terminateurs orphelins (S11-2)
+- `endif` isolé ne fait rien et `else` isolé saute jusqu'à son `endif` (`if.asm` : `EndIf: rts`,
+  `ElseCode` cherche `endif` en avant) ; `wend`/`next`/`until`/`loop`/`endproc` isolés et `else` sans
+  `endif` arrêtent le programme avec « Structure Imbalance **at line N** » (le numéro manquait).
+  Différentiel `orphans.bsc`.
 
 ## [0.11.0] - 2026-09-22 — sprint 10 : vérification complète, vitesse, erreurs dans l'éditeur
 ### Ajouté — IDE : erreurs d'exécution dans l'éditeur (S10-3)

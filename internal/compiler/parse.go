@@ -383,9 +383,21 @@ func (p *parser) statement() (Stmt, error) {
 	case "restore":
 		p.next()
 		return &Restore{}, nil
-	case "next", "wend", "until", "loop", "endif", "endproc", "endcase": // terminateur orphelin : erreur à l'exécution
+	case "endif": // isolé : sans effet (if.asm : `EndIf: rts`)
 		p.next()
-		return &StrayEnd{Name: it.Tok.Name}, nil
+		return &Nop{}, nil
+	case "else": // isolé : saut jusqu'au `endif` correspondant ; sans `endif`, Structure Imbalance
+		line := p.bas
+		p.next()
+		body, err := p.block([]string{"endif"})
+		if err != nil {
+			return &StrayEnd{Name: "else", Line: line}, nil //nolint:nilerr // pas de endif : erreur d'exécution, comme l'interpréteur
+		}
+		p.next() // endif
+		return &SkipTo{Body: body}, nil
+	case "next", "wend", "until", "loop", "endproc", "endcase": // terminateur orphelin : erreur à l'exécution
+		p.next()
+		return &StrayEnd{Name: it.Tok.Name, Line: p.bas}, nil
 	case "assert":
 		p.next()
 		x, err := p.expr(TInt)

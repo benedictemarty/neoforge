@@ -8,7 +8,7 @@ NEOBASIC_BIN ?= $(HOME)/Neo6502Basic/bin/basic.bin
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build run test test-emu test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json dist
+.PHONY: all build run test test-emu fuzz test-js cover cover-check vet fmt clean emu-wasm e2e e2e-browser help-json dist
 
 all: test test-js build
 
@@ -26,6 +26,12 @@ test:
 # Tests exigeant Phosphoneo natif (différentiel interprété/compilé, squelette API).
 test-emu:
 	NEOFORGE_EMU_TESTS=1 go test -count=1 $(PKG)
+
+# Différentiel aléatoire : N programmes tirés au sort (grammaire sûre), interprétés et compilés.
+#   make fuzz N=200 SEED=500
+fuzz:
+	NEOFORGE_EMU_TESTS=1 NEOFORGE_FUZZ=$(or $(N),20) NEOFORGE_FUZZ_SEED=$(or $(SEED),1) \
+		go test -count=1 -timeout 90m -run TestRandomDifferential ./internal/compiler
 
 # Tests de la logique pure de l'éditeur (JS, node --test).
 test-js:

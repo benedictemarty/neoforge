@@ -23,7 +23,8 @@ var rtDeps = map[string][]string{
 	"ERRFILE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRRANGE": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
 	"ERRDIV": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRDATA": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
 	"ERRMEM": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"}, "ERRSTR": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
-	"API": {}, "MATH": {"API"}, "ACC2R1": {}, "TMP2R1": {}, "ACC2R2": {}, "R12ACC": {}, "LDV": {}, "STV": {}, "LDT": {}, "LDI8": {}, "LTI8": {}, "ADD32": {}, "SUB32": {},
+	"ERRSTRUCT": {"PUSH", "POPACC", "PRSTR", "PRINT", "PRCHR"},
+	"API":       {}, "MATH": {"API"}, "ACC2R1": {}, "TMP2R1": {}, "ACC2R2": {}, "R12ACC": {}, "LDV": {}, "STV": {}, "LDT": {}, "LDI8": {}, "LTI8": {}, "ADD32": {}, "SUB32": {},
 }
 
 // Ordre d'émission stable.
@@ -33,7 +34,7 @@ var rtOrder = []string{"API", "MATH", "ACC2R1", "TMP2R1", "ACC2R2", "R12ACC", "P
 	"GFXSEND", "GFXPOS", "GFXDRAW", "GFXRESET", "SPRINIT", "SPRUPDATE", "SEXT16", "JOYAXIS", "EVENT",
 	"MUL16", "ZEROFILL", "LOADELEM", "STOREELEM", "READDATA", "SYSCALL", "PRHEX", "ASMBYTE",
 	"FWRITEBYTE", "FREADBYTE", "FWRITENUM", "FWRITESTR", "FREADNUM", "FREADSTR", "TXBYTE", "TXSTR", "CMP32",
-	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE", "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR", "LDV", "STV", "LDT", "LDI8", "LTI8", "ADD32", "SUB32"}
+	"TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE", "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR", "ERRSTRUCT", "LDV", "STV", "LDT", "LDI8", "LTI8", "ADD32", "SUB32"}
 
 // runtime émet les routines utilisées (et leurs dépendances), après le corps.
 func (g *gen) runtime() {
@@ -90,7 +91,7 @@ func (g *gen) emitRoutine(name string) {
 	case "TURTLEINIT", "TURTLEDELAY", "FWRITELINE", "FREADLINE":
 		g.emitTurtleRoutine(name)
 		return
-	case "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR":
+	case "ERRFILE", "ERRRANGE", "ERRDIV", "ERRDATA", "ERRMEM", "ERRSTR", "ERRSTRUCT":
 		g.emitErrorRoutine(name)
 		return
 	case "PRHEX":

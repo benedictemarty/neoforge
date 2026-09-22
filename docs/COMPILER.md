@@ -32,7 +32,7 @@ Dans l'IDE : **⚙ Compiler** (F6) compile et lance le `.neo` dans l'émulateur 
 | `if … then …` (une ligne, sans `else`), `if … / else / endif`, `while/wend`, `repeat/until`, `do/exit/loop`, `for … to/downto … next` | `on error` |
 | `proc`/`endproc` (paramètres par valeur ou `ref` : recopie dans la variable de l'appelant au retour), `call`, `local` (entiers et chaînes), `data`/`read`/`restore`, `assert`, `defchr`, `load "f",adr`, `sys` (A, X, Y) ; **tableaux** `dim a(n[,m])` (1 ou 2 dimensions, bornes incluses, taille dynamique, chaînes comprises), **`goto`/`gosub`/`return`** vers des numéros de ligne constants | récursion, `case`/`when` (« Not Implemented » dans NeoBASIC) |
 | `abs( sgn( int( min( max( rand( alloc( true false` ; opérateur `mem[i]` (mot 16 bits) ; **souris** `mouse to/show/hide/cursor`, `mouse(x,y[,w])`, `havemouse(` ; **GPIO/I2C** `pin n,input|output|analog|valeur`, `pin(`, `analog(`, `iwrite`, `iread(` ; **tortue** `turtle home|fast|hide|show`, `penup`, `pendown [c]`, `left`/`right`/`forward` (groupe 9, sprite $7F, temporisations de `turtle.asm`) | — |
-| **UART/I2C/SPI** : `uconfig`, `usend`/`ssend`/`isend` (blocs : octet bas, `;` = mot, chaînes), `ureceive`/`utransmit`/`sreceive`/`stransmit`/`ireceive`/`itransmit`, `uhasdata(` ; `exists(` ; récursion (paramètres sauvegardés/restaurés) ; terminateur orphelin = « Structure Imbalance » à l'exécution | — |
+| **UART/I2C/SPI** : `uconfig`, `usend`/`ssend`/`isend` (blocs : octet bas, `;` = mot, chaînes), `ureceive`/`utransmit`/`sreceive`/`stransmit`/`ireceive`/`itransmit`, `uhasdata(` ; `exists(` ; récursion (paramètres sauvegardés/restaurés) ; terminateur orphelin = « Structure Imbalance at line N » à l'exécution — mais `endif` isolé ne fait rien et `else` isolé saute jusqu'à son `endif` (`if.asm`) | — |
 | **assembleur en ligne** : mnémoniques 65C02 assemblés à l'exécution dans `P` (options `O`), étiquettes `.nom`, tous les modes (immédiat, page zéro/absolu choisi sur la valeur, `,x`/`,y`, indirects), branches relatives, listing hexadécimal (`O` bit 1) — code identique à celui de l'interpréteur | Sweet16 : absent de NeoBASIC actuel (`mixedassembler.bsc` obsolète, « Syntax Error » dans l'interpréteur lui-même) |
 | **graphisme chaîné** `move line rect ellipse plot text image tiledraw` (`from to by x,y ink solid frame dim`), **`sprite`** (`image to by flip anchor hide`, `sprite clear`), `gload`, `tilemap`, `sound`/`noise`/`sfx`, `vmode`, `wait`, `ink`, `cursor`, `palette` ; fonctions `event( joypad( time( vblanks( key( vmode( notes( point( spoint( hit( spritex( spritey(` | `joypad(` à 3 arguments, `mouse(`, `frame`, fichiers |
 
@@ -91,6 +91,16 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
   Au-delà de `$FE00` en compact : erreur « programme trop grand ». `neoforgec` et ⚙ Compiler
   annoncent la fin du programme et le mode. Les appels API passent toujours par `RT_API` (A = fonction,
   X = groupe) et `RT_MATH` (7 et 5 octets au lieu de 16 et 33).
+- **Différentiel aléatoire** (`make fuzz N=200`) : des programmes tirés au sort dans une grammaire
+  sûre (déterministe, sans `rnd(`, `time(` ni saisie) sont exécutés interprétés puis compilés et les
+  écrans comparés. 320 programmes vérifiés ; il a mis au jour trois défauts de **l'interpréteur**,
+  corrigés dans Neo6502Basic : `upper$(`/`lower$(` qui lisaient au-delà de la chaîne (US-13), la
+  pile d'expressions sans contrôle de débordement (US-14) et, plus tôt, la concrétisation des chaînes
+  (US-12).
+- **Différences connues** (l'interpréteur est plus contraint que le code compilé) : sa pile
+  d'expressions n'a que **8 emplacements** — au-delà, il signale « Out Of Stack Space » alors que le
+  compilé évalue sans limite ; `alloc(` y dispose de moins de mémoire. Un programme accepté par
+  l'interpréteur l'est donc toujours par le compilateur, l'inverse n'est pas garanti.
 - **Erreurs d'exécution** reproduites avec le numéro de ligne de la numérotation automatique (100, pas
   10, ou numéro explicite) : « File I/O Error at line N » (`load`, `gload`, `open`), « Division By Zero
   Error » (`/ \ %`), « Out Of Range Error » (indice de tableau hors de 0…borne), « Out Of Data »

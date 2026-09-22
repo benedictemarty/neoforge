@@ -275,9 +275,9 @@ func (g *gen) runtimeError(routine string, line int) {
 
 // ErrorMessages : message de chaque routine d'erreur d'exécution, dans l'ordre des codes écrits
 // en ERRINFO (code = indice + 1, puis le numéro de ligne sur 16 bits) — lus par le débogueur.
-var ErrorMessages = []string{"File I/O Error", "Out Of Range Error", "Division By Zero Error", "Out Of Data", "Out Of Memory", "String Too Long"}
+var ErrorMessages = []string{"File I/O Error", "Out Of Range Error", "Division By Zero Error", "Out Of Data", "Out Of Memory", "String Too Long", "Structure Imbalance"}
 
-var errorRoutines = map[string]int{"ERRFILE": 0, "ERRRANGE": 1, "ERRDIV": 2, "ERRDATA": 3, "ERRMEM": 4, "ERRSTR": 5}
+var errorRoutines = map[string]int{"ERRFILE": 0, "ERRRANGE": 1, "ERRDIV": 2, "ERRDATA": 3, "ERRMEM": 4, "ERRSTR": 5, "ERRSTRUCT": 6}
 
 // emitErrorRoutine : message, « at line », ACC en décimal, CR, arrêt.
 func (g *gen) emitErrorRoutine(name string) {
@@ -1794,11 +1794,13 @@ func (g *gen) dataStmt(s Stmt) bool {
 		a.Op("jsr", asm.Abs, kernelLoadExtended)
 		g.fileErrorCheck(s.Line)
 	case *StrayEnd:
-		idx := len(g.strLits)
-		g.strLits = append(g.strLits, "Structure Imbalance")
-		g.setPTR(fmt.Sprintf("STR_%d", idx))
-		g.call("PRSTR")
-		g.stop()
+		g.runtimeError("ERRSTRUCT", s.Line)
+	case *Nop: // `endif` isolé
+	case *SkipTo: // `else` isolé : le bloc est compilé mais sauté
+		after := a.Uniq("skip")
+		a.OpL("jmp", asm.Abs, after, 0)
+		g.stmts(s.Body)
+		a.Label(after)
 	case *Assert: // expression nulle → message éventuel, « : », « Assert failed », arrêt
 		g.intExpr(s.Cond)
 		g.testACC()

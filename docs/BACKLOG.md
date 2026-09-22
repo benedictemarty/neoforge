@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-22)** : sprints 0 à 10 **livrés** (v0.11.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-22)** : sprints 0 à 10 **livrés** (v0.11.0), sprint 11 **en cours** ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -129,6 +129,14 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 | S10-1 | E5    | `tools/corpus_run.sh` classe les écarts au lieu de les laisser « expliqués » : rejeu avec un budget large, masquage des adresses `alloc(` puis des chronométrages, comparaison de préfixe pour les programmes sans fin — **48/48 vérifiés** (36 identiques, 2 adresses, 9 chronos, 1 préfixe) | P2   | FAIT |
 | S10-2 | E5    | Vitesse : opérations directes entre feuilles entières, `v = v ∘ feuille` sur place, boucle `for` à borne constante comparée en ligne — bench 214 → 146 (×5,4 contre l'interpréteur ; boucle entière ×13,7), benchmarks officiels ×5 à ×17,5 ; Atic Atac repasse en mode rapide (55 Ko) | P2   | FAIT |
 | S10-3 | E8    | IDE : erreurs d'exécution remontées dans l'éditeur (`ERRINFO` + carte des lignes, bandeau et ligne soulignée), étiquettes du débogueur filtrées génériquement (mode compact compris) ; `make e2e-browser` contrôle la chaîne dans Chrome | P3   | FAIT |
+
+## Sprint 11 — Différentiel aléatoire — EN COURS
+
+| ID    | Épop. | Récit utilisateur                                                                 | Prio | État |
+|-------|-------|------------------------------------------------------------------------------------|------|------|
+| S11-1 | E5    | `make fuzz` : programmes tirés au sort dans une grammaire sûre, interprétés et compilés, écrans comparés — 320 programmes vérifiés | P2   | FAIT |
+| S11-2 | E5    | Terminateurs orphelins fidèles à `if.asm` : `endif` isolé sans effet, `else` isolé saute jusqu'à son `endif`, `wend`/`next`/… = « Structure Imbalance **at line N** » ; différentiel `orphans.bsc` | P2   | FAIT |
+| S11-3 | —     | Défauts de l'**interpréteur** trouvés par le fuzz et corrigés dans Neo6502Basic : `upper$(`/`lower$(` lisaient au-delà de la chaîne (US-13), pile d'expressions sans contrôle (US-14, « Out Of Stack Space » au lieu d'écrire en page zéro) | P1   | FAIT |
 
 ## Idées non planifiées
 

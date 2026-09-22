@@ -1,0 +1,11 @@
+print "debut"
+endif
+print "endif ignore"
+else
+print "saute"
+endif
+print "apres else"
+if 1 then print "then vrai"
+if 0 then print "jamais"
+endif
+print "fin"
