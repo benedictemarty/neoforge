@@ -2,7 +2,7 @@
 
 Gestion agile. Priorité : **P1** (haute) → **P3** (basse). État : `TODO`, `EN COURS`, `FAIT`.
 
-**État global (2026-09-21)** : sprints 0 à 9 **livrés** (v0.10.0) ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
+**État global (2026-09-21)** : sprints 0 à 9 **livrés** (v0.10.0), sprint 10 **en cours** ; 48/50 exemples officiels compilent ; reste la validation sur carte réelle (S7-5, matériel requis) et les idées non planifiées. Cadrage : `docs/adr/ADR-001`.
 
 **Dépendance Phosphoneo** : le WASM doit être construit contre `~/Neo6502Trinity` (`make -C ~/Phosphoneo wasm`, commits du 2026-09-20 : gardes fork, `TMRRead` en attente active, exports `web_type`/`web_reset`). Sous Trinity le firmware démarre sur NeoDOS ; neoforge injecte `boot/neobasic.bin` (`NEOFORGE_NEOBASIC_BIN`) dans le stockage de l'émulateur.
 
@@ -121,6 +121,14 @@ Objectif : faire tourner les 48 exemples officiels compilés comme interprétés
 | S9-2 | E5    | Erreurs d'exécution comme l'interpréteur avec numéro de ligne : File I/O, Division By Zero, Out Of Range (indices), Out Of Data — différentiels `errdiv`/`errrange`/`errdata`, `files.bsc` | P2   | FAIT |
 | S9-3 | E5    | Programmes volumineux : Atic Atac compilé (61 Ko) écrasait la page zéro par son tas → appels API par routines (`RT_API`/`RT_MATH`), **mode compact automatique** au-delà de `$E000` (accès variables par routines, ×2 plus petit), erreur au-delà de `$FE00` ; différentiels exécutés dans les deux modes (21 programmes × 2) | P1   | FAIT |
 | S9-4 | E5    | Autres erreurs d'exécution : String Too Long (concaténation > 251), Out Of Range (`chr$(`, fonctions maths en erreur API, règles de `dim`), Out Of Memory (tas > `$FE00`) — différentiels `errstr`/`errdim`/`errmath`/`errchr` (25 programmes × 2 modes) ; bug de l'interpréteur relevé (chaîne constante corrompue) | P3   | FAIT |
+
+## Sprint 10 — Vérification complète et vitesse — EN COURS
+
+| ID    | Épop. | Récit utilisateur                                                                 | Prio | État |
+|-------|-------|------------------------------------------------------------------------------------|------|------|
+| S10-1 | E5    | `tools/corpus_run.sh` classe les écarts au lieu de les laisser « expliqués » : rejeu avec un budget large, masquage des adresses `alloc(` puis des chronométrages, comparaison de préfixe pour les programmes sans fin — **48/48 vérifiés** (36 identiques, 2 adresses, 9 chronos, 1 préfixe) | P2   | FAIT |
+| S10-2 | E5    | Vitesse : opérations directes entre feuilles entières, `v = v ∘ feuille` sur place, boucle `for` à borne constante comparée en ligne — bench 214 → 146 (×5,4 contre l'interpréteur ; boucle entière ×13,7), benchmarks officiels ×5 à ×17,5 ; Atic Atac repasse en mode rapide (55 Ko) | P2   | FAIT |
+| S10-3 | E8    | IDE : le débogueur ignore le mode compact (symboles `RT_LDV`…), les erreurs d'exécution ne sont visibles qu'à l'écran de l'émulateur | P3   | TODO |
 
 ## Idées non planifiées
 

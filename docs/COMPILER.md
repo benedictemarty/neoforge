@@ -1,9 +1,16 @@
 # Compilateur NeoBASIC → 65C02 (neoforgec)
 
 Conception : `docs/adr/ADR-002-compilateur.md`. État : **sprint 9** — **48 des 50 exemples `.bsc` de Trinity compilent** (`tools/corpus.sh`) et
-**36 donnent le même écran que l'interpréteur** (`tools/corpus_run.sh` ; les 12 autres affichent des
-chronométrages ou des adresses `alloc(`). Restent : Sweet16 (`mixedassembler.bsc`, absent de NeoBASIC)
-et `asteroids.bsc` (bibliothèque non incluse par le Makefile officiel). Performance : `tools/bench.sh`.
+**tous donnent le même écran que l'interpréteur** (`tools/corpus_run.sh` : 36 au caractère près, 2 après
+masquage des adresses de `alloc(`, 9 après masquage des chronométrages, 1 sur son préfixe — programme sans fin). Restent : Sweet16 (`mixedassembler.bsc`, absent de NeoBASIC)
+et `asteroids.bsc` (bibliothèque non incluse par le Makefile officiel). Performance : `tools/bench.sh` (795 → 146 centièmes, ×5,4) et les benchmarks Rugg/Feldman officiels
+(`bm1`-`bm8`, secondes par itération) :
+
+| | bm1 | bm2 | bm3 | bm4 | bm5 | bm6 | bm7 | bm8 |
+|---|---|---|---|---|---|---|---|---|
+| interprété | 0,0673 | 0,420 | 0,857 | 0,792 | 0,990 | 1,488 | 2,578 | 0,0880 |
+| compilé | 0,0080 | 0,024 | 0,169 | 0,158 | 0,160 | 0,212 | 0,504 | 0,0125 |
+| gain | ×8,4 | ×17,5 | ×5,1 | ×5,0 | ×6,2 | ×7,0 | ×5,1 | ×7,0 |
 
 ## Utilisation
 
@@ -72,6 +79,10 @@ avec 6 décimales comme dans l'interpréteur. Les constantes décimales sont con
 - Page zéro : `$20` ACC (32 bits), `$24` TMP, `$28`/`$2A` pointeurs de chaînes, `$2C`/`$2D` indices de
   piles, `$2E` compteur, `$30-$39` registres maths de l'API (entrelacés au pas 2), `$3C`/`$3D` types,
   `$3E` tas, `$40` pointeur data, `$42` pointeur des accès variables (mode compact).
+- **Opérations directes** (mode rapide) : `a ∘ b` entre deux feuilles entières (constante, variable)
+  lit les opérandes en mémoire sans passer par TMP, et `v = v ∘ feuille` (accumulateurs, compteurs)
+  modifie la variable sur place. Une boucle `for` à borne constante compare l'indice à la constante
+  en ligne, sans variable de borne ni `RT_CMP32`.
 - **Deux modes de génération.** Rapide (par défaut) : accès aux variables en ligne (30 octets par
   chargement). Si la fin du programme (`ENDPROG`, début du tas) dépasse `$E000`, le programme est
   recompilé en mode **compact** : variables par routines `RT_LDV`/`RT_STV`/`RT_LDT` (`ldx/ldy` + `jsr`,

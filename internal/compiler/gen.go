@@ -343,7 +343,7 @@ func (g *gen) stmt(s Stmt) {
 		if isStrName(s.Name) {
 			g.strExpr(s.X)
 			g.call("STRCOPY", varLabel(s.Name)) // copie (PTR) → (PTR2) = tampon de la variable
-		} else {
+		} else if !g.inPlace(s) {
 			g.intExpr(s.X)
 			g.storeACC(varLabel(s.Name))
 		}
@@ -445,10 +445,15 @@ func (g *gen) loop(end string, body []Stmt) {
 func (g *gen) forStmt(s *For) {
 	a := g.a
 	g.vars[s.Name] = true
-	lim := a.Uniq("FORLIM")
-	g.vars[lim] = true // borne évaluée une fois, stockée comme une variable
-	g.intExpr(s.To)
-	g.storeACC(varLabel(lim))
+	lim, constLim := "", int32(0)
+	if c, ok := s.To.(IntLit); ok && !g.compact { // borne constante : comparaison en ligne, pas de variable
+		constLim = int32(c.V)
+	} else {
+		lim = a.Uniq("FORLIM")
+		g.vars[lim] = true // borne évaluée une fois, stockée comme une variable
+		g.intExpr(s.To)
+		g.storeACC(varLabel(lim))
+	}
 	g.intExpr(s.From)
 	a.Op("stz", asm.Zp, zTYPE) // l'indice de boucle est entier (l'interpréteur l'exige)
 	g.storeACC(varLabel(s.Name))
@@ -480,17 +485,47 @@ func (g *gen) forStmt(s *For) {
 		}
 		a.Label(done)
 	}
-	g.loadTMP(v)
-	g.loadACC(varLabel(lim))
-	g.call("CMP32")
-	if s.Down {
-		a.Op("cmp", asm.Imm, 0xFF) // indice < borne → fin
+	if lim == "" {
+		g.forCompareConst(v, constLim, s.Down, end)
 	} else {
-		a.Op("cmp", asm.Imm, 1) // indice > borne → fin
+		g.loadTMP(v)
+		g.loadACC(varLabel(lim))
+		g.call("CMP32")
+		if s.Down {
+			a.Op("cmp", asm.Imm, 0xFF) // indice < borne → fin
+		} else {
+			a.Op("cmp", asm.Imm, 1) // indice > borne → fin
+		}
+		a.Branch("beq", end)
 	}
-	a.Branch("beq", end)
 	a.OpL("jmp", asm.Abs, top, 0)
 	a.Label(end)
+}
+
+// forCompareConst : saute à end quand l'indice a dépassé la borne constante — différence 32 bits en
+// ligne, avec la même sémantique que RT_CMP32 (signe du résultat, sans correction de débordement).
+func (g *gen) forCompareConst(v string, limit int32, down bool, end string) {
+	a := g.a
+	cont := a.Uniq("forc")
+	a.Op("sec", asm.Imp, 0)
+	for i := 0; i < 4; i++ { // TMP = indice - borne (l'indice est à gauche, comme CMP32)
+		b := int(byte(uint32(limit) >> (8 * i)))
+		if down { // borne - indice
+			a.Op("lda", asm.Imm, b)
+			a.OpL("sbc", asm.Abs, v, i+1)
+		} else {
+			a.OpL("lda", asm.Abs, v, i+1)
+			a.Op("sbc", asm.Imm, b)
+		}
+		a.Op("sta", asm.Zp, zTMP+i)
+	}
+	a.Branch("bmi", cont) // différence négative : pas encore dépassé
+	a.Op("lda", asm.Zp, zTMP)
+	a.Op("ora", asm.Zp, zTMP+1)
+	a.Op("ora", asm.Zp, zTMP+2)
+	a.Op("ora", asm.Zp, zTMP+3)
+	a.Branch("bne", end) // différence positive : borne dépassée
+	a.Label(cont)
 }
 
 func (g *gen) callProc(s *CallProc) {
@@ -752,6 +787,9 @@ func (g *gen) binary(x Binary) {
 		g.compareResult(x.Op, g.compare(x))
 		return
 	}
+	if g.directBinary(x) {
+		return
+	}
 	g.operands(x)
 	if !g.isInt(x.L) || !g.isInt(x.R) || x.Op == "/" { // opérandes flottants ou incertains : API (types dynamiques)
 		if fn, ok := map[string]int{"+": fnMathAdd, "-": fnMathSub, "*": fnMathMul, "/": fnMathFDiv, "\\": fnMathIDiv, "%": fnMathMod}[x.Op]; ok {
@@ -815,6 +853,91 @@ func (g *gen) divCheck(line int) {
 	g.a.Branch("beq", ok)
 	g.runtimeError("ERRDIV", line)
 	g.a.Label(ok)
+}
+
+// directOps : opérations 32 bits que l'on peut faire directement d'une mémoire à l'autre.
+var directOps = map[string]string{"+": "adc", "-": "sbc", "&": "and", "|": "ora", "^": "eor"}
+
+// leafBytes : accès aux 4 octets d'une feuille (constante ou variable) sous forme d'un opérande
+// d'instruction ; ok=false si l'expression n'est pas une feuille. Les appelants ont déjà vérifié
+// que l'expression est prouvée entière (une variable chaîne ne peut pas arriver ici).
+func (g *gen) leafBytes(x Expr) (emit func(mn string, i int), ok bool) {
+	switch x := x.(type) {
+	case IntLit:
+		v := uint32(int32(x.V))
+		return func(mn string, i int) { g.a.Op(mn, asm.Imm, int(byte(v>>(8*i)))) }, true
+	case Var:
+		g.vars[x.Name] = true
+		return func(mn string, i int) { g.a.OpL(mn, asm.Abs, varLabel(x.Name), i+1) }, true
+	}
+	return nil, false
+}
+
+// directBinary : ACC = gauche ∘ droite lu directement en mémoire, sans passer par TMP (mode rapide,
+// deux feuilles entières, opération native). Économise dix chargements par opération.
+func (g *gen) directBinary(x Binary) bool {
+	mn, ok := directOps[x.Op]
+	if !ok || g.compact || !g.isInt(x.L) || !g.isInt(x.R) {
+		return false
+	}
+	left, ok := g.leafBytes(x.L)
+	if !ok {
+		return false
+	}
+	right, ok := g.leafBytes(x.R)
+	if !ok {
+		return false
+	}
+	switch x.Op {
+	case "+":
+		g.a.Op("clc", asm.Imp, 0)
+	case "-":
+		g.a.Op("sec", asm.Imp, 0)
+	}
+	for i := 0; i < 4; i++ {
+		left("lda", i)
+		right(mn, i)
+		g.a.Op("sta", asm.Zp, zACC+i)
+	}
+	g.a.Op("stz", asm.Zp, zTYPE)
+	return true
+}
+
+// inPlace : `v = v ∘ feuille` (entiers, opération native) modifie la variable sur place — le motif
+// des accumulateurs et compteurs de boucle. Vrai si le code a été émis.
+func (g *gen) inPlace(s *Assign) bool {
+	if g.compact || !g.intVars[s.Name] {
+		return false
+	}
+	b, ok := s.X.(Binary)
+	if !ok {
+		return false
+	}
+	mn, ok := directOps[b.Op]
+	if !ok || !g.isInt(b.L) || !g.isInt(b.R) {
+		return false
+	}
+	if v, ok := b.L.(Var); !ok || v.Name != s.Name {
+		return false
+	}
+	right, ok := g.leafBytes(b.R)
+	if !ok {
+		return false
+	}
+	switch b.Op {
+	case "+":
+		g.a.Op("clc", asm.Imp, 0)
+	case "-":
+		g.a.Op("sec", asm.Imp, 0)
+	}
+	v := varLabel(s.Name)
+	for i := 0; i < 4; i++ {
+		g.a.OpL("lda", asm.Abs, v, i+1)
+		right(mn, i)
+		g.a.OpL("sta", asm.Abs, v, i+1)
+	}
+	g.a.OpL("stz", asm.Abs, v, 0) // type entier
+	return true
 }
 
 // operands : TMP = gauche, ACC = droite (chargements directs quand les feuilles le permettent).

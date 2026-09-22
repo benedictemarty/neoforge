@@ -5,6 +5,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versionnage [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
+### Ajouté — vérification complète des exemples officiels (S10-1)
+- `tools/corpus_run.sh` rejoue les écarts avec un budget de cycles large puis compare sous deux
+  normalisations (adresses hexadécimales de `alloc(`, chronométrages) et, pour les programmes sans fin,
+  sur le préfixe d'écran : **48/48 vérifiés** — 36 identiques au caractère près, 2 adresses, 9 chronos,
+  1 préfixe. Plus aucun écart inexpliqué.
+### Modifié — compilateur : vitesse du code généré (S10-2)
+- Opérations directes entre feuilles entières (sans passer par TMP), `v = v ∘ feuille` modifiée sur place,
+  boucle `for` à borne constante comparée en ligne (ni variable de borne ni `RT_CMP32`).
+  `tools/bench.sh` : 214 → **146** centièmes (interprété 795, ×5,4 ; boucle entière 439 → 32, ×13,7).
+  Benchmarks Rugg/Feldman officiels : ×5,0 à ×17,5. Atic Atac repasse sous `$E000` (mode rapide, 55 Ko).
 ### Corrigé — interpréteur NeoBASIC (dépôt Neo6502Basic, `c1fe87c`)
 - Le bug relevé par le différentiel (chaîne voisine écrasée quand une chaîne grandit sur place, `concrete.asm`)
   est corrigé dans Neo6502Basic avec `tests/strconcrete.bsc` ; `bin/basic.bin` régénéré. Le motif entre dans
