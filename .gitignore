@@ -11,3 +11,4 @@ coverage.out
 
 # Émulateur WASM (servi depuis ~/Phosphoneo/web, jamais versionné ici)
 /internal/server/web/emu/
+ROADMAP.md
