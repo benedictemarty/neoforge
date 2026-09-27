@@ -12,3 +12,8 @@ coverage.out
 # Émulateur WASM (servi depuis ~/Phosphoneo/web, jamais versionné ici)
 /internal/server/web/emu/
 ROADMAP.md
+# Tenus en local uniquement, jamais suivis par git (decision bmarty 2026-09-27)
+CHANGELOG.md
+ROADMAP.md
+changelog.md
+roadmap.md
