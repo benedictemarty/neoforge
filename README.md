@@ -107,3 +107,7 @@ identiques octet pour octet) — test sauté si les scripts ou `python3` sont ab
 ## Licence
 
 **EUPL-1.2** — voir `LICENSE`. © bmarty.
+
+## Avertissement
+
+⚠️ Avertissement : ce programme est un programme généré par Claude Code sous la supervision d'un être humain : il a été utilisé pour améliorer, développer, rendre compatible ou traduire ce logiciel.
